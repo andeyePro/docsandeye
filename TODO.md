@@ -23,14 +23,14 @@ maintainer's machine only; the public-facing summary is README.md.
       cache keyed by `<component>@<design_version>--<render-id>--<params-hash>`; `.f3z` flagged as
       hand-exported. Runs locally, never in GitHub Actions.
 - [ ] **Version-bump guard** (in task_004): source file git history moved and `design_version` did not → fail.
-- [ ] **Theme packs**: `pioreactor` (default; re-implemented from published token values, no copied
+- [ ] **Theme packs** (awaiting approval — /vs --approve task_005): `pioreactor` (default; re-implemented from published token values, no copied
       CSS or JS) and stock Starlight. Theme control cycles Pioreactor inherit → Pioreactor light →
       Pioreactor dark → Starlight inherit → Starlight dark → Starlight light, with the logo variants
       (mark over half-filled circle / sun / moon); fall back to a plain picker if the cycling logo is
       expensive.
 - [ ] **Carbon gate** (in task_004): poster-only initial load of a step page ≤ 150 KB, checked by `docsandeye check`;
       CO2.js (Sustainable Web Design v4) gCO2e figure rendered on every page. Warn in v0.1.
-- [ ] **Dogfood**: this repo's own docs site built with the plugin; one synthetic example project
+- [ ] **Dogfood** (in task_005): this repo's own docs site built with the plugin; one synthetic example project
       under `examples/`.
 - [ ] **First consumer: electroPioreactor AEP0.2** (awaiting approval — /vs --approve task_006) — content under `docs/` on the `AEP02` branch of
       the shared mount at `/repos/electroPioreactor`, converted from the existing assembly README;

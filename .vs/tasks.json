@@ -44,6 +44,17 @@
     "last_modified": "2026-09-04T20:56:21Z"
   },
   {
+    "id": "task_005",
+    "description": "@docsandeye/themes pioreactor pack (token re-implementation, no fonts shipped), <docsi-theme> six-state cycle with neutral mark, examples/synthetic-guide, site/ (docs.andeye.com dogfood)",
+    "implementation_status": "awaiting-approval",
+    "test_status": "pending",
+    "assigned_to": "generator",
+    "mode": "fuzzy",
+    "branch": "vsss/task_005-themes",
+    "spec": ".claude/worktrees/task_005/.vs/spec.md",
+    "last_modified": "2026-09-04T21:05:04Z"
+  },
+  {
     "id": "task_006",
     "description": "electroPioreactor AEP0.2 guide content: docs/{components,steps,media} + docsandeye.config.yaml on branch AEP02 (files only, no git)",
     "implementation_status": "awaiting-approval",
