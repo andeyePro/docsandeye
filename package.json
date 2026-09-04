@@ -1,0 +1,25 @@
+{
+  "name": "docsandeye",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Docs&I monorepo: versioned hardware documentation tooling",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "site",
+    "examples/*"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "tsc --noEmit -p packages/core"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.1",
+    "typescript": "7.0.2",
+    "vitest": "5.0.0"
+  }
+}

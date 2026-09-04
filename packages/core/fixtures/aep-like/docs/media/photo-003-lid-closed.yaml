@@ -1,0 +1,8 @@
+id: photo-003-lid-closed
+type: photo
+file: assets/photo/photo-003-lid-closed.jpg
+shot_date: 2026-08-21
+shot_by: "Example Maker"
+hero: [lid-assembly@1.2.0]
+in_frame: [vial-cap-2x6.1-5x3.2@2.1.0]
+licence: CC-BY-SA-4.0

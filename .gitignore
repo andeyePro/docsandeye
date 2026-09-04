@@ -21,3 +21,7 @@
 .vss/rate-limit
 .vs/cycle-*/
 .claude/worktrees/
+
+# build output and dependencies
+node_modules/
+dist/

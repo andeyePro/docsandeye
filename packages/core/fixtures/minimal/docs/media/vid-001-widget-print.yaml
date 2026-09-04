@@ -1,0 +1,8 @@
+id: vid-001-widget-print
+type: video
+file: assets/video/vid-001-widget-print.mp4
+poster: assets/video/vid-001-widget-print.jpg
+duration_s: 12
+shot_date: 2026-01-12
+shot_by: "Example Maker"
+hero: [widget@1.0.0]
