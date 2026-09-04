@@ -2,13 +2,13 @@
   {
     "id": "task_001",
     "description": "@docsandeye/core: content schemas, loader, staleness engine, reshoot index, render plan, version-bump guard, hosting seam",
-    "implementation_status": "in_progress",
-    "test_status": "pending",
-    "assigned_to": "generator",
+    "implementation_status": "complete",
+    "test_status": "passing",
+    "assigned_to": "evaluator",
     "mode": "rigorous",
     "branch": "vsss/task_001-core",
     "spec": ".claude/worktrees/task_001/.vs/spec.md",
-    "last_modified": "2026-09-04T21:11:51Z"
+    "last_modified": "2026-09-04T21:34:44Z"
   },
   {
     "id": "task_002",
