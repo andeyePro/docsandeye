@@ -1,0 +1,15 @@
+* text=auto eol=lf
+*.png binary
+*.glb binary
+*.stl binary
+*.step binary
+*.stp binary
+*.3mf binary
+*.mp4 binary
+*.webm binary
+*.avif binary
+*.webp binary
+*.jpg binary
+*.jpeg binary
+*.woff2 binary
+*.svg text
