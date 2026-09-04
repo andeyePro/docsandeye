@@ -28,12 +28,11 @@ maintainer's machine only; the public-facing summary is README.md.
       CO2.js (Sustainable Web Design v4) gCO2e figure rendered on every page. Warn in v0.1.
 - [ ] **Dogfood** (in task_005): this repo's own docs site built with the plugin; one synthetic example project
       under `examples/`.
-- [ ] **First consumer: electroPioreactor AEP0.2** (in progress — task_006) — content under `docs/` on the `AEP02` branch of
-      the shared mount at `/repos/electroPioreactor`, converted from the existing assembly README;
-      published at docs.electroPioreactor.org/AEP. Design for a sibling `/MEP` guide that shares
-      most components and steps. Denylist `private-notes/**`, `.claude/**` and `.vibe/**` from ingestion (the PII setup notes live under `private-notes/`).
+- [ ] **First consumer: electroPioreactor AEP0.2** — content landed on the AEP02 branch of Martin's clone (commit 80780ae: 69 components, 12 steps, shoot list, stubs); Reviewer pass with 4 minor notes; awaiting Martin's own review (Docs&I-fromClaude item 10) and the docs.electroPioreactor.org/AEP deployment.
 - [ ] **Plus/Pro seam** (in task_001: the hosting-provider registry in `packages/core/src/hosting.ts`): a hosting-provider abstraction for video assets (local path or bucket URL)
       so a managed zero-carbon hosting tier can plug in later without schema changes. No paid code.
+
+- [ ] **Core follow-ups from downstream tasks**: `loadProject` should ignore `README.md` inside `docs/steps/` (task_006 could not place its steps README there); `checkVersionBumps` should treat a version commit that is a descendant of the source commit as satisfied (the CLI currently clears these with `git merge-base --is-ancestor`).
 
 ### v0.2 — video
 

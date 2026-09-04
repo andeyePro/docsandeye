@@ -57,12 +57,12 @@
   {
     "id": "task_006",
     "description": "electroPioreactor AEP0.2 guide content: docs/{components,steps,media} + docsandeye.config.yaml on branch AEP02 (files only, no git)",
-    "implementation_status": "in_progress",
-    "test_status": "pending",
-    "assigned_to": "generator",
+    "implementation_status": "complete",
+    "test_status": "passing",
+    "assigned_to": "evaluator",
     "mode": "fuzzy",
     "branch": "vsss/task_006-aep",
     "spec": ".claude/worktrees/task_006/.vs/spec.md",
-    "last_modified": "2026-09-04T21:11:51Z"
+    "last_modified": "2026-09-04T21:51:19Z"
   }
 ]
