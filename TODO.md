@@ -32,7 +32,7 @@ maintainer's machine only; the public-facing summary is README.md.
       CO2.js (Sustainable Web Design v4) gCO2e figure rendered on every page. Warn in v0.1.
 - [ ] **Dogfood**: this repo's own docs site built with the plugin; one synthetic example project
       under `examples/`.
-- [ ] **First consumer: electroPioreactor AEP0.2** — content under `docs/` on the `AEP02` branch of
+- [ ] **First consumer: electroPioreactor AEP0.2** (awaiting approval — /vs --approve task_006) — content under `docs/` on the `AEP02` branch of
       the shared mount at `/repos/electroPioreactor`, converted from the existing assembly README;
       published at docs.electroPioreactor.org/AEP. Design for a sibling `/MEP` guide that shares
       most components and steps. Denylist `private-notes/**`, `.claude/**` and `.vibe/**` from ingestion (the PII setup notes live under `private-notes/`).
