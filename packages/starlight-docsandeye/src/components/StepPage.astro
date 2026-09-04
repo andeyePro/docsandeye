@@ -1,0 +1,53 @@
+---
+import type { Guide, ProjectModel, StalenessReport, Step } from '@docsandeye/core';
+import type { CarbonReport, RenderManifest } from '../data.ts';
+import { renderMarkdown } from '../markdown.ts';
+import { carbonFor } from '../view.ts';
+import CarbonFigure from './CarbonFigure.astro';
+import MediaPane from './MediaPane.astro';
+import PartsList from './PartsList.astro';
+
+interface Props {
+	guide: Guide;
+	step: Step;
+	model: ProjectModel;
+	staleness: StalenessReport;
+	renderManifest: RenderManifest | null;
+	carbon: CarbonReport | null;
+	buildDate: string;
+	maintainer: boolean;
+	pathname: string;
+}
+
+const { guide, step, model, staleness, renderManifest, carbon, pathname } = Astro.props;
+const html = await renderMarkdown(step.body);
+const carbonEntry = carbonFor(carbon, pathname);
+---
+
+<div class="not-content docsi-step-wrap" id="_top" data-guide={guide.id}>
+	<docsi-step data-step={step.id}>
+		<div class="docsi-media">
+			<MediaPane step={step} model={model} staleness={staleness} renderManifest={renderManifest} />
+		</div>
+		<div class="docsi-text">
+			<h1>{step.title}</h1>
+			<div class="docsi-body sl-markdown-content" set:html={html} />
+			<PartsList step={step} model={model} />
+			{
+				step.safety && (
+					<aside class="docsi-safety">
+						<strong class="docsi-safety-label">Safety</strong>
+						<p>{step.safety}</p>
+					</aside>
+				)
+			}
+			<footer class="docsi-meta">
+				{carbonEntry && <CarbonFigure gco2e={carbonEntry.gco2e} />}
+			</footer>
+		</div>
+	</docsi-step>
+</div>
+
+<script>
+	import '../elements/index.ts';
+</script>

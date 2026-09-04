@@ -1,0 +1,385 @@
+/*
+ * starlight-docsandeye — layout and the --docsi-* token contract.
+ *
+ * Colour and font tokens default onto Starlight's --sl-* tokens and may be
+ * overridden by a theme pack (theme-<name>.css). The two layout tokens
+ * (--docsi-media-col, --docsi-text-col) are defined here only; packs do not
+ * set them.
+ */
+:root {
+  --docsi-accent: var(--sl-color-accent);
+  --docsi-accent-high: var(--sl-color-accent-high);
+  --docsi-accent-low: var(--sl-color-accent-low);
+  --docsi-bg: var(--sl-color-bg);
+  --docsi-text: var(--sl-color-text);
+  --docsi-text-muted: var(--sl-color-gray-3);
+  --docsi-media-col: 55%;
+  --docsi-text-col: 44%;
+  --docsi-stale-bg: var(--sl-color-orange-low);
+  --docsi-stale-fg: var(--sl-color-orange-high);
+  --docsi-badge-stale-bg: var(--sl-color-orange-low);
+  --docsi-badge-updated-bg: var(--sl-color-green-low);
+  --docsi-font-body: var(--sl-font);
+  --docsi-font-mono: var(--sl-font-mono);
+}
+
+/* Give the two-column step layout room: widen Starlight's content column on step pages. */
+:root:has(docsi-step) {
+  --sl-content-width: 72rem;
+}
+
+/* ---- step layout --------------------------------------------------------- */
+.docsi-step-wrap {
+  margin-top: 1rem;
+}
+
+docsi-step {
+  display: grid;
+  grid-template-columns: var(--docsi-media-col) var(--docsi-text-col);
+  column-gap: 1%;
+  row-gap: 1.5rem;
+  align-items: start;
+  color: var(--docsi-text);
+  font-family: var(--docsi-font-body);
+}
+
+@media (max-width: 60rem) {
+  docsi-step {
+    grid-template-columns: 100%;
+  }
+}
+
+.docsi-media {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: calc(var(--sl-nav-height, 4rem) + 1rem);
+}
+
+@media (max-width: 60rem) {
+  .docsi-media {
+    position: static;
+  }
+}
+
+.docsi-media figure {
+  margin: 0;
+  background: var(--docsi-bg);
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.docsi-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--docsi-bg);
+}
+
+.docsi-media figcaption,
+.docsi-note {
+  padding: 0.4rem 0.75rem;
+  font-size: var(--sl-text-sm);
+  color: var(--docsi-text-muted);
+}
+
+.docsi-note {
+  margin: 0;
+  background: var(--docsi-stale-bg);
+  color: var(--docsi-stale-fg);
+}
+
+.docsi-render-missing {
+  padding: 1rem;
+  border: 1px dashed var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  color: var(--docsi-text-muted);
+  font-size: var(--sl-text-sm);
+}
+
+/* ---- 3D model ------------------------------------------------------------ */
+docsi-model {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+}
+
+docsi-model a {
+  color: var(--docsi-accent-high);
+}
+
+.docsi-model-load {
+  align-self: flex-start;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--docsi-accent);
+  border-radius: 999px;
+  background: var(--docsi-accent);
+  color: var(--sl-color-text-invert, #fff);
+  font: inherit;
+  cursor: pointer;
+}
+
+.docsi-model-load[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.docsi-viewer {
+  width: 100%;
+  height: 22rem;
+  background: var(--docsi-bg);
+  border-radius: 0.5rem;
+}
+
+/* ---- staleness ----------------------------------------------------------- */
+details.docsi-stale {
+  border: 1px solid var(--docsi-stale-fg);
+  border-radius: 0.5rem;
+  background: var(--docsi-stale-bg);
+  color: var(--docsi-stale-fg);
+}
+
+details.docsi-stale > summary {
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  font-size: var(--sl-text-sm);
+}
+
+details.docsi-stale > .docsi-changelog {
+  margin: 0;
+  padding: 0 0.9rem 0.6rem 2rem;
+  font-size: var(--sl-text-sm);
+}
+
+details.docsi-stale figure {
+  border: 0;
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* ---- text pane ----------------------------------------------------------- */
+.docsi-text h1 {
+  margin-top: 0;
+  font-size: var(--sl-text-h1);
+  line-height: var(--sl-line-height-headings);
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+
+.docsi-text h2 {
+  font-size: var(--sl-text-h4);
+  margin-top: 1.5rem;
+}
+
+.docsi-parts ul,
+.docsi-tools ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+}
+
+.docsi-parts li,
+.docsi-tools li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--sl-color-hairline-light);
+}
+
+.docsi-qty {
+  font-family: var(--docsi-font-mono);
+  color: var(--docsi-text-muted);
+  min-width: 2.5rem;
+}
+
+.docsi-cat {
+  margin-left: auto;
+  font-size: var(--sl-text-xs);
+  color: var(--docsi-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.docsi-safety {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--sl-color-red);
+  background: var(--sl-color-red-low);
+  color: var(--sl-color-white);
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.docsi-safety-label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.docsi-safety p {
+  margin: 0;
+}
+
+.docsi-meta {
+  margin-top: 1.5rem;
+  font-size: var(--sl-text-xs);
+  color: var(--docsi-text-muted);
+}
+
+.docsi-carbon {
+  font-family: var(--docsi-font-mono);
+}
+
+/* ---- guide index ---------------------------------------------------------- */
+.docsi-guide-steps li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.docsi-parts-count {
+  font-size: var(--sl-text-sm);
+  color: var(--docsi-text-muted);
+}
+
+/* ---- sidebar --------------------------------------------------------------- */
+.docsi-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.docsi-guide-title,
+.docsi-sidebar-heading {
+  display: block;
+  font-size: var(--sl-text-base);
+  font-weight: 600;
+  color: var(--sl-color-white);
+  text-decoration: none;
+  padding: 0.2em 0.5rem;
+}
+
+.docsi-steps,
+.docsi-guides {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.docsi-steps li,
+.docsi-guides li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.4rem;
+  align-items: center;
+  margin-inline-start: 0.5rem;
+  border-inline-start: 1px solid var(--sl-color-hairline-light);
+  padding-inline-start: 0.5rem;
+}
+
+.docsi-steps a,
+.docsi-guides a,
+.docsi-reshoot-link {
+  display: block;
+  border-radius: 0.25rem;
+  text-decoration: none;
+  color: var(--sl-color-gray-2);
+  padding: 0.3em 0.5rem;
+  line-height: 1.4;
+  font-size: var(--sl-text-sm);
+}
+
+.docsi-steps a:hover,
+.docsi-guides a:hover,
+.docsi-reshoot-link:hover {
+  color: var(--sl-color-white);
+}
+
+.docsi-steps a[aria-current='page'],
+.docsi-guide-title[aria-current='page'],
+.docsi-reshoot-link[aria-current='page'] {
+  font-weight: 600;
+  color: var(--sl-color-text-invert);
+  background-color: var(--sl-color-text-accent);
+}
+
+.docsi-badge {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: var(--sl-text-xs);
+  line-height: 1.5;
+  color: var(--sl-color-white);
+  border: 1px solid transparent;
+}
+
+.docsi-badge-stale {
+  background: var(--docsi-badge-stale-bg);
+  border-color: var(--sl-color-orange);
+}
+
+.docsi-badge-updated {
+  background: var(--docsi-badge-updated-bg);
+  border-color: var(--sl-color-green);
+}
+
+/* ---- reshoot dashboard ------------------------------------------------------ */
+.docsi-reshoot tr.docsi-stale > td {
+  background: var(--docsi-stale-bg);
+  color: var(--docsi-stale-fg);
+}
+
+.docsi-reshoot ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+/* ---- lightbox ---------------------------------------------------------------- */
+.docsi-lightbox-dialog {
+  max-width: min(96vw, 90rem);
+  max-height: 96vh;
+  padding: 0;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--docsi-bg);
+  color: var(--docsi-text);
+}
+
+.docsi-lightbox-dialog::backdrop {
+  background: rgb(0 0 0 / 0.75);
+}
+
+.docsi-lightbox-dialog figure {
+  margin: 0;
+}
+
+.docsi-lightbox-dialog img {
+  display: block;
+  max-width: 96vw;
+  max-height: 88vh;
+  object-fit: contain;
+}
+
+.docsi-lightbox-dialog figcaption {
+  padding: 0.5rem 0.75rem;
+  font-size: var(--sl-text-sm);
+  color: var(--docsi-text-muted);
+}
+
+.docsi-lightbox-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--docsi-bg);
+  color: var(--docsi-text);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}

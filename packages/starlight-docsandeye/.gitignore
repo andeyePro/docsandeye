@@ -1,0 +1,4 @@
+# Astro writes a per-project cache/types directory into each fixture site
+fixtures/*/.astro/
+fixtures/*/.astro/
+fixtures/*/dist*/

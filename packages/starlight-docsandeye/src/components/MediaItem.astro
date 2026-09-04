@@ -1,0 +1,28 @@
+---
+import type { HostingConfig, Media, ProjectModel, StalenessEntry } from '@docsandeye/core';
+import { changedInFrameNote, mediaUrl } from '../view.ts';
+
+interface Props {
+	media: Media;
+	entry: StalenessEntry;
+	model: ProjectModel;
+	hosting: HostingConfig;
+	base: string;
+}
+
+const { media, entry, model, hosting, base } = Astro.props;
+const isVideo = media.type === 'video';
+// Videos are v0.2: a video manifests as its poster only, marked as reserved.
+const src = mediaUrl(media, isVideo ? 'poster' : 'file', hosting, base);
+const alt = isVideo ? `Video ${media.id} (poster)` : `Photo ${media.id}`;
+const note = entry.status === 'CHANGED_IN_FRAME' ? changedInFrameNote(media, entry, model) : undefined;
+---
+
+<figure class={isVideo ? 'docsi-video' : 'docsi-photo'} data-media={media.id} data-status={entry.status}>
+	{isVideo ? <img src={src} alt={alt} data-docsi-video="reserved" /> : <img src={src} alt={alt} />}
+	{note && <p class="docsi-note">{note}</p>}
+	<figcaption>
+		{isVideo ? 'Video (poster only in this release)' : 'Photo'} — shot {media.shot_date}
+		{media.shot_by ? ` by ${media.shot_by}` : ''}
+	</figcaption>
+</figure>

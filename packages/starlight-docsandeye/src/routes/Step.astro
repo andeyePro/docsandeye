@@ -1,0 +1,44 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { stepsForGuide } from '@docsandeye/core';
+import { buildDate, carbon, config, maintainer, model, renderManifest, staleness } from 'virtual:docsandeye/model';
+import StepPage from '../components/StepPage.astro';
+import { guideForRoutePattern } from '../view.ts';
+
+export function getStaticPaths({ routePattern }: { routePattern: string }) {
+	const guide = guideForRoutePattern(config.guides, routePattern);
+	if (!guide) return [];
+	return stepsForGuide(model, guide.id).map((step) => ({
+		params: { step: step.id },
+		props: { guideId: guide.id, stepId: step.id },
+	}));
+}
+
+const { guideId, stepId } = Astro.props as { guideId: string; stepId: string };
+const guide = config.guides.find((g) => g.id === guideId);
+const step = model.steps.get(stepId);
+if (!guide || !step) {
+	throw new Error(`starlight-docsandeye: unknown guide/step ${guideId}/${stepId}`);
+}
+
+// The step's own frontmatter travels through StarlightPage so a `docs` collection
+// extended with `stepFrontmatterSchema` validates it (and plain Starlight strips it).
+const { body: _body, ...stepFrontmatter } = step;
+---
+
+<StarlightPage
+	frontmatter={{ ...stepFrontmatter, title: step.title, tableOfContents: false }}
+	docsandeye={{ kind: 'step', guideId: guide.id, stepId: step.id }}
+>
+	<StepPage
+		guide={guide}
+		step={step}
+		model={model}
+		staleness={staleness}
+		renderManifest={renderManifest}
+		carbon={carbon}
+		buildDate={buildDate}
+		maintainer={maintainer}
+		pathname={Astro.url.pathname}
+	/>
+</StarlightPage>

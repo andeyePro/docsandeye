@@ -1,0 +1,10 @@
+id: vid-02-seat
+type: video
+file: assets/video/vid-02-seat.mp4
+poster: assets/video/vid-02-seat.jpg
+duration_s: 20
+shot_date: 2026-04-10
+shot_by: "Example Maker"
+hero: [top-stop@1.3.0]
+in_frame: [vial-cap@1.0.0]
+licence: CC-BY-SA-4.0

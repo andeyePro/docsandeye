@@ -1,0 +1,7 @@
+id: blank-cap
+name: Blank Cap
+kind: printed
+design_version: 1.0.0
+master_format: f3z
+source_files: ["Components/BlankCap/BlankCap.f3z"]
+derived_files: ["Components/BlankCap/BlankCap v1.stl"]

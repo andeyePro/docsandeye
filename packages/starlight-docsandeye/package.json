@@ -1,0 +1,54 @@
+{
+  "name": "starlight-docsandeye",
+  "version": "0.1.0",
+  "description": "Starlight plugin that turns a Docs&I project into versioned hardware guide pages",
+  "keywords": [
+    "astro-integration",
+    "starlight-plugin",
+    "withastro",
+    "documentation",
+    "hardware"
+  ],
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "import": "./dist/schema.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "index.ts",
+    "schema.ts"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@astrojs/starlight": "^0.42.0",
+    "astro": "^7.2.0"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "7.3.0",
+    "@docsandeye/core": "0.1.0",
+    "@google/model-viewer": "4.3.1"
+  },
+  "devDependencies": {
+    "@astrojs/starlight": "0.42.0",
+    "astro": "7.3.1",
+    "node-html-parser": "9.0.3",
+    "vitest": "5.0.0"
+  }
+}

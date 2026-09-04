@@ -1,0 +1,9 @@
+id: top-stop
+name: Top Stop
+kind: printed
+design_version: 1.3.0
+master_format: scad
+source_files: ["Components/TopStop/TopStop.scad"]
+licence: CC-BY-SA-4.0
+changelog:
+  - {version: 1.3.0, date: 2026-03-01, note: "Chamfer on electrode bore."}
