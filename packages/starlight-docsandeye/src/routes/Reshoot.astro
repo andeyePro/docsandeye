@@ -1,0 +1,52 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { buildReshootIndex } from '@docsandeye/core';
+import { buildDate, model, staleness } from 'virtual:docsandeye/model';
+
+const entries = buildReshootIndex(model, staleness);
+const staleCount = entries.filter((e) => e.staleHeroCount > 0).length;
+---
+
+<StarlightPage
+	frontmatter={{ id: 'reshoot', order: 0, title: 'Reshoot dashboard', tableOfContents: false }}
+	docsandeye={{ kind: 'reshoot' }}
+>
+	<p>
+		Components ranked by how many photos or videos show an out-of-date version of them as the main subject. Build date
+		{buildDate}; {staleCount} of {entries.length} component{entries.length === 1 ? '' : 's'} need a reshoot.
+	</p>
+	<table class="docsi-reshoot">
+		<thead>
+			<tr>
+				<th>Component</th>
+				<th>Current version</th>
+				<th>Stale hero shots</th>
+				<th>Appearances</th>
+			</tr>
+		</thead>
+		<tbody>
+			{
+				entries.map((entry) => (
+					<tr class={entry.staleHeroCount > 0 ? 'docsi-stale' : undefined} data-component={entry.component}>
+						<td>
+							{entry.name} <code>{entry.component}</code>
+						</td>
+						<td>
+							<code>{entry.current}</code>
+						</td>
+						<td>{entry.staleHeroCount}</td>
+						<td>
+							<ul>
+								{entry.appearances.map((a) => (
+									<li data-media={a.media} data-role={a.role} data-status={a.status}>
+										<code>{a.media}</code> — {a.role} — {a.status} (shot with v{a.shot_with})
+									</li>
+								))}
+							</ul>
+						</td>
+					</tr>
+				))
+			}
+		</tbody>
+	</table>
+</StarlightPage>

@@ -1,0 +1,42 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { stepsForGuide } from '@docsandeye/core';
+import { config, maintainer, model } from 'virtual:docsandeye/model';
+import { guideForRoutePattern, partsCount, stepHref, withBase } from '../view.ts';
+
+const guide = guideForRoutePattern(config.guides, Astro.routePattern);
+if (!guide) {
+	throw new Error(`starlight-docsandeye: no guide declared for route ${Astro.routePattern}`);
+}
+const steps = stepsForGuide(model, guide.id);
+const base = import.meta.env.BASE_URL;
+---
+
+<StarlightPage
+	frontmatter={{ id: guide.id, order: 0, title: guide.title, tableOfContents: false }}
+	docsandeye={{ kind: 'guide', guideId: guide.id }}
+>
+	<p class="docsi-guide-intro">
+		{steps.length} {steps.length === 1 ? 'step' : 'steps'}. Follow them in order; each step lists its parts, tools and
+		safety notes.
+	</p>
+	<ol class="docsi-guide-steps">
+		{
+			steps.map((step) => (
+				<li data-step={step.id}>
+					<a href={stepHref(guide, step.id, base)}>{step.title}</a>
+					<span class="docsi-parts-count">
+						{partsCount(step)} {partsCount(step) === 1 ? 'part' : 'parts'}
+					</span>
+				</li>
+			))
+		}
+	</ol>
+	{
+		maintainer && (
+			<p class="docsi-maintainer">
+				Maintainers: <a href={withBase('/reshoot/', base)}>reshoot dashboard</a>
+			</p>
+		)
+	}
+</StarlightPage>

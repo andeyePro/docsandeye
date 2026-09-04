@@ -1,0 +1,11 @@
+---
+import { formatCarbon } from '../view.ts';
+
+interface Props {
+	gco2e: number;
+}
+
+const { gco2e } = Astro.props;
+---
+
+<span class="docsi-carbon">{formatCarbon(gco2e)}</span>

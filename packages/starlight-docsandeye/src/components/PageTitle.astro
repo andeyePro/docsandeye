@@ -1,0 +1,12 @@
+---
+/**
+ * PageTitle override: step pages render their own <h1> inside the two-column
+ * layout, so the default title is suppressed there and kept everywhere else.
+ */
+import Default from '@astrojs/starlight/components/PageTitle.astro';
+
+const route = Astro.locals.starlightRoute as { docsandeye?: { kind?: string } };
+const isStep = route.docsandeye?.kind === 'step';
+---
+
+{!isStep && <Default />}

@@ -1,0 +1,76 @@
+---
+/**
+ * Sidebar override: on Docs&I pages, list the current guide's steps in order
+ * with staleness/updated badges; elsewhere defer to Starlight's own sidebar.
+ */
+import MobileMenuFooter from '@astrojs/starlight/components/MobileMenuFooter.astro';
+import Default from '@astrojs/starlight/components/Sidebar.astro';
+import { stepsForGuide } from '@docsandeye/core';
+import { buildDate, config, maintainer, model, staleness } from 'virtual:docsandeye/model';
+import { guideHref, stepBadges, stepHref, withBase } from '../view.ts';
+
+interface Marker {
+	kind: 'guide' | 'step' | 'reshoot';
+	guideId?: string;
+	stepId?: string;
+}
+
+const route = Astro.locals.starlightRoute as { docsandeye?: Marker };
+const marker = route.docsandeye;
+const base = import.meta.env.BASE_URL;
+const guide = marker?.guideId ? config.guides.find((g) => g.id === marker.guideId) : undefined;
+const steps = guide ? stepsForGuide(model, guide.id) : [];
+const otherGuides = config.guides.filter((g) => g.id !== guide?.id);
+---
+
+{
+	marker ? (
+		<>
+			<nav class="docsi-sidebar" aria-label="Guide navigation">
+				{guide && (
+					<div class="docsi-sidebar-guide">
+						<a class="docsi-guide-title" href={guideHref(guide, base)} aria-current={marker.kind === 'guide' ? 'page' : undefined}>
+							{guide.title}
+						</a>
+						<ol class="docsi-steps">
+							{steps.map((step) => {
+								const badges = stepBadges(step, model, staleness, buildDate);
+								return (
+									<li data-step={step.id}>
+										<a href={stepHref(guide, step.id, base)} aria-current={marker.stepId === step.id ? 'page' : undefined}>
+											{step.title}
+										</a>
+										{badges.stale && <span class="docsi-badge docsi-badge-stale">stale media</span>}
+										{badges.updated && <span class="docsi-badge docsi-badge-updated">updated</span>}
+									</li>
+								);
+							})}
+						</ol>
+					</div>
+				)}
+				{otherGuides.length > 0 && (
+					<div class="docsi-sidebar-others">
+						<span class="docsi-sidebar-heading">{guide ? 'Other guides' : 'Guides'}</span>
+						<ul class="docsi-guides">
+							{otherGuides.map((g) => (
+								<li>
+									<a href={guideHref(g, base)}>{g.title}</a>
+								</li>
+							))}
+						</ul>
+					</div>
+				)}
+				{maintainer && (
+					<a class="docsi-reshoot-link" href={withBase('/reshoot/', base)} aria-current={marker.kind === 'reshoot' ? 'page' : undefined}>
+						Reshoot dashboard
+					</a>
+				)}
+			</nav>
+			<div class="md:sl-hidden">
+				<MobileMenuFooter />
+			</div>
+		</>
+	) : (
+		<Default />
+	)
+}

@@ -1,0 +1,35 @@
+/*
+ * Theme pack "starlight" — the stock pack. Restates the pack-settable
+ * --docsi-* tokens on :root and on :root[data-theme='dark'], mapping them onto
+ * Starlight's own tokens. Other packs (@docsandeye/themes/<name>.css) follow
+ * the same shape; they never set --docsi-media-col / --docsi-text-col.
+ */
+:root {
+  --docsi-accent: var(--sl-color-accent);
+  --docsi-accent-high: var(--sl-color-accent-high);
+  --docsi-accent-low: var(--sl-color-accent-low);
+  --docsi-bg: var(--sl-color-bg);
+  --docsi-text: var(--sl-color-text);
+  --docsi-text-muted: var(--sl-color-gray-3);
+  --docsi-stale-bg: var(--sl-color-orange-low);
+  --docsi-stale-fg: var(--sl-color-orange-high);
+  --docsi-badge-stale-bg: var(--sl-color-orange-low);
+  --docsi-badge-updated-bg: var(--sl-color-green-low);
+  --docsi-font-body: var(--sl-font);
+  --docsi-font-mono: var(--sl-font-mono);
+}
+
+:root[data-theme='dark'] {
+  --docsi-accent: var(--sl-color-accent);
+  --docsi-accent-high: var(--sl-color-accent-high);
+  --docsi-accent-low: var(--sl-color-accent-low);
+  --docsi-bg: var(--sl-color-bg);
+  --docsi-text: var(--sl-color-text);
+  --docsi-text-muted: var(--sl-color-gray-2);
+  --docsi-stale-bg: var(--sl-color-orange-low);
+  --docsi-stale-fg: var(--sl-color-orange);
+  --docsi-badge-stale-bg: var(--sl-color-orange-low);
+  --docsi-badge-updated-bg: var(--sl-color-green-low);
+  --docsi-font-body: var(--sl-font);
+  --docsi-font-mono: var(--sl-font-mono);
+}

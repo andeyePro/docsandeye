@@ -1,0 +1,35 @@
+---
+import type { HostingConfig, Media, ProjectModel, StalenessEntry } from '@docsandeye/core';
+import { componentName, staleSummary } from '../view.ts';
+import MediaItem from './MediaItem.astro';
+
+interface Props {
+	media: Media;
+	entry: StalenessEntry;
+	model: ProjectModel;
+	hosting: HostingConfig;
+	base: string;
+}
+
+const { media, entry, model, hosting, base } = Astro.props;
+const summary = staleSummary(media, entry, model);
+const changelog = entry.stale_heroes.flatMap((hero) =>
+	hero.changelog.map((e) => ({ ...e, component: componentName(model, hero.component) }))
+);
+---
+
+<details class="docsi-stale">
+	<summary>{summary}</summary>
+	{
+		changelog.length > 0 && (
+			<ul class="docsi-changelog">
+				{changelog.map((e) => (
+					<li>
+						<code>{e.version}</code> <time datetime={e.date}>{e.date}</time> — {e.component}: {e.note}
+					</li>
+				))}
+			</ul>
+		)
+	}
+	<MediaItem media={media} entry={entry} model={model} hosting={hosting} base={base} />
+</details>
