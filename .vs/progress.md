@@ -9,4 +9,4 @@ spec-first checkpoint: Spec Critic pass after 3 iterations (7 blocking → 2 →
 ## task_003 amendment — 2026-09-04T21:00:52Z
 Token contract: --docsi-logo-mark removed (mark handled by <docsi-theme>); layout tokens declared non-pack-settable; plugin merges components overrides with user keys winning (AC11 updated). Amended on vsss/task_003-plugin at b97fde3 while awaiting approval (T32).
 ## task_006 — AEP0.2 guide content (fuzzy) — 2026-09-04T21:02:09Z
-spec-first checkpoint: Spec Critic pass after 2 iterations (4 blocking → 0). Spec committed on vsss/task_006-aep at 4df4fd7. Awaiting Martin's approval via Docs&I-fromClaude (T36). Generator tier planned: opus; Reviewer sonnet. Depends on task_001 + task_004 merges; writes files only under /repos/electroPioreactor (no git there).
+spec-first checkpoint: Spec Critic pass after 2 iterations (4 blocking → 0). Spec committed on vsss/task_006-aep at 28e663c. Awaiting Martin's approval via Docs&I-fromClaude (T36). Generator tier planned: opus; Reviewer sonnet. Depends on task_001 + task_004 merges; writes files only under /repos/electroPioreactor (no git there).
