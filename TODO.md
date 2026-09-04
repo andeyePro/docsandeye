@@ -16,19 +16,19 @@ maintainer's machine only; the public-facing summary is README.md.
 - [ ] **`starlight-docsandeye` plugin** (awaiting approval — /vs --approve task_003): extends `docsSchema()` with the step fields, registers the
       components and videos collections, ships `<docsi-step>` and `<docsi-model>` as vanilla custom
       elements with static-HTML fallback, sidebar badges derived from staleness data.
-- [ ] **`docsandeye` CLI**: `init` scaffolds a Starlight site with the plugin; `render` runs the
+- [ ] **`docsandeye` CLI** (awaiting approval — /vs --approve task_004): `init` scaffolds a Starlight site with the plugin; `render` runs the
       Python render pipeline; `check` runs the version-bump guard and the byte budget.
 - [ ] **Render pipeline** (Python) (awaiting approval — /vs --approve task_002): OpenSCAD CLI for `.scad` (Manifold backend, BOSL2 on the include
       path), CadQuery/OCP for STEP (PNG, SVG line-art, exploded/annotated, GLB); outputs committed,
       cache keyed by `<component>@<design_version>--<render-id>--<params-hash>`; `.f3z` flagged as
       hand-exported. Runs locally, never in GitHub Actions.
-- [ ] **Version-bump guard**: source file git history moved and `design_version` did not → fail.
+- [ ] **Version-bump guard** (in task_004): source file git history moved and `design_version` did not → fail.
 - [ ] **Theme packs**: `pioreactor` (default; re-implemented from published token values, no copied
       CSS or JS) and stock Starlight. Theme control cycles Pioreactor inherit → Pioreactor light →
       Pioreactor dark → Starlight inherit → Starlight dark → Starlight light, with the logo variants
       (mark over half-filled circle / sun / moon); fall back to a plain picker if the cycling logo is
       expensive.
-- [ ] **Carbon gate**: poster-only initial load of a step page ≤ 150 KB, checked by `docsandeye check`;
+- [ ] **Carbon gate** (in task_004): poster-only initial load of a step page ≤ 150 KB, checked by `docsandeye check`;
       CO2.js (Sustainable Web Design v4) gCO2e figure rendered on every page. Warn in v0.1.
 - [ ] **Dogfood**: this repo's own docs site built with the plugin; one synthetic example project
       under `examples/`.

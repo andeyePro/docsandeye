@@ -31,5 +31,16 @@
     "branch": "vsss/task_003-plugin",
     "spec": ".claude/worktrees/task_003/.vs/spec.md",
     "last_modified": "2026-09-04T20:52:06Z"
+  },
+  {
+    "id": "task_004",
+    "description": "docsandeye CLI: init, render (plan + python), check (validation, git version-bump guard, byte budget, CO2.js carbon.json)",
+    "implementation_status": "awaiting-approval",
+    "test_status": "pending",
+    "assigned_to": "generator",
+    "mode": "rigorous",
+    "branch": "vsss/task_004-cli",
+    "spec": ".claude/worktrees/task_004/.vs/spec.md",
+    "last_modified": "2026-09-04T20:56:21Z"
   }
 ]
