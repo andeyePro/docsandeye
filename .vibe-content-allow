@@ -1,3 +1,6 @@
 # vibe content-guard allowlist: one whole-line ERE per line.
 # Suppresses the mdns WARN on the runtime-config line of the vibe-managed .gitignore block.
 ^\.claude/settings\.local\.json$
+# harness state and worktrees: component@version keys look like emails to the WARN scanner
+path-warn:.vs/*
+path-warn:.claude/worktrees/*
