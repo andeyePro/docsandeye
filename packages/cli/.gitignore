@@ -1,0 +1,4 @@
+# The root .gitignore drops every dist/, but fixtures/dist is a hand-written built-site tree for the budget tests.
+!/fixtures/dist/
+# Build output of this package.
+/dist/

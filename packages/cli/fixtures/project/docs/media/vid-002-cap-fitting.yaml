@@ -1,0 +1,9 @@
+id: vid-002-cap-fitting
+type: video
+file: assets/video/vid-002-cap-fitting.mp4
+poster: assets/video/vid-002-cap-fitting.jpg
+duration_s: 18
+shot_date: 2026-02-03
+shot_by: "Example Maker"
+hero: [vial-cap@1.1.0]
+in_frame: [glass-vial@1.0.0]
