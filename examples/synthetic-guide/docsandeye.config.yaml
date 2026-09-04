@@ -1,0 +1,12 @@
+# Docs&I example project: a made-up bench lamp.
+# Every component is hand-exported (master_format: none), so `docsandeye render`
+# completes without OpenSCAD or CadQuery and the site builds anywhere.
+theme: pioreactor
+guides:
+  - id: lamp
+    title: "Bench lamp"
+    base: /example
+denylist: []
+hosting:
+  provider: local
+byte_budget_kb: 150

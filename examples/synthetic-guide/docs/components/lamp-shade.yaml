@@ -1,0 +1,11 @@
+id: lamp-shade
+name: Lamp shade
+kind: printed
+design_version: 1.0.0
+master_format: none
+derived_files:
+  - assets/renders/lamp-shade.glb
+  - assets/renders/lamp-shade.stl
+licence: CC-BY-SA-4.0
+changelog:
+  - {version: 1.0.0, date: 2026-03-02, note: "Initial release."}

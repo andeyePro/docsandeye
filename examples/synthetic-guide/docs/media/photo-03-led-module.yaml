@@ -1,0 +1,8 @@
+id: photo-03-led-module
+type: photo
+file: assets/photo/photo-03-led-module.png
+shot_date: 2026-04-08
+shot_by: "Docs&I example"
+hero: [led-module@1.0.0]
+in_frame: [lamp-base@1.0.0]
+licence: CC-BY-SA-4.0

@@ -1,0 +1,10 @@
+id: lamp-arm
+name: Lamp arm
+kind: printed
+design_version: 1.0.0
+master_format: none
+derived_files:
+  - assets/renders/lamp-arm-front.svg
+licence: CC-BY-SA-4.0
+changelog:
+  - {version: 1.0.0, date: 2026-03-02, note: "Initial release."}

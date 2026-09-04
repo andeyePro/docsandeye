@@ -1,0 +1,35 @@
+{
+  "name": "@docsandeye/themes",
+  "version": "0.1.0",
+  "description": "Docs&I theme packs and the <docsi-theme> six-state theme control for Starlight sites built with starlight-docsandeye",
+  "keywords": [
+    "starlight",
+    "theme",
+    "documentation",
+    "hardware"
+  ],
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": {
+    "./pioreactor.css": "./pioreactor.css",
+    "./ThemeSelect.astro": "./ThemeSelect.astro",
+    "./docsi-theme.js": "./dist/docsi-theme.js",
+    "./head.js": "./dist/head.js",
+    "./marks/*": "./marks/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "marks",
+    "src",
+    "pioreactor.css",
+    "ThemeSelect.astro"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "starlight-docsandeye": "0.1.0"
+  }
+}

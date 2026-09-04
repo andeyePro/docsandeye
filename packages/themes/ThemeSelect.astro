@@ -1,0 +1,81 @@
+---
+/**
+ * Starlight `ThemeSelect` override: renders the <docsi-theme> control for the
+ * pack named in docsandeye.config.yaml (`theme:`), read from the plugin's
+ * `virtual:docsandeye/model` module. Starlight passes no props to this
+ * component; anything it does pass is ignored.
+ *
+ * The three base icons and the neutral mark travel as light-DOM <template>s
+ * so the element composes them without fetching anything. The control is
+ * server-rendered `hidden` and shown by the element on upgrade, so a page
+ * without JavaScript shows no dead control. mark-pioreactor.svg is not read
+ * here or anywhere else (see README.md, T29).
+ *
+ * Wire it in astro.config.mjs:
+ *   components: { ThemeSelect: '@docsandeye/themes/ThemeSelect.astro' },
+ *   head: themeHead(),
+ */
+import { config } from 'virtual:docsandeye/model';
+import baseAuto from './marks/base-auto.svg?raw';
+import baseDark from './marks/base-dark.svg?raw';
+import baseLight from './marks/base-light.svg?raw';
+import markNeutral from './marks/mark-neutral.svg?raw';
+
+const pack: string = config.theme;
+---
+
+<docsi-theme hidden data-pack={pack}>
+	<template data-base="auto" data-mark-transform="translate(3 0)" set:html={baseAuto} />
+	<template data-base="light" set:html={baseLight} />
+	<template data-base="dark" data-mark-transform="translate(-2.5 2.5)" set:html={baseDark} />
+	<template data-mark set:html={markNeutral} />
+	<span class="docsi-theme-text" data-label>Theme</span>
+</docsi-theme>
+
+<script>
+	import '@docsandeye/themes/docsi-theme.js';
+</script>
+
+<style is:global>
+	docsi-theme {
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.docsi-theme-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		padding: 0;
+		border: 0;
+		border-radius: 0.25rem;
+		background: transparent;
+		color: var(--sl-color-gray-2);
+		cursor: pointer;
+	}
+
+	.docsi-theme-button:hover,
+	.docsi-theme-button:focus-visible {
+		color: var(--sl-color-white);
+	}
+
+	.docsi-theme-button svg {
+		width: 1.5rem;
+		height: 1.5rem;
+	}
+
+	/* Visually hidden, still read by assistive technology. */
+	.docsi-theme-text {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+</style>

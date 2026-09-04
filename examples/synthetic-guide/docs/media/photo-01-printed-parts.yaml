@@ -1,0 +1,8 @@
+id: photo-01-printed-parts
+type: photo
+file: assets/photo/photo-01-printed-parts.png
+shot_date: 2026-03-15
+shot_by: "Docs&I example"
+hero: [lamp-base@1.0.0]
+in_frame: [lamp-arm@1.0.0, lamp-shade@1.0.0]
+licence: CC-BY-SA-4.0

@@ -1,0 +1,36 @@
+{
+  "jobs": {
+    "lamp-arm@1.0.0--arm-front--8825060295f5": {
+      "driver": "none",
+      "outputs": [
+        "assets/renders/lamp-arm-front.svg"
+      ],
+      "reason": "no CAD master; derived files maintained by hand",
+      "rendered_at": "2026-09-04T22:37:00Z",
+      "status": "hand-exported",
+      "unsupported": []
+    },
+    "lamp-base@1.1.0--base-iso--bdb2505e5ea3": {
+      "driver": "none",
+      "outputs": [
+        "assets/renders/lamp-base-iso.svg"
+      ],
+      "reason": "no CAD master; derived files maintained by hand",
+      "rendered_at": "2026-09-04T22:37:00Z",
+      "status": "hand-exported",
+      "unsupported": []
+    },
+    "lamp-shade@1.0.0--viewer--00628eabad92": {
+      "driver": "none",
+      "outputs": [
+        "assets/renders/lamp-shade.glb",
+        "assets/renders/lamp-shade.stl"
+      ],
+      "reason": "no CAD master; derived files maintained by hand",
+      "rendered_at": "2026-09-04T22:37:00Z",
+      "status": "hand-exported",
+      "unsupported": []
+    }
+  },
+  "version": 1
+}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 240" width="120" height="240" role="img" aria-label="Lamp arm, front line drawing">
+  <title>Lamp arm, front view</title>
+  <g fill="none" stroke="#1c1e21" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M50 230 L50 40 A10 10 0 0 1 70 40 L70 230 Z"/>
+    <path d="M36 230 L84 230 L84 218 L36 218 Z"/>
+    <path d="M44 40 L76 40 L76 24 A16 16 0 0 0 44 24 Z"/>
+    <circle cx="60" cy="32" r="3"/>
+    <path d="M54 60 L54 210 M66 60 L66 210" stroke-dasharray="6 6"/>
+    <circle cx="44" cy="224" r="2.5"/>
+    <circle cx="76" cy="224" r="2.5"/>
+  </g>
+</svg>
