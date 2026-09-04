@@ -20,7 +20,28 @@ Docs&I is a member of the andeye `<X>&I` family (alongside Time&I, Money&I, Task
 
 ## Status
 
-Pre-alpha. Research complete, specification in progress, no release yet. Watch this repo or [register interest](https://contact.andeye.com/?source=docs.andeye.com&subject=Docs%26I%20interest&message=Please%20email%20me%20when%20Docs%26I%20has%20a%20release.) and we will email you when there is something to try.
+v0.1 is built and merged (4 September 2026): the schemas and staleness engine, the render pipeline, the command line, the Starlight plugin, the Pioreactor-style theme pack with the six-state theme cycle, a synthetic example guide and this project's own documentation site. No npm release yet. [Register interest](https://contact.andeye.com/?source=docs.andeye.com&subject=Docs%26I%20interest&message=Please%20email%20me%20when%20Docs%26I%20has%20a%20release.) and we will email you when there is one.
+
+## Try it
+
+Node 22 and Python 3.11 or later, then from a clone of this repository:
+
+```
+npm install
+npm run build -w docsandeye-site
+npm run preview -w docsandeye-site
+```
+
+Open the address the last command prints. The example guide is under `/example/`; the theme button in the header cycles through the six theme states; `docsandeye check --project examples/synthetic-guide --dist site/dist` prints the per-page byte budget result and writes `build/carbon.json`.
+
+## What is in v0.1
+
+- `@docsandeye/core`: Zod schemas for components, steps, media and config; the project loader with a denylist; the staleness engine and `staleness.json`; the reshoot index; the render plan; the version-bump guard; the hosting-provider registry.
+- `render/` (`docsandeye_render`): the Python pipeline, standard library only, with OpenSCAD and CadQuery drivers behind a seam, a version-keyed cache and a binary STL to GLB converter.
+- `docsandeye` CLI: `init`, `render`, `check` (validation, git version-bump guard, 150 KB byte budget, CO2.js carbon figure).
+- `starlight-docsandeye`: guide and step routes, `<docsi-step>`, `<docsi-model>` and `<docsi-lightbox>` custom elements that read without JavaScript, staleness details, sidebar badges, the maintainer reshoot dashboard.
+- `@docsandeye/themes`: the `pioreactor` pack from published token values, no font files, and the `<docsi-theme>` control.
+- `examples/synthetic-guide` and `site/`: a bench-lamp example processed end to end, and the documentation site built with the plugin.
 
 ## How it works
 
