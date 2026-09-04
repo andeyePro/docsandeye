@@ -13,9 +13,6 @@ maintainer's machine only; the public-facing summary is README.md.
       (component@version pins, hero/in-frame, BuildUp/OKH-compatible field names, no exporters);
       staleness algorithm and `staleness.json`; the `/reshoot` dashboard; error handling for
       missing versions, unrenderable masters (`.f3z`) and denylisted paths.
-- [ ] **`starlight-docsandeye` plugin** (in progress — task_003): extends `docsSchema()` with the step fields, registers the
-      components and videos collections, ships `<docsi-step>` and `<docsi-model>` as vanilla custom
-      elements with static-HTML fallback, sidebar badges derived from staleness data.
 - [ ] **Theme packs** (in progress — task_005): `pioreactor` (default; re-implemented from published token values, no copied
       CSS or JS) and stock Starlight. Theme control cycles Pioreactor inherit → Pioreactor light →
       Pioreactor dark → Starlight inherit → Starlight dark → Starlight light, with the logo variants
@@ -27,6 +24,7 @@ maintainer's machine only; the public-facing summary is README.md.
 - [ ] **Plus/Pro seam** (in task_001: the hosting-provider registry in `packages/core/src/hosting.ts`): a hosting-provider abstraction for video assets (local path or bucket URL)
       so a managed zero-carbon hosting tier can plug in later without schema changes. No paid code.
 
+- [ ] **Plugin follow-up**: `docsSchema({ extend: stepFrontmatterSchema })` makes the step fields required on every docs entry; export a partial extension (or make the step fields optional in the extension) so ordinary documentation pages validate — the dogfood site uses `.partial()` meanwhile.
 - [ ] **Core follow-ups from downstream tasks**: `loadProject` should ignore `README.md` inside `docs/steps/` (task_006 could not place its steps README there); `checkVersionBumps` should treat a version commit that is a descendant of the source commit as satisfied (the CLI currently clears these with `git merge-base --is-ancestor`).
 
 ### v0.2 — video
