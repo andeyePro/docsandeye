@@ -16,16 +16,11 @@ maintainer's machine only; the public-facing summary is README.md.
 - [ ] **`starlight-docsandeye` plugin** (in progress — task_003): extends `docsSchema()` with the step fields, registers the
       components and videos collections, ships `<docsi-step>` and `<docsi-model>` as vanilla custom
       elements with static-HTML fallback, sidebar badges derived from staleness data.
-- [ ] **`docsandeye` CLI** (in progress — task_004): `init` scaffolds a Starlight site with the plugin; `render` runs the
-      Python render pipeline; `check` runs the version-bump guard and the byte budget.
-- [ ] **Version-bump guard** (in task_004): source file git history moved and `design_version` did not → fail.
 - [ ] **Theme packs** (in progress — task_005): `pioreactor` (default; re-implemented from published token values, no copied
       CSS or JS) and stock Starlight. Theme control cycles Pioreactor inherit → Pioreactor light →
       Pioreactor dark → Starlight inherit → Starlight dark → Starlight light, with the logo variants
       (mark over half-filled circle / sun / moon); fall back to a plain picker if the cycling logo is
       expensive.
-- [ ] **Carbon gate** (in task_004): poster-only initial load of a step page ≤ 150 KB, checked by `docsandeye check`;
-      CO2.js (Sustainable Web Design v4) gCO2e figure rendered on every page. Warn in v0.1.
 - [ ] **Dogfood** (in task_005): this repo's own docs site built with the plugin; one synthetic example project
       under `examples/`.
 - [ ] **First consumer: electroPioreactor AEP0.2** — content landed on the AEP02 branch of Martin's clone (commit 80780ae: 69 components, 12 steps, shoot list, stubs); Reviewer pass with 4 minor notes; awaiting Martin's own review (Docs&I-fromClaude item 10) and the docs.electroPioreactor.org/AEP deployment.
