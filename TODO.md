@@ -18,10 +18,6 @@ maintainer's machine only; the public-facing summary is README.md.
       elements with static-HTML fallback, sidebar badges derived from staleness data.
 - [ ] **`docsandeye` CLI** (in progress — task_004): `init` scaffolds a Starlight site with the plugin; `render` runs the
       Python render pipeline; `check` runs the version-bump guard and the byte budget.
-- [ ] **Render pipeline** (Python) (in progress — task_002): OpenSCAD CLI for `.scad` (Manifold backend, BOSL2 on the include
-      path), CadQuery/OCP for STEP (PNG, SVG line-art, exploded/annotated, GLB); outputs committed,
-      cache keyed by `<component>@<design_version>--<render-id>--<params-hash>`; `.f3z` flagged as
-      hand-exported. Runs locally, never in GitHub Actions.
 - [ ] **Version-bump guard** (in task_004): source file git history moved and `design_version` did not → fail.
 - [ ] **Theme packs** (in progress — task_005): `pioreactor` (default; re-implemented from published token values, no copied
       CSS or JS) and stock Starlight. Theme control cycles Pioreactor inherit → Pioreactor light →
