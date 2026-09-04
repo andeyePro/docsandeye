@@ -110,7 +110,7 @@ Render plan (`build/render-plan.json`, consumed by task_002; this task defines a
   {"key": "electrode-top-stop@2.0.0--topstop-exploded--3f9a1c2b7e4d", "component": "electrode-top-stop",
    "design_version": "2.0.0", "render_id": "topstop-exploded", "master_format": "scad",
    "source_files": ["Components/ElectrodeTopStop/ElectrodeTopStop.scad"], "parameters": {},
-   "options": {"view": "front-top-right", "explode": true, "annotate": true, "format": "png"},
+   "options": {"annotate": true, "explode": true, "format": "png", "view": "front-top-right"},
    "outputs": ["build/render/electrode-top-stop@2.0.0--topstop-exploded--3f9a1c2b7e4d.png"]}]}
 ```
 
