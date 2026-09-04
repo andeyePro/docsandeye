@@ -9,21 +9,21 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### v0.1 — data, renders, staleness, no video
 
-- [ ] **Spec v0.1** (spec-first; task_001 core awaiting approval — /vs --approve task_001): content schemas for components, steps, videos and photos
+- [ ] **Spec v0.1** (spec-first; task_001 core in progress — task_001): content schemas for components, steps, videos and photos
       (component@version pins, hero/in-frame, BuildUp/OKH-compatible field names, no exporters);
       staleness algorithm and `staleness.json`; the `/reshoot` dashboard; error handling for
       missing versions, unrenderable masters (`.f3z`) and denylisted paths.
-- [ ] **`starlight-docsandeye` plugin** (awaiting approval — /vs --approve task_003): extends `docsSchema()` with the step fields, registers the
+- [ ] **`starlight-docsandeye` plugin** (in progress — task_003): extends `docsSchema()` with the step fields, registers the
       components and videos collections, ships `<docsi-step>` and `<docsi-model>` as vanilla custom
       elements with static-HTML fallback, sidebar badges derived from staleness data.
-- [ ] **`docsandeye` CLI** (awaiting approval — /vs --approve task_004): `init` scaffolds a Starlight site with the plugin; `render` runs the
+- [ ] **`docsandeye` CLI** (in progress — task_004): `init` scaffolds a Starlight site with the plugin; `render` runs the
       Python render pipeline; `check` runs the version-bump guard and the byte budget.
-- [ ] **Render pipeline** (Python) (awaiting approval — /vs --approve task_002): OpenSCAD CLI for `.scad` (Manifold backend, BOSL2 on the include
+- [ ] **Render pipeline** (Python) (in progress — task_002): OpenSCAD CLI for `.scad` (Manifold backend, BOSL2 on the include
       path), CadQuery/OCP for STEP (PNG, SVG line-art, exploded/annotated, GLB); outputs committed,
       cache keyed by `<component>@<design_version>--<render-id>--<params-hash>`; `.f3z` flagged as
       hand-exported. Runs locally, never in GitHub Actions.
 - [ ] **Version-bump guard** (in task_004): source file git history moved and `design_version` did not → fail.
-- [ ] **Theme packs** (awaiting approval — /vs --approve task_005): `pioreactor` (default; re-implemented from published token values, no copied
+- [ ] **Theme packs** (in progress — task_005): `pioreactor` (default; re-implemented from published token values, no copied
       CSS or JS) and stock Starlight. Theme control cycles Pioreactor inherit → Pioreactor light →
       Pioreactor dark → Starlight inherit → Starlight dark → Starlight light, with the logo variants
       (mark over half-filled circle / sun / moon); fall back to a plain picker if the cycling logo is
@@ -32,7 +32,7 @@ maintainer's machine only; the public-facing summary is README.md.
       CO2.js (Sustainable Web Design v4) gCO2e figure rendered on every page. Warn in v0.1.
 - [ ] **Dogfood** (in task_005): this repo's own docs site built with the plugin; one synthetic example project
       under `examples/`.
-- [ ] **First consumer: electroPioreactor AEP0.2** (awaiting approval — /vs --approve task_006) — content under `docs/` on the `AEP02` branch of
+- [ ] **First consumer: electroPioreactor AEP0.2** (in progress — task_006) — content under `docs/` on the `AEP02` branch of
       the shared mount at `/repos/electroPioreactor`, converted from the existing assembly README;
       published at docs.electroPioreactor.org/AEP. Design for a sibling `/MEP` guide that shares
       most components and steps. Denylist `private-notes/**`, `.claude/**` and `.vibe/**` from ingestion (the PII setup notes live under `private-notes/`).

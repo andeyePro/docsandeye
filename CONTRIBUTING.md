@@ -10,7 +10,7 @@ Thank you for helping. Docs&I (`docsandeye`) is AGPL-3.0 with an additional perm
 
 ## Working on the code
 
-- Node 20 or later and Python 3.11 or later. `npm install` at the root installs every workspace; `npm test` runs the JavaScript suites; `python -m pytest render` runs the render-pipeline suite (OpenSCAD and CadQuery are optional at test time; tests that need the real binaries skip when they are absent).
+- Node 22 or later (see `.nvmrc`) and Python 3.11 or later. `npm install` at the root installs every workspace; `npm test` runs the JavaScript suites; `python3 -m unittest discover -s render/tests -t render` runs the render-pipeline suite (OpenSCAD and CadQuery are optional at test time; tests that need the real binaries skip when they are absent). These commands land with the packages.
 - Conventional commits (`feat:`, `fix:`, `docs:`, `chore:`), with a body that says what changed and why.
 - Open work lives in TODO.md; finished work is recorded in CHANGELOG.md in the same commit as the change.
 - Never commit rendered video, machine-specific paths, local hostnames or IP addresses. The repository is public.
