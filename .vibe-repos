@@ -1,0 +1,2 @@
+# Shared repos this project uses (see /repo). Per-machine checkout: `vibe repos add <slug> [path]` on the host.
+amy-bo/electroPioreactor rw
