@@ -4,6 +4,7 @@ Done-work log for Docs&I (`docsandeye`), newest first. Open work is in TODO.md.
 
 ## 2026-09-04
 
+- [x] **Morning-review polish** — `64a0946` README: v0.1 status, Try it, What is in v0.1; `eacf83a` CLI tests: the intermittent failures under the full parallel run were vitest's 5 s default timeout being exceeded while the plugin's `astro build` tests starve the CPU; timeouts raised to 120 s, three consecutive full runs green (277/277).
 - [x] **task_005 themes, theme cycle, example and docs site** (fuzzy) — `8b32521` (generator, Fable): `@docsandeye/themes` with the `pioreactor` pack re-implemented from published token values (no fonts shipped, no external requests), `<docsi-theme>` six-state cycle with a neutral mark (`mark-pioreactor.svg` shipped empty and inert), `examples/synthetic-guide` processed end to end by the real CLI and render pipeline, and `site/` (the docs.andeye.com dogfood site, 16 pages, step pages 106 to 109 KB under the 150 KB budget). Reviewer: pass, 3 minor notes. Look paper-passed pending Martin. Spec archived at `.vs/archive/task_005/spec.md`.
 
 **v0.1 complete**: all six tasks merged; `npm run build` builds every package and the site; `npm test` 277 vitest tests; `python3 -m unittest discover -s render/tests -t render` 126 tests.

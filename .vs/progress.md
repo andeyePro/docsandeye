@@ -28,3 +28,5 @@ Evaluator: summary 64/64; fresh re-run in the worktree 64/64 (2 files, includes 
 Runs: 276/277 (1 CLI fail), then 274/277 (3 CLI fails, different cases), then 277/277. CLI suite alone: 54/54 twice. Verdict: flaky under parallel load, not a regression in the merged code; filed in TODO. Python suite OK (skipped=1).
 ## task_005 — cycle 1 — Reviewer PASS (fuzzy; look paper-passed pending Martin, T41) — 2026-09-04T22:48:37Z
 Evaluator: Reviewer pass, 0 blocking / 2 minor / 1 nit; chair re-ran on main after merge: npm run build (16 pages), check 0/0, render hand-exported 3, check --dist 0/0. Subjective look surfaced to Martin with the preview SVG. Generator tier that passed: fable. Merged --no-ff into main; archived under .vs/archive/task_005/. v0.1 scope complete.
+## iter 4 — README polish + flaky CLI tests — 2026-09-04T23:01:06Z
+README 64a0946 (chair). Flaky tests eacf83a (sonnet): root cause vitest default 5 s testTimeout under parallel astro builds; fixed in the test file only; 3 consecutive root runs 277/277.
