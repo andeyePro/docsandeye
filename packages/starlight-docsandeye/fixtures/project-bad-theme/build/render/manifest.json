@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "jobs": {
+    "vial-cap@2.0.0--cap-iso--0fd0f88538ea": {
+      "status": "rendered",
+      "driver": "openscad",
+      "outputs": ["build/render/vial-cap@2.0.0--cap-iso--0fd0f88538ea.png"],
+      "rendered_at": "2026-09-01T12:00:00Z"
+    },
+    "vial-cap@2.0.0--viewer--d2ced720dce2": {
+      "status": "rendered",
+      "driver": "openscad",
+      "outputs": ["build/render/vial-cap@2.0.0--viewer--d2ced720dce2.glb"],
+      "rendered_at": "2026-09-01T12:00:05Z"
+    }
+  }
+}

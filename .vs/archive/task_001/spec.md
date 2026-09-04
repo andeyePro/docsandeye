@@ -1,163 +1,100 @@
-# task_001 — `@docsandeye/core`: content schemas, staleness engine, render plan, guards
+# task_003 — `starlight-docsandeye`: the Starlight plugin, custom elements and theme wiring
 
 ## Task summary
 
-Build the TypeScript library every other Docs&I package compiles against: Zod schemas for the three content collections (components, steps, media manifests for videos and photos) plus the project config; the loader that reads a project tree into a validated, cross-referenced model; the build-time staleness engine that pins `component@version` in each media manifest against the component's current `design_version` and emits `staleness.json`; the inverse "reshoot" index; the render plan that the Python pipeline (task_002) consumes as JSON; the pure version-bump guard; and the hosting-provider seam. Pure functions over plain data, no git or filesystem side effects beyond reading the project tree. This is the contract for the Starlight plugin (task_003), the CLI (task_004) and the AEP0.2 content (task_006), so names and shapes are chosen here once.
+Build the Starlight plugin that turns a project's `docs/` tree (validated by `@docsandeye/core`, task_001) into guide pages: it registers the project model as a virtual module, extends Starlight's `docsSchema()` so step frontmatter is typed, generates one route per step and per guide, renders each step through the `<docsi-step>` custom element (two-column layout: media pane with renders, 3D viewer and media thumbnails; text pane with the step's Markdown, parts list and safety note), computes staleness at build time and derives sidebar badges from it, emits the `/reshoot` maintainer dashboard in maintainer builds, and stamps every step page with the metadata the CLI's byte-budget check reads. The interactive core is framework-agnostic vanilla custom elements with a static-HTML fallback, so the same markup works with JavaScript disabled and can later be embedded elsewhere. Theme packs (task_005) plug in through the project config's `theme` field and the CSS-token contract defined here; this task ships only the stock `starlight` pack and the contract.
 
-Decisions already made by Martin (do not reopen): identifier `docsandeye` everywhere, npm scope `@docsandeye`; explicit human-bumped semver `design_version`, never file hashes; photos are first-class media with the same hero/in-frame tagging as videos; field names stay BuildUp/OKH-compatible but no exporters; the Plus hosting tier plugs in through a provider seam, no paid code; Whisper is out of scope for v0.x.
+Decisions already made (do not reopen): Astro + Starlight (0.42.x, Astro 7); vanilla custom elements, not Lit; the guide must be complete with video disabled; renders and staleness JSON are produced before `astro build` by the CLI (this plugin reads `build/render/manifest.json` and computes staleness itself from the model, it never renders); videos are v0.2 — this task renders photo media, and video manifests as their poster only; a guide is identified by `config.guides[].id` and served under `base` (e.g. `/AEP`), with a sibling guide (`/MEP`) sharing steps; theme selection comes from `docsandeye.config.yaml` `theme`, never from a plugin option; no `sharp` and no Astro image service (plain `<img>` and a static copy step).
 
-## Repository layout (this task creates the root)
+## Package layout (owns `packages/starlight-docsandeye/**` only)
 
 ```
-package.json                 private, "workspaces": ["packages/*", "site", "examples/*"], scripts: test → vitest run, build → npm run build --workspaces --if-present
-tsconfig.base.json           ESM, strict, NodeNext, target ES2022
-vitest.config.ts             projects: packages/*/test
-packages/core/package.json   name @docsandeye/core, type module, exports ./dist/index.js, types; deps: zod, yaml, semver, picomatch (+ @types)
-packages/core/src/           schemas.ts, load.ts, staleness.ts, reshoot.ts, render-plan.ts, guard.ts, hosting.ts, errors.ts, canonical-json.ts, index.ts
-packages/core/test/          Tester-owned (immutable once committed)
-packages/core/fixtures/      Generator-owned example projects used by BOTH Generator scratch tests and Tester tests: `minimal/` (1 component, 1 step, 1 video, all fresh, 1 guide) and `aep-like/` (see below)
+packages/starlight-docsandeye/package.json     name starlight-docsandeye, type module; peerDeps @astrojs/starlight ^0.42, astro ^7.2; deps @docsandeye/core (workspace); devDeps vitest, node-html-parser; NO sharp, lit, react, preact, vue, svelte
+packages/starlight-docsandeye/index.ts         export default function docsandeye(options?: {projectRoot?: string}): StarlightPlugin   (projectRoot default: the Astro project root)
+packages/starlight-docsandeye/schema.ts        export { stepFrontmatterSchema }  (Zod object = core's step frontmatter shape minus filename-dependent checks)
+packages/starlight-docsandeye/src/plugin.ts    'config:setup' hook: updateConfig (customCss order, components override for Sidebar, head tags), addIntegration(createDocsandeyeIntegration(...))
+packages/starlight-docsandeye/src/integration.ts   export createDocsandeyeIntegration(opts): AstroIntegration — astro:config:setup: injectRoute for /<base>/, /<base>/<step-id>/, and /reshoot (maintainer builds only); registers the vite plugin; astro:build:done: static copy step (below)
+packages/starlight-docsandeye/src/virtual.ts   export createDocsandeyeVitePlugin(data: DocsandeyeData): Plugin — serves `virtual:docsandeye/model`
+packages/starlight-docsandeye/src/data.ts      export loadDocsandeyeData(projectRoot, env): DocsandeyeData = { config, model, staleness, renderManifest, carbon, buildDate, maintainer }
+packages/starlight-docsandeye/src/routes/Guide.astro, Step.astro, Reshoot.astro
+packages/starlight-docsandeye/src/components/StepPage.astro, PartsList.astro, MediaPane.astro, StalenessDetails.astro, CarbonFigure.astro, Sidebar.astro (override adding badges)
+packages/starlight-docsandeye/src/elements/index.ts, docsi-step.ts, docsi-model.ts, docsi-lightbox.ts   custom elements; index.ts is the single client entry
+packages/starlight-docsandeye/src/styles/docsandeye.css      layout + the --docsi-* token contract with defaults mapped onto Starlight's --sl-* tokens
+packages/starlight-docsandeye/src/styles/theme-starlight.css the stock pack (token defaults restated; present so theme "starlight" resolves)
+packages/starlight-docsandeye/test/            Tester-owned (vitest)
+packages/starlight-docsandeye/fixtures/project/   Generator-owned Docs&I project (see below)
+packages/starlight-docsandeye/fixtures/site/      Generator-owned Starlight site: astro.config.mjs with starlight({ plugins: [docsandeye({ projectRoot: '../project' })] }), image: { service: passthroughImageService() }, src/content.config.ts using docsSchema({ extend: stepFrontmatterSchema })
+packages/starlight-docsandeye/fixtures/project-bad-theme/  a copy of fixtures/project whose docsandeye.config.yaml sets theme: nope
+packages/starlight-docsandeye/fixtures/site-bad-theme/     same site config pointing projectRoot at '../project-bad-theme'
 ```
 
-`aep-like` fixture requirements: ≥ 4 components including one with `master_format: f3z`, one `off-the-shelf` with empty `source_files`, and one whose `changelog` spans ≥ 3 versions; config with 2 guides (`aep` base `/AEP`, `mep` base `/MEP`); ≥ 3 steps, at least one listing `guide: [aep, mep]`, one in `aep` only, and one omitting `guide`; both a `scratch`/`kit` branch use; ≥ 2 videos and ≥ 1 photo, such that exactly one media manifest is STALE, exactly one is CHANGED_IN_FRAME and the rest are FRESH; the files `private-notes/pi02-setup-notes.md` and `private-notes/deeper/more.md`, each containing the literal string `DENYLISTED-SENTINEL`; and a stray `docs/components/README.md` (non-YAML, must be ignored by the loader).
+Fixture project (Generator-owned, normative for the tests): config `guides: [{id: aep, title: "Aseptic", base: /AEP}, {id: mep, title: "Mixed", base: /MEP}]`, `theme: starlight`; components `vial-cap` (design_version 2.0.0, changelog 1.0.0 dated 2026-01-10, 2.0.0 dated 2026-08-20), `top-stop` (1.3.0, changelog dated 2026-03-01), `anode` (1.0.0, off-the-shelf, no source files), `blank-cap` (master_format f3z, 1.0.0); steps `step-01-raft` (guide `[aep, mep]`, order 1), `step-02-cap` (guide `aep`, order 2, one render of `vial-cap`, viewer `vial-cap` glb, media `[photo-02-cap, vid-02-seat]`, safety set), `step-03-mep-only` (guide `mep`, order 3), `step-04-orphan` (guide `[]`, order 4 — core accepts an empty array; the plugin generates no route for it); media `photo-02-cap` (type photo, hero `[vial-cap@1.0.0]` → STALE), `vid-02-seat` (type video, hero `[top-stop@1.3.0]`, in_frame `[vial-cap@1.0.0]` → CHANGED_IN_FRAME), `photo-01-raft` (type photo on step-01, hero `[anode@1.0.0]` → FRESH); `build/render/manifest.json` — this is task_002's output artefact (shape: `{"version": 1, "jobs": {"<key>": {"status", "driver", "outputs": [...], "rendered_at", ...}}}`, distinct from core's `build/render-plan.json`, which the plugin never reads) with `rendered` entries and stub files for `vial-cap@2.0.0--cap-iso--<hash>.png` and `vial-cap@2.0.0--viewer--<hash>.glb` (hash values as produced by core's `buildRenderPlan`, computed once by the Generator and committed); `build/carbon.json` with an entry for `/AEP/step-02-cap/` only.
 
-The fixture directory layout mirrors a real project: `docs/components/*.yaml`, `docs/steps/*.md`, `docs/media/*.yaml`, `docsandeye.config.yaml`. The Tester may add further fixtures under `packages/core/test/fixtures/` but must not edit Generator fixtures.
+## Static copy step (normative)
 
-## Versions (normative)
+In `astro:build:done`, copy every file listed in `renderManifest.jobs[*].outputs` from `<projectRoot>/<output>` to `<dist>/_docsandeye/render/<basename>`, and every media `file`/`poster` from `<projectRoot>/<file>` to `<dist>/_docsandeye/media/<basename>`; page markup references these `/_docsandeye/...` paths. No image transformation, no `astro:assets`.
 
-`design_version`, every `changelog[].version`, the version in `supersedes`, and every media pin version are **release semver** only: `MAJOR.MINOR.PATCH` with non-negative integers and no leading zeros; pre-release suffixes (`-rc.1`) and build metadata (`+abc`) are rejected at parse time. Comparison uses the `semver` package's `compare` (so `1.10.0 > 1.9.0`). "Differs" means `compare !== 0`; "greater" means `compare === 1`.
-
-## Data model (normative)
-
-Component (`docs/components/<id>.yaml`):
-
-```yaml
-id: vial-cap-2x6.1-5x3.2          # kebab-case ([a-z0-9]+(-[a-z0-9.]+)*), unique, equals filename stem
-name: Vial Cap (2×6.1 mm + 5×3.2 mm ports)
-kind: printed                     # printed | off-the-shelf | kitted | assembly
-design_version: 2.1.0             # release semver, bumped by hand
-master_format: scad               # scad | step | f3z | none
-source_files: ["Components/Vial Cap/Vial Cap.scad"]      # repo-relative; required non-empty for scad|step|f3z, must be empty for none
-parameters: {ports: 5, port_dia: 3.2}                     # optional; values: string | number | boolean | flat array of those
-derived_files: ["Components/Vial Cap/2x6.1 + 5x3.2mm ports/Vial Cap 2x6.1 + 5x3.2 v2.stl"]  # optional; required non-empty for f3z
-depends_on: [bosl2]               # optional, free-form ids
-supersedes: vial-cap-2x6.1-5x3.2@1.4.0                    # optional `<id>@<release semver>`
-licence: CC-BY-SA-4.0             # optional string
-supplier: {name: LabCrafter, url: https://…, mpn: ABC-123}  # optional
-changelog:                        # optional; versions unique release semver; sorted ascending by version at load
-  - {version: 2.1.0, date: 2026-08-11, note: "Dovetail added for cap o-ring."}
-```
-
-Step (`docs/steps/<id>.md`, YAML frontmatter + Markdown body):
-
-```yaml
-id: step-05-electrolysis          # kebab-case, equals filename stem
-order: 5                          # integer ≥ 0
-title: Electrolysis setup
-guide: aep                        # optional; string or array; normalised to string[] by parseStep; absent → resolved by loadProject to [config.guides[0].id]
-branch: [scratch, kit]            # optional; absent = all branches
-parts: [{component: anode-mmo, qty: 1, cat: part}]        # cat: part | printed | tool | consumable | prev; qty integer ≥ 1, default 1
-tools: [{component: vernier-callipers, qty: 1}]           # cat defaults to tool
-renders: [{id: topstop-exploded, component: electrode-top-stop, view: front-top-right, explode: true, annotate: true, format: png}]
-                                  # id and component required; view default iso; explode/annotate default false; format default png
-                                  # view ∈ front|back|left|right|top|bottom|iso|front-top-right|front-top-left; format ∈ png|stl|svg|glb
-viewer: {component: electrode-top-stop, format: glb}      # optional; format default glb
-media: [vid-005-electrode-seating, photo-005-wiring]      # optional, media manifest ids in display order
-safety: "Do not energise LED channel D with the cap off." # optional
-```
-
-Media manifest (`docs/media/<id>.yaml`), one per video or photo:
-
-```yaml
-id: vid-005-electrode-seating     # kebab-case, equals filename stem
-type: video                       # video | photo
-file: assets/video/vid-005-electrode-seating.mp4           # video: primary file; photo: the image
-poster: assets/video/vid-005-electrode-seating.jpg         # video only, required; forbidden for photo
-captions: assets/video/vid-005-electrode-seating.en.vtt    # video only, optional; forbidden for photo
-duration_s: 47                    # video only, required, number > 0; forbidden for photo
-shot_date: 2026-07-19             # ISO date string
-shot_by: "Martin Currie"
-hero: [electrode-top-stop@1.3.0, anode-mmo@1.0.0]          # ≥ 1 entry, `<id>@<release semver>`
-in_frame: [vial-cap-2x6.1-5x3.2@2.0.0]                     # optional
-narration_source: steps/step-05-electrolysis.md            # optional
-licence: CC-BY-SA-4.0             # optional
-```
-
-Config (`docsandeye.config.yaml` at project root):
-
-```yaml
-theme: pioreactor                 # optional, default "starlight"
-guides: [{id: aep, title: "Aseptic ElectroPioreactor", base: /AEP}]   # ≥ 1; ids unique kebab-case; base starts with "/"
-denylist: ["private-notes/**"]    # optional; the DEFAULT_DENYLIST below is always merged in (union, de-duplicated, order: defaults then user entries)
-hosting: {provider: local}        # provider name looked up in the hosting registry at parse time; url-prefix requires base
-byte_budget_kb: 150               # default 150, integer > 0
-```
-
-`DEFAULT_DENYLIST = ["private-notes/**", ".claude/**", ".vibe/**", ".git/**", "node_modules/**"]` (exported constant). Glob semantics are `picomatch` with `{ dot: true }` applied to the POSIX-style repo-relative path: `**` matches zero or more path segments, so `private-notes/**` matches `private-notes/a.md` and `private-notes/a/b.md` and not `private-notesx/a.md`; exported `isDenylisted(relPath, patterns)`.
-
-`staleness.json` (emitted by `computeStaleness`; serialised with `canonicalJson`, which sorts object keys recursively at every depth and emits 2-space indentation):
+## `carbon.json` (normative here; task_004 writes it, this plugin reads it)
 
 ```json
-{"vid-005-electrode-seating": {"type": "video", "status": "STALE", "shot_date": "2026-07-19",
-  "stale_heroes": [{"component": "electrode-top-stop", "shot_with": "1.3.0", "current": "2.0.0",
-     "changelog": [{"version": "2.0.0", "date": "2026-09-01", "note": "M3 nut trap moved"}]}],
-  "changed_in_frame": []}}
+{"version": 1, "pages": {"/AEP/step-02-cap/": {"bytes": 123456, "gco2e": 0.0118}}}
 ```
 
-Render plan (`build/render-plan.json`, consumed by task_002; this task defines and emits it):
+Keys are site-relative URL paths with leading and trailing slash, matching the route's `Astro.url.pathname` (with `base` prefix). Absent file → `carbon` is `null`.
 
-```json
-{"version": 1, "project_root": ".", "jobs": [
-  {"key": "electrode-top-stop@2.0.0--topstop-exploded--3f9a1c2b7e4d", "component": "electrode-top-stop",
-   "design_version": "2.0.0", "render_id": "topstop-exploded", "master_format": "scad",
-   "source_files": ["Components/ElectrodeTopStop/ElectrodeTopStop.scad"], "parameters": {},
-   "options": {"annotate": true, "explode": true, "format": "png", "view": "front-top-right"},
-   "outputs": ["build/render/electrode-top-stop@2.0.0--topstop-exploded--3f9a1c2b7e4d.png"]}]}
+## Environment contract
+
+`DOCSANDEYE_BUILD_DATE` (ISO date `YYYY-MM-DD`; default today) fixes the "updated within 30 days" reference date. `DOCSANDEYE_MAINTAINER=1` enables the `/reshoot` route and the link to it; unset, neither exists in `dist/`.
+
+## Token contract (normative; task_005's packs override these only)
+
+```
+--docsi-accent, --docsi-accent-high, --docsi-accent-low   default var(--sl-color-accent), -high, -low
+--docsi-bg, --docsi-text, --docsi-text-muted             default var(--sl-color-bg), var(--sl-color-text), var(--sl-color-gray-3)
+--docsi-media-col: 55%   --docsi-text-col: 44%           the step layout split
+--docsi-stale-bg, --docsi-stale-fg                       the staleness details colours
+--docsi-badge-stale-bg, --docsi-badge-updated-bg
+--docsi-font-body, --docsi-font-mono                     default var(--sl-font), var(--sl-font-mono)
 ```
 
-Job rules: `parameters` is a verbatim copy of the component's top-level `parameters` (`{}` when absent) — step renders never carry parameters. `options` is the render entry with defaults applied and only the keys `annotate`, `explode`, `format`, `view` (alphabetical, as `canonicalJson` emits them; the render entry's `id` and `component` are not part of `options`). `key` = `<component>@<design_version>--<render_id>--<params-hash>` where `params-hash` is the first 12 lowercase hex chars of SHA-256 over `canonicalJson({parameters, options})` serialised compactly (sorted keys at every depth, no whitespace — `canonicalJson(value, {compact: true})`). Viewer entries become jobs with `render_id: "viewer"`, `options: {format: <viewer format>}`. Jobs are de-duplicated by `key` across all steps and guides; the job order is by `component`, then `render_id`, then `key`. Components whose `master_format` is `f3z` or `none` produce jobs with the same key formula, `"status": "hand-exported"` and `outputs` equal to their `derived_files` (no rendering); two different render ids on such a component therefore yield two hand-exported jobs with identical outputs. Every non-hand-exported output path is `build/render/<key>.<format>`.
-
-Problem shape, used everywhere: `Problem = {code: string, file: string, path: string, message: string}` (`path` is the YAML/JSON pointer-style dotted path, `""` for file-level). `DocsiError extends Error` with `problems: Problem[]`. Codes are stable strings listed in `errors.ts` (exactly these in v0.1: `invalid-yaml`, `schema`, `id-mismatch`, `unknown-component`, `unknown-media`, `unknown-guide`, `future-pin`, `duplicate-id`). Denylisted files produce no problem at all; they are simply never read.
-
-`branch` is stored and passed through unchanged in this task; no branch filtering function is in scope (the plugin, task_003, decides how branches render).
+Colour and font tokens are pack-settable; the two layout tokens (`--docsi-media-col`, `--docsi-text-col`) are defined once in `docsandeye.css` and packs do not set them. The theme-cycle mark (task_005) is handled by the `<docsi-theme>` element, not by a token. A pack is one CSS file setting the pack-settable tokens on `:root` and on `:root[data-theme='dark']`. The plugin adds `docsandeye.css` then `theme-<name>.css`, resolved from the plugin's own `src/styles/` for `starlight`, else from the package `@docsandeye/themes/<name>.css`; if neither resolves the build fails with `unknown theme "<name>"`. The plugin merges its `components` overrides into the user's existing `config.components` (user keys win on conflict), so a site that overrides `ThemeSelect` keeps that override.
 
 ## Acceptance criteria
 
-1. **Component schema.** `parseComponent(text, filename)` returns a typed `Component` for the fixture files (changelog sorted ascending by version) and throws `DocsiError` for: a non-release-semver `design_version` (including `2.0.0-rc.1` and `2.0.0+build`), an `id` that does not match the filename stem, an unknown `kind` or `master_format`, a `supersedes` value not of the form `<id>@<release semver>`, `master_format: scad|step|f3z` with empty `source_files`, `master_format: f3z` with empty `derived_files`, a `changelog` entry with a non-release-semver `version`, and duplicate `changelog` versions. Each problem carries `code`, `file` (= `filename`), `path` (e.g. `design_version`, `changelog.1.version`), `message`.
-2. **Step schema.** `parseStep(text, filename)` parses frontmatter plus body, returns `Step` with `body` (Markdown string) and typed fields, normalises `guide` to `string[] | undefined`, applies defaults (`qty: 1`, `cat: tool` for tools, `view: iso`, `explode: false`, `annotate: false`, `format: png`, viewer `format: glb`), and throws `DocsiError` for a missing `order`, a duplicate render `id` within the step, a render without `component` or `id`, an unknown `view` or `format`, an unknown `cat`, and an `id` not matching the filename stem.
-3. **Media schema.** `parseMedia(text, filename)` accepts both fixture videos and photos; throws `DocsiError` for a video without `poster` or `duration_s`, a photo with `poster`, `captions` or `duration_s`, an empty `hero`, any pin that is not `<id>@<release semver>`, an unknown `type`, and an `id` not matching the filename stem.
-4. **Config schema.** `parseConfig(text, {registry?})` applies defaults (`theme: starlight`, `DEFAULT_DENYLIST` merged first then user entries, de-duplicated, `hosting.provider: local`, `byte_budget_kb: 150`) and throws for `guides: []`, duplicate guide ids, a `base` not starting with `/`, a hosting provider name not present in the registry (default registry = the built-ins `local`, `url-prefix`), and `url-prefix` without `base`. Test: `parseConfig` on `provider: s3` throws; after `registerHostingProvider('s3', impl)` on the default registry it succeeds; a fresh explicit `registry` (from `createHostingRegistry()`) passed in does not see that registration. `resetHostingRegistry()` restores the default registry to the two built-ins so tests can isolate themselves.
-5. **Project loader.** `loadProject(root)` reads `docsandeye.config.yaml` and the three collections (only `*.yaml` / `*.yml` for components and media, only `*.md` for steps; other files ignored), resolves each step's `guide` default to `[config.guides[0].id]`, returns `{config, components, steps, media, problems}` with `components`/`steps`/`media` as `Map<id, …>`, never opens any file whose repo-relative path is denylisted (the `DENYLISTED-SENTINEL` string appears nowhere in the returned model, its problems, or any thrown error, for both fixture files), and reports a missing collection directory as an empty map, not a problem. `isDenylisted` is tested directly on this table: `private-notes/a.md` → true, `private-notes/a/b.md` → true, `private-notesx/a.md` → false, `.claude/settings.local.json` → true, `docs/steps/x.md` → false.
-6. **Cross-reference check.** `loadProject` aggregates (does not throw on the first) problems for: a step part/tool/render/viewer naming an unknown component (`unknown-component`); a step `media` id with no manifest (`unknown-media`); a media pin naming an unknown component; a media pin whose version is greater than the component's current `design_version` (`future-pin`); duplicate component/step/media ids across files (`duplicate-id`); a step `guide` entry not declared in config (`unknown-guide`). Per-file parse failures become problems too (`schema` / `invalid-yaml`) and the offending file is omitted from the maps. Problems are sorted by `file` then `path`.
-7. **Staleness.** `computeStaleness(model)` returns `Record<mediaId, StalenessEntry>` with `status` ∈ `FRESH | CHANGED_IN_FRAME | STALE`: STALE iff any hero pin's version differs from the current `design_version`; CHANGED_IN_FRAME iff no hero differs but an in_frame pin does; FRESH otherwise. Each stale/changed record carries `component`, `shot_with`, `current`, and `changelog` = the component's entries with `shot_with < version <= current`, ascending. The `aep-like` fixture yields exactly one STALE, one CHANGED_IN_FRAME and the rest FRESH; `canonicalJson(result)` parsed back has top-level keys in lexicographic order and every nested object's keys in lexicographic order (the test walks the parsed tree); `computeStaleness` never mutates its input (deep-equal before/after).
-8. **Reshoot index.** `buildReshootIndex(model, staleness)` returns `Array<{component, name, current, staleHeroCount, appearances: Array<{media, type, role: 'hero' | 'in_frame', shot_with, status}>}>` sorted by `staleHeroCount` descending, then `component` ascending; components with no appearances are omitted; appearances sorted by `media`.
-9. **Render plan.** `buildRenderPlan(model)` emits the schema above: keys computed exactly as specified (the test recomputes one hash independently with `node:crypto` from a hand-built canonical string), one job per distinct key, `hand-exported` jobs for `f3z|none` masters with outputs = `derived_files`, parameters copied from the component, job order as specified, output paths under `build/render/`.
-10. **Version-bump guard.** `checkVersionBumps(model, facts)` where `facts: Record<componentId, {sourceCommit: string, versionCommit: string}>` returns an object `{violations: Violation[], unchecked: string[]}`; `Violation = {component, designVersion, sourceCommit, versionCommit, message}`, one per component whose `sourceCommit !== versionCommit`, none when equal; components with empty `source_files` are skipped silently; components with non-empty `source_files` but absent from `facts` are skipped and listed in `unchecked` (sorted). Pure: no git calls.
-11. **Hosting seam.** `resolveMediaUrl(hosting, file)` returns `file` unchanged for `local`; for `url-prefix` returns `base` with trailing slashes removed + `/` + `file` with leading slashes removed (so `https://m.example` and `https://m.example/` both give `https://m.example/assets/x.mp4`). `HostingProvider = {name, resolve(file, config): string}`; `registerHostingProvider(name, impl, registry = defaultRegistry)` and `createHostingRegistry()` are exported; `resolveMediaUrl` dispatches through the registry.
-12. **Public surface.** `packages/core/src/index.ts` re-exports every function, constant and type named in these criteria plus `canonicalJson`; a test imports the package entry and asserts the named exports exist and are functions/objects. (Chair-run shell checks, not Tester tests: `npm install`, `npm run build -w @docsandeye/core` emitting `dist/index.js` and `dist/index.d.ts`, and `npm test` green from the repo root.)
-13. **Frontmatter helper.** `readFrontmatter(text)` handles `---`-fenced YAML at the top of a Markdown file (LF or CRLF), returns `{data, body}` with `body` starting after the closing fence's newline, returns `{data: {}, body: text}` when there is no opening fence on line 1, and throws `DocsiError` (`invalid-yaml`) for an unterminated fence.
-14. **Guide filtering.** `stepsForGuide(model, guideId)` returns the steps whose resolved `guide` includes `guideId`, ordered by `order` then `id`; on the `aep-like` fixture the shared step appears for both guides, the aep-only step for `aep` only, and the step that omitted `guide` for `aep` (the first configured guide) only; an unknown `guideId` returns `[]`.
-15. **Canonical JSON.** `canonicalJson(value, {compact?})` sorts object keys recursively, preserves array order, emits 2-space indentation unless `compact`, and round-trips through `JSON.parse` to a deep-equal value.
+Verification model: the Tester runs `astro build` on `fixtures/site` once per test file (foreground, `timeout: 600000`, `DOCSANDEYE_BUILD_DATE=2026-09-04`, and separately with `DOCSANDEYE_MAINTAINER=1`) and asserts on `dist/` with `node-html-parser`.
+
+1. **Plugin registration.** `docsandeye()` returns an object with `name: 'starlight-docsandeye'` and a `hooks['config:setup']` function; `astro build` of `fixtures/site` exits 0; `astro build` of `fixtures/site-bad-theme` exits non-zero with stderr containing `unknown theme "nope"`.
+2. **Schema export.** `stepFrontmatterSchema` validates the frontmatter of every fixture step and rejects each of these three inputs (table committed at `fixtures/step-cases.json`, used by the test): missing `order`; duplicate render `id`; unknown `cat`. Filename-dependent checks (id vs filename) are explicitly not part of this schema.
+3. **Routes.** `dist/` contains `AEP/index.html`, `MEP/index.html`, `AEP/step-01-raft/index.html`, `AEP/step-02-cap/index.html`, `MEP/step-01-raft/index.html`, `MEP/step-03-mep-only/index.html`, and does NOT contain `AEP/step-03-mep-only/`, `MEP/step-02-cap/`, or any `step-04-orphan/` directory; without `DOCSANDEYE_MAINTAINER` there is no `reshoot/` directory.
+4. **Step page markup (no-JS fallback).** `AEP/step-02-cap/index.html` contains, in document order inside `<docsi-step data-step="step-02-cap">`: `<div class="docsi-media">` with an `<img src="/_docsandeye/render/vial-cap@2.0.0--cap-iso--<hash>.png" alt="cap-iso">`, a `<docsi-model data-src="/_docsandeye/render/vial-cap@2.0.0--viewer--<hash>.glb">` whose light-DOM child is `<a href="…glb">Download 3D model</a>`, and the media items per AC6; `<div class="docsi-text">` with an `<h1>` equal to the step title, the rendered Markdown body, `<section class="docsi-parts">` listing each part as `<li data-component="<id>" data-qty="<n>" data-cat="<cat>">` containing the component's `name`, a tools list, and `<aside class="docsi-safety">` containing the safety text. The copied files exist at `dist/_docsandeye/render/…` and `dist/_docsandeye/media/…`. The test asserts on raw HTML only.
+5. **Custom elements upgrade, not replace.** Exactly one `<script type="module" src="…">` on each step page points at a built file whose content contains all three strings `customElements.define("docsi-step"`, `customElements.define("docsi-model"`, `customElements.define("docsi-lightbox"` (quote style may vary; the test normalises quotes) — that file is "the registering script"; its size is under 25 KB. Source-level check: `src/elements/*.ts` contain no static `import` whose specifier contains `three` or `model-viewer`; the only reference to a 3D library is a dynamic `import()` inside `docsi-model.ts`, and in that file's source the first occurrence of `import(` comes after the first occurrence of `addEventListener(` (the test asserts the character offsets), and `dist/` contains a separate chunk (not the registering script) whose content includes the string `model-viewer` (the viewer implementation is `@google/model-viewer`, loaded on demand).
+6. **Staleness details and demotion.** For `photo-02-cap` (STALE), the media pane places the render and viewer first and the photo inside `<details class="docsi-stale">` whose `<summary>` text is `A photo exists for this step, but Vial Cap has changed since it was taken (v1.0.0 → v2.0.0)`; the changelog entry `2.0.0` note appears as an `<li>` inside the details before the `<img>`. For `vid-02-seat` (CHANGED_IN_FRAME) the poster `<img>` is in normal flow followed by `<p class="docsi-note">` mentioning `Vial Cap`, and the `<img>` carries `data-docsi-video="reserved"`. For `photo-01-raft` (FRESH, on step-01) the `<img>` is in normal flow with no details and no note. Wording uses `A video exists for this step, but … since it was filmed` for stale videos.
+7. **Sidebar badges.** On every guide page the sidebar (a `components.Sidebar` override; route middleware is not used for this) lists the guide's steps in `order`; `step-02-cap` carries `<span class="docsi-badge docsi-badge-stale">stale media</span>` and `<span class="docsi-badge docsi-badge-updated">updated</span>` (vial-cap's latest changelog date 2026-08-20 is within 30 days of 2026-09-04); `step-01-raft` carries neither.
+8. **Reshoot dashboard.** With `DOCSANDEYE_MAINTAINER=1`, `reshoot/index.html` contains a table with rows in core's `buildReshootIndex` order: `vial-cap` first (one STALE hero appearance) with `class="docsi-stale"`, then `top-stop` and `anode`; each row lists component name, current version and, per appearance, media id, role and status.
+9. **Page metadata for the CLI.** Every step page `<head>` contains `<meta name="docsandeye:step" content="<step id>">` and `<meta name="docsandeye:guide" content="<guide id>">`; `AEP/step-02-cap/index.html` renders `<span class="docsi-carbon">≈ 0.01 g CO₂e per view</span>` (two decimals from the fixture's `carbon.json`), and `AEP/step-01-raft/index.html` has no `docsi-carbon` span.
+10. **Guide index.** `AEP/index.html` lists the aep steps as links in order with their titles and the number of `parts` entries; it links to `/reshoot/` only when built with `DOCSANDEYE_MAINTAINER=1`.
+11. **Theme wiring.** A unit test invokes `hooks['config:setup']` with a recording `updateConfig` and a `config` that already has `components: { ThemeSelect: './my/ThemeSelect.astro' }`, and asserts `customCss` ends with `[…docsandeye.css, …theme-starlight.css]` in that order and that the resulting `components` has both `Sidebar` (the plugin's `Sidebar.astro`) and the untouched user `ThemeSelect`; the built CSS in `dist/` contains `--docsi-media-col:55%` (whitespace-insensitive) and a `:root[data-theme=dark]` (or `'dark'`) block.
+12. **Virtual module contract.** `createDocsandeyeVitePlugin(data)` returns a Vite plugin whose `resolveId('virtual:docsandeye/model')` is truthy and whose `load()` for the resolved id returns a module string exporting `config`, `model`, `staleness`, `renderManifest`, `carbon`, `buildDate`, `maintainer`; a unit test evaluates the returned string with `import()` via a data URL and checks `staleness['photo-02-cap'].status === 'STALE'` for the fixture project's data from `loadDocsandeyeData`.
+13. **Package hygiene.** `npm run build -w starlight-docsandeye` (tsc for `.ts`; `.astro` shipped as source) succeeds; `npm test` passes; `package.json` lists none of `sharp`, `lit`, `react`, `preact`, `vue`, `svelte` in any dependency field.
 
 ## Out of scope
 
-- No Starlight, Astro or browser code (task_003). No CLI entry points or git calls (task_004). No Python (task_002).
-- No BuildUp or OKH exporters; no PDF; no i18n.
-- No video encoding, posters, captions generation, or the stale-video UX (v0.2).
-- No geometry hashing or mesh diffing (v0.3).
-- No network access at runtime; no reading outside `root`.
-- No paid-tier code; the hosting seam is the registry plus the two free providers only.
-- Do not edit `README.md`, `TODO.md`, `CHANGELOG.md`, `.vs/tasks.json` or `.vs/progress.md` (chair-owned).
+- Video playback, posters as facades, WebVTT, the "watch the older video" flow (v0.2). No `<docsi-video>`, no `<docsi-diff>`.
+- The Pioreactor theme pack, the six-state theme cycle and the logo marks (task_005); this task ships the token contract and the stock pack only.
+- The dogfood site and example project content (task_005); the CLI (task_004); rendering (task_002); writing `carbon.json` (task_004).
+- i18n strings beyond English; search configuration (Pagefind stays at Starlight defaults).
+- Do not edit `README.md`, `TODO.md`, `CHANGELOG.md`, `.vs/tasks.json`, `.vs/progress.md`, or any file outside `packages/starlight-docsandeye/**`. If core's contract is insufficient, report it in the generator report rather than patching core.
 
 ## Test location
 
-`packages/core/test/` (vitest). Generator scratch tests go under `.vs/cycle-<N>/scratch-tests/` only. Tests may import fixtures from `packages/core/fixtures/` and add their own under `packages/core/test/fixtures/`.
+`packages/starlight-docsandeye/test/` (vitest). Generator scratch tests only under `.vs/cycle-<N>/scratch-tests/`.
 
 ## Proposed budget
 
-3 cycles. Rationale: schema-heavy but fully specified; the risk is cross-reference and staleness edge cases, which a second cycle normally closes.
+4 cycles. Rationale: three moving parts (plugin config, Astro integration routes, custom elements) plus an `astro build` in the loop; the first cycle usually surfaces a route or virtual-module wiring issue.
 
 ## Model plan
 
-- Generator: **fable** (pre-authorised), ceiling fable. Rationale: this package is the long-horizon contract for four downstream tasks; getting the shapes coherent in one pass is worth the tier.
+- Generator: **fable** (pre-authorised), ceiling fable. Rationale: Starlight 0.42 plugin API + Astro 7 integration + SSR-safe custom elements with a mandatory no-JS fallback is long-horizon, cross-layer work; a wrong shape here forces rework in tasks 004 and 005.
 - Spec Critic: sonnet. Tester: haiku, ceiling sonnet on test-quality findings.
 - Fable rung: **pre-authorised (--fable-subagents)**.

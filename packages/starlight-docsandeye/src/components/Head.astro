@@ -1,0 +1,16 @@
+---
+/**
+ * Head override: Starlight's default head plus the page metadata the Docs&I
+ * CLI reads (`docsandeye:step`, `docsandeye:guide`). Rendered here rather
+ * than through frontmatter `head` so the tags serialise as plain `<meta …>`.
+ * If you override `Head` yourself, render this component as your default.
+ */
+import Default from '@astrojs/starlight/components/Head.astro';
+
+const route = Astro.locals.starlightRoute as { docsandeye?: { kind?: string; guideId?: string; stepId?: string } };
+const marker = route.docsandeye;
+---
+
+<Default />
+{marker?.stepId && <meta name="docsandeye:step" content={marker.stepId} />}
+{marker?.guideId && <meta name="docsandeye:guide" content={marker.guideId} />}

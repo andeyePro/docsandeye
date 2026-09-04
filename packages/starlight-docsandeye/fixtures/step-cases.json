@@ -1,0 +1,39 @@
+{
+  "$comment": "Shared table for the stepFrontmatterSchema test (AC2). `valid` are project-relative step files whose frontmatter must parse; `invalid` are frontmatter objects the schema must reject, with the dotted path of the failing field. Filename-dependent checks (id vs filename) are not part of this schema.",
+  "valid": [
+    "docs/steps/step-01-raft.md",
+    "docs/steps/step-02-cap.md",
+    "docs/steps/step-03-mep-only.md",
+    "docs/steps/step-04-orphan.md"
+  ],
+  "invalid": [
+    {
+      "name": "missing order",
+      "input": {"id": "step-09-broken", "title": "Broken"},
+      "path": "order"
+    },
+    {
+      "name": "duplicate render id",
+      "input": {
+        "id": "step-09-broken",
+        "order": 9,
+        "title": "Broken",
+        "renders": [
+          {"id": "iso", "component": "vial-cap"},
+          {"id": "iso", "component": "top-stop"}
+        ]
+      },
+      "path": "renders.1.id"
+    },
+    {
+      "name": "unknown cat",
+      "input": {
+        "id": "step-09-broken",
+        "order": 9,
+        "title": "Broken",
+        "parts": [{"component": "vial-cap", "cat": "widget"}]
+      },
+      "path": "parts.0.cat"
+    }
+  ]
+}
