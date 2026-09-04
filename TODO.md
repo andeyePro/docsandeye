@@ -30,9 +30,6 @@ maintainer's machine only; the public-facing summary is README.md.
       expensive.
 - [ ] **Carbon gate**: poster-only initial load of a step page ≤ 150 KB, checked by `docsandeye check`;
       CO2.js (Sustainable Web Design v4) gCO2e figure rendered on every page. Warn in v0.1.
-- [ ] **Licence files**: LICENSE (AGPL-3.0 + section-7 additional permission: generated sites and
-      assets are not covered works), CLA.md (andeye CLA v1.0 verbatim), CONTRIBUTING.md, CLA
-      assistant workflow. Must land before any outside PR.
 - [ ] **Dogfood**: this repo's own docs site built with the plugin; one synthetic example project
       under `examples/`.
 - [ ] **First consumer: electroPioreactor AEP0.2** — content under `docs/` on the `AEP02` branch of

@@ -13,3 +13,11 @@
 # Confidential — Martin-only notes, never committed or shared upstream
 /Martin/
 .DS_Store
+
+# harness state
+.vss/last-plan.md
+.vss/auto-resume
+.vss/heartbeat
+.vss/rate-limit
+.vs/cycle-*/
+.claude/worktrees/
