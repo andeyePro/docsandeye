@@ -1,0 +1,21 @@
+{
+  "pages": {
+    "/example/step-01-print-the-parts/": {
+      "bytes": 109264,
+      "gco2e": 0.0161929248
+    },
+    "/example/step-02-fit-the-arm/": {
+      "bytes": 108471,
+      "gco2e": 0.0160754022
+    },
+    "/example/step-03-fit-the-led-module/": {
+      "bytes": 107828,
+      "gco2e": 0.0159801096
+    },
+    "/example/step-04-fit-the-shade/": {
+      "bytes": 105867,
+      "gco2e": 0.0156894894
+    }
+  },
+  "version": 1
+}

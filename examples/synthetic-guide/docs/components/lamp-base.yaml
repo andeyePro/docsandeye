@@ -1,0 +1,11 @@
+id: lamp-base
+name: Lamp base
+kind: printed
+design_version: 1.1.0
+master_format: none
+derived_files:
+  - assets/renders/lamp-base-iso.svg
+licence: CC-BY-SA-4.0
+changelog:
+  - {version: 1.0.0, date: 2026-03-02, note: "Initial release."}
+  - {version: 1.1.0, date: 2026-05-11, note: "Cable slot widened to 8 mm so a moulded plug passes through."}

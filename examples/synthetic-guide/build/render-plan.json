@@ -1,0 +1,61 @@
+{
+  "jobs": [
+    {
+      "component": "lamp-arm",
+      "design_version": "1.0.0",
+      "key": "lamp-arm@1.0.0--arm-front--8825060295f5",
+      "master_format": "none",
+      "options": {
+        "annotate": false,
+        "explode": false,
+        "format": "svg",
+        "view": "front"
+      },
+      "outputs": [
+        "assets/renders/lamp-arm-front.svg"
+      ],
+      "parameters": {},
+      "render_id": "arm-front",
+      "source_files": [],
+      "status": "hand-exported"
+    },
+    {
+      "component": "lamp-base",
+      "design_version": "1.1.0",
+      "key": "lamp-base@1.1.0--base-iso--bdb2505e5ea3",
+      "master_format": "none",
+      "options": {
+        "annotate": false,
+        "explode": false,
+        "format": "svg",
+        "view": "iso"
+      },
+      "outputs": [
+        "assets/renders/lamp-base-iso.svg"
+      ],
+      "parameters": {},
+      "render_id": "base-iso",
+      "source_files": [],
+      "status": "hand-exported"
+    },
+    {
+      "component": "lamp-shade",
+      "design_version": "1.0.0",
+      "key": "lamp-shade@1.0.0--viewer--00628eabad92",
+      "master_format": "none",
+      "options": {
+        "format": "glb"
+      },
+      "outputs": [
+        "assets/renders/lamp-shade.glb",
+        "assets/renders/lamp-shade.stl"
+      ],
+      "parameters": {},
+      "render_id": "viewer",
+      "source_files": [],
+      "status": "hand-exported"
+    }
+  ],
+  "project_root": ".",
+  "version": 1
+}

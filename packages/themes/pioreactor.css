@@ -1,0 +1,104 @@
+/*
+ * Theme pack "pioreactor" for starlight-docsandeye.
+ *
+ * The colour, type and sidebar values below are published token facts
+ * (the accent, background and text colours, the font stacks, the 14 px
+ * sidebar links with a 2 px accent bar on the active item) re-implemented
+ * here against Starlight's --sl-* custom properties and class names and the
+ * --docsi-* contract of starlight-docsandeye. No selector, rule or file from
+ * any other documentation site is copied. Decision recorded as T9.
+ *
+ * Fonts: the stacks name Roboto and Source Code Pro first but the pack ships
+ * no font files and makes no external request. See README.md.
+ *
+ * Scope: the rules apply when <html> carries data-docsi-pack="pioreactor",
+ * and also when it carries no data-docsi-pack at all, which is the
+ * JavaScript-disabled page (the control never ran, the config's pack shows).
+ * Light values are the base; dark values apply under data-theme="dark" and,
+ * with JavaScript disabled, when data-theme is absent, because Starlight
+ * itself renders dark until its script sets the attribute.
+ *
+ * The two layout tokens (--docsi-media-col, --docsi-text-col) belong to the
+ * plugin and are not set here.
+ *
+ * SPDX-License-Identifier: AGPL-3.0-only
+ */
+
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) {
+  --docsi-accent: #5331ca;
+  --docsi-accent-high: #332083;
+  --docsi-accent-low: #8c6be9;
+  --docsi-bg: #f6f6f7;
+  --docsi-text: #1c1e21;
+  --docsi-text-muted: #4a4a4a;
+  --docsi-stale-bg: #ffefa4;
+  --docsi-stale-fg: #1c1e21;
+  --docsi-badge-updated-bg: #ddffdc;
+  --docsi-badge-stale-bg: #ffefa4;
+  --docsi-font-body: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --docsi-font-mono: "Source Code Pro", Menlo, monospace;
+
+  --sl-color-accent: var(--docsi-accent);
+  --sl-color-accent-high: var(--docsi-accent-high);
+  --sl-color-accent-low: var(--docsi-accent-low);
+  --sl-color-bg: var(--docsi-bg);
+  --sl-font: var(--docsi-font-body);
+  --sl-font-mono: var(--docsi-font-mono);
+}
+
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])):is([data-theme='dark'], :not([data-theme])) {
+  --docsi-accent: #b7a6ff;
+  --docsi-accent-high: #dcd5ff;
+  --docsi-accent-low: #4a2bb9;
+  --docsi-bg: var(--sl-color-black);
+  --docsi-text: var(--sl-color-gray-2);
+  --docsi-text-muted: var(--sl-color-gray-3);
+  --docsi-stale-bg: #ffefa4;
+  --docsi-stale-fg: #1c1e21;
+  --docsi-badge-updated-bg: #ddffdc;
+  --docsi-badge-stale-bg: #ffefa4;
+
+  --sl-color-accent: var(--docsi-accent);
+  --sl-color-accent-high: var(--docsi-accent-high);
+  --sl-color-accent-low: var(--docsi-accent-low);
+  --sl-color-bg: var(--docsi-bg);
+}
+
+/* ---- sidebar: 14 px links, active item marked by a 2 px accent bar ------ */
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) .sidebar-content a,
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) .docsi-steps a,
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) .docsi-guides a {
+  font-size: 14px;
+  border-radius: 0;
+  border-inline-end: 2px solid transparent;
+}
+
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) .sidebar-content a[aria-current='page'],
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) .docsi-steps a[aria-current='page'],
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) .docsi-guide-title[aria-current='page'],
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) .docsi-reshoot-link[aria-current='page'] {
+  background-color: transparent;
+  color: var(--docsi-accent);
+  border-inline-end: 2px solid var(--docsi-accent);
+  border-radius: 0;
+}
+
+/* ---- badges -------------------------------------------------------------- */
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) .docsi-badge-updated {
+  background: var(--docsi-badge-updated-bg);
+  color: #176114;
+  border-color: #176114;
+}
+
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) .docsi-badge-stale {
+  background: var(--docsi-badge-stale-bg);
+  color: #1c1e21;
+  border-color: #1c1e21;
+}
+
+/* Stale notes keep dark text on the pale stale background in both modes. */
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) .docsi-note,
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) details.docsi-stale,
+:root:is([data-docsi-pack='pioreactor'], :not([data-docsi-pack])) .docsi-reshoot tr.docsi-stale > td {
+  color: var(--docsi-stale-fg);
+}

@@ -1,0 +1,8 @@
+id: m3-screw
+name: M3 x 12 button-head screw
+kind: off-the-shelf
+design_version: 1.0.0
+master_format: none
+supplier:
+  name: Any fastener supplier
+  mpn: ISO 7380 M3x12

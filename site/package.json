@@ -1,0 +1,22 @@
+{
+  "name": "docsandeye-site",
+  "private": true,
+  "version": "0.1.0",
+  "description": "docs.andeye.com: the Docs&I documentation site, built with Starlight and starlight-docsandeye, hosting the synthetic example guide under /example/",
+  "type": "module",
+  "scripts": {
+    "prebuild": "npm run build -w @docsandeye/core -w starlight-docsandeye -w @docsandeye/themes -w docsandeye",
+    "build": "astro build",
+    "dev": "astro dev",
+    "preview": "astro preview",
+    "render": "docsandeye render --project ../examples/synthetic-guide",
+    "check": "docsandeye check --project ../examples/synthetic-guide --dist dist"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.42.0",
+    "@docsandeye/themes": "0.1.0",
+    "astro": "7.3.1",
+    "docsandeye": "0.1.0",
+    "starlight-docsandeye": "0.1.0"
+  }
+}

@@ -1,0 +1,55 @@
+---
+title: Docs&I
+description: Interactive video documentation for open-source hardware that knows when its own videos have gone stale.
+template: splash
+hero:
+  tagline: Assembly guides where every step has a short video, the full text and drawings rendered from the CAD files. When a part changes, the guide notices.
+  actions:
+    - text: Get started
+      link: /getting-started/
+      icon: right-arrow
+    - text: See the example guide
+      link: /example/
+      icon: open-book
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What it is
+
+Docs&I (`docsandeye` in code) builds assembly guides for open-source hardware. Every step shows three things side by side:
+
+- a short, self-hosted, low-carbon video of the step;
+- the full text, complete on its own, never a caption;
+- drawings rendered from the CAD files, so a guide can be complete with no photography at all.
+
+Each video declares which components are its hero and which are merely in frame. When a hero component's design changes, the guide notices at build time. The video steps back, text and fresh renders become the primary content, and a reader who still wants the older video is first shown what changed. Maintainers get the inverse view: a dashboard of which videos need reshooting, and why.
+
+<CardGrid>
+  <Card title="Plain files in your repo" icon="document">
+    Components, steps and media are YAML and Markdown under `docs/`. Readable on GitHub, on a mirror, or offline.
+  </Card>
+  <Card title="Versioned components" icon="approve-check">
+    Every component carries a `design_version`. A CI guard checks it against the git history of the CAD source files.
+  </Card>
+  <Card title="Renders from source" icon="seti:image">
+    OpenSCAD for `.scad`, CadQuery for STEP. Stills, exploded views, SVG line art and GLB for an in-page 3D viewer.
+  </Card>
+  <Card title="Carbon measured, not asserted" icon="star">
+    Each step page has a byte budget for its initial load, checked in CI, and its estimated CO2e is printed on the page.
+  </Card>
+</CardGrid>
+
+## Status
+
+Pre-alpha. The schemas, the render pipeline, the Starlight plugin, the CLI and this theme pack exist. Video playback is the next release. There is no npm release yet.
+
+The example guide under [/example/](/example/) is a made-up bench lamp. It exercises every part of the engine with hand-exported drawings, so it builds without CAD tools.
+
+## Where to go next
+
+- [Getting started](/getting-started/): scaffold a project, author, render, check, build.
+- [Components](/authoring/components/), [Steps](/authoring/steps/) and [Media](/authoring/media/): the file formats.
+- [Staleness](/staleness/): how a changed part marks a video stale.
+- [Themes](/themes/), [Carbon](/carbon/), [CLI](/cli/) and [Licence](/licence/).
