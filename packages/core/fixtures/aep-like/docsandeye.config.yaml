@@ -1,0 +1,9 @@
+theme: pioreactor
+guides:
+  - {id: aep, title: "Aseptic ElectroPioreactor", base: /AEP}
+  - {id: mep, title: "Minimal ElectroPioreactor", base: /MEP}
+denylist: ["private-notes/**", "drafts/**"]
+hosting:
+  provider: url-prefix
+  base: https://media.example/
+byte_budget_kb: 200

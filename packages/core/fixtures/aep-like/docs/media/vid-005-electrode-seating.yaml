@@ -1,0 +1,12 @@
+id: vid-005-electrode-seating
+type: video
+file: assets/video/vid-005-electrode-seating.mp4
+poster: assets/video/vid-005-electrode-seating.jpg
+captions: assets/video/vid-005-electrode-seating.en.vtt
+duration_s: 47
+shot_date: 2026-07-19
+shot_by: "Example Maker"
+hero: [electrode-top-stop@1.3.0, anode-mmo@1.0.0]
+in_frame: [vial-cap-2x6.1-5x3.2@2.0.0]
+narration_source: steps/step-05-electrolysis.md
+licence: CC-BY-SA-4.0
