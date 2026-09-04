@@ -1,0 +1,13 @@
+[
+  {
+    "id": "task_002",
+    "description": "docsandeye_render: Python render pipeline (OpenSCAD/CadQuery drivers, cache, STL\u2192GLB), stdlib-only, fixture-tested",
+    "implementation_status": "awaiting-approval",
+    "test_status": "pending",
+    "assigned_to": "generator",
+    "mode": "rigorous",
+    "branch": "vsss/task_002-render",
+    "spec": ".claude/worktrees/task_002/.vs/spec.md",
+    "last_modified": "2026-09-04T20:44:37Z"
+  }
+]

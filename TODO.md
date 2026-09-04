@@ -18,7 +18,7 @@ maintainer's machine only; the public-facing summary is README.md.
       elements with static-HTML fallback, sidebar badges derived from staleness data.
 - [ ] **`docsandeye` CLI**: `init` scaffolds a Starlight site with the plugin; `render` runs the
       Python render pipeline; `check` runs the version-bump guard and the byte budget.
-- [ ] **Render pipeline** (Python): OpenSCAD CLI for `.scad` (Manifold backend, BOSL2 on the include
+- [ ] **Render pipeline** (Python) (awaiting approval — /vs --approve task_002): OpenSCAD CLI for `.scad` (Manifold backend, BOSL2 on the include
       path), CadQuery/OCP for STEP (PNG, SVG line-art, exploded/annotated, GLB); outputs committed,
       cache keyed by `<component>@<design_version>--<render-id>--<params-hash>`; `.f3z` flagged as
       hand-exported. Runs locally, never in GitHub Actions.
@@ -35,7 +35,7 @@ maintainer's machine only; the public-facing summary is README.md.
 - [ ] **First consumer: electroPioreactor AEP0.2** — content under `docs/` on the `AEP02` branch of
       the shared mount at `/repos/electroPioreactor`, converted from the existing assembly README;
       published at docs.electroPioreactor.org/AEP. Design for a sibling `/MEP` guide that shares
-      most components and steps. Denylist `AEP-Plugin/pi02-setup-notes.md` from ingestion.
+      most components and steps. Denylist `private-notes/**`, `.claude/**` and `.vibe/**` from ingestion (the PII setup notes live under `private-notes/`).
 - [ ] **Plus/Pro seam**: a hosting-provider abstraction for video assets (local path or bucket URL)
       so a managed zero-carbon hosting tier can plug in later without schema changes. No paid code.
 - [ ] **CHANGELOG.md** created on the first closed task.
