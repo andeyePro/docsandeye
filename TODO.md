@@ -24,6 +24,7 @@ maintainer's machine only; the public-facing summary is README.md.
 - [ ] **Plus/Pro seam** (in task_001: the hosting-provider registry in `packages/core/src/hosting.ts`): a hosting-provider abstraction for video assets (local path or bucket URL)
       so a managed zero-carbon hosting tier can plug in later without schema changes. No paid code.
 
+- [ ] **Flaky CLI tests under the full parallel run**: `packages/cli/test/cli.test.ts` passes alone (54/54) but 1–3 cases (AC2 exit-65, AC6 non-git skip, AC7 hrefs/carbon) fail intermittently when the whole workspace suite runs alongside the plugin's `astro build` tests; passes on re-run. Likely a shared temp path, `process.chdir`, or a timeout under load — isolate per-test temp dirs and raise the exec timeout.
 - [ ] **Plugin follow-up**: `docsSchema({ extend: stepFrontmatterSchema })` makes the step fields required on every docs entry; export a partial extension (or make the step fields optional in the extension) so ordinary documentation pages validate — the dogfood site uses `.partial()` meanwhile.
 - [ ] **Core follow-ups from downstream tasks**: `loadProject` should ignore `README.md` inside `docs/steps/` (task_006 could not place its steps README there); `checkVersionBumps` should treat a version commit that is a descendant of the source commit as satisfied (the CLI currently clears these with `git merge-base --is-ancestor`).
 
