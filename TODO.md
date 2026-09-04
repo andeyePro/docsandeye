@@ -13,7 +13,7 @@ maintainer's machine only; the public-facing summary is README.md.
       (component@version pins, hero/in-frame, BuildUp/OKH-compatible field names, no exporters);
       staleness algorithm and `staleness.json`; the `/reshoot` dashboard; error handling for
       missing versions, unrenderable masters (`.f3z`) and denylisted paths.
-- [ ] **`starlight-docsandeye` plugin**: extends `docsSchema()` with the step fields, registers the
+- [ ] **`starlight-docsandeye` plugin** (awaiting approval — /vs --approve task_003): extends `docsSchema()` with the step fields, registers the
       components and videos collections, ships `<docsi-step>` and `<docsi-model>` as vanilla custom
       elements with static-HTML fallback, sidebar badges derived from staleness data.
 - [ ] **`docsandeye` CLI**: `init` scaffolds a Starlight site with the plugin; `render` runs the

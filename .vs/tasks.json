@@ -20,5 +20,16 @@
     "branch": "vsss/task_002-render",
     "spec": ".claude/worktrees/task_002/.vs/spec.md",
     "last_modified": "2026-09-04T20:44:37Z"
+  },
+  {
+    "id": "task_003",
+    "description": "starlight-docsandeye: Starlight plugin, routes, <docsi-step>/<docsi-model> custom elements with no-JS fallback, staleness details, sidebar badges, reshoot dashboard, theme token contract",
+    "implementation_status": "awaiting-approval",
+    "test_status": "pending",
+    "assigned_to": "generator",
+    "mode": "rigorous",
+    "branch": "vsss/task_003-plugin",
+    "spec": ".claude/worktrees/task_003/.vs/spec.md",
+    "last_modified": "2026-09-04T20:52:06Z"
   }
 ]
