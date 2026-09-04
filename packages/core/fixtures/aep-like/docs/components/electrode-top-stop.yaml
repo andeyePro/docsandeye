@@ -1,0 +1,12 @@
+id: electrode-top-stop
+name: Electrode Top Stop
+kind: printed
+design_version: 2.0.0
+master_format: scad
+source_files: ["Components/ElectrodeTopStop/ElectrodeTopStop.scad"]
+depends_on: [bosl2]
+licence: CC-BY-SA-4.0
+changelog:
+  - {version: 2.0.0, date: 2026-09-01, note: "M3 nut trap moved."}
+  - {version: 1.0.0, date: 2026-05-02, note: "Initial release."}
+  - {version: 1.3.0, date: 2026-07-01, note: "Chamfer on electrode bore."}

@@ -1,0 +1,4 @@
+guides:
+  - id: main
+    title: Minimal Guide
+    base: /
