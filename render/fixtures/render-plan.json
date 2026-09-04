@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "project_root": ".",
+  "jobs": [
+    {
+      "key": "electrode-top-stop@2.0.0--topstop-exploded--3f9a1c2b7e4d",
+      "component": "electrode-top-stop",
+      "design_version": "2.0.0",
+      "render_id": "topstop-exploded",
+      "master_format": "scad",
+      "source_files": ["Components/ElectrodeTopStop/ElectrodeTopStop.scad"],
+      "parameters": {"stop_height": 12, "label": "top", "ribs": false, "guides": [1, 2]},
+      "options": {"view": "front-top-right", "explode": true, "annotate": false, "format": "png"},
+      "outputs": ["build/render/electrode-top-stop@2.0.0--topstop-exploded--3f9a1c2b7e4d.png"]
+    },
+    {
+      "key": "electrode-top-stop@2.0.0--topstop-mesh--a1b2c3d4e5f6",
+      "component": "electrode-top-stop",
+      "design_version": "2.0.0",
+      "render_id": "topstop-mesh",
+      "master_format": "scad",
+      "source_files": ["Components/ElectrodeTopStop/ElectrodeTopStop.scad"],
+      "parameters": {"stop_height": 12},
+      "options": {"view": "iso", "format": "stl"},
+      "outputs": ["build/render/electrode-top-stop@2.0.0--topstop-mesh--a1b2c3d4e5f6.stl"]
+    },
+    {
+      "key": "electrode-top-stop@2.0.0--topstop-lineart--b2c3d4e5f601",
+      "component": "electrode-top-stop",
+      "design_version": "2.0.0",
+      "render_id": "topstop-lineart",
+      "master_format": "scad",
+      "source_files": ["Components/ElectrodeTopStop/ElectrodeTopStop.scad"],
+      "parameters": {},
+      "options": {"view": "front", "format": "svg"},
+      "outputs": ["build/render/electrode-top-stop@2.0.0--topstop-lineart--b2c3d4e5f601.svg"]
+    },
+    {
+      "key": "electrode-top-stop@2.0.0--topstop-viewer--c3d4e5f60123",
+      "component": "electrode-top-stop",
+      "design_version": "2.0.0",
+      "render_id": "topstop-viewer",
+      "master_format": "scad",
+      "source_files": ["Components/ElectrodeTopStop/ElectrodeTopStop.scad"],
+      "parameters": {},
+      "options": {"view": "iso", "annotate": true, "format": "glb"},
+      "outputs": ["build/render/electrode-top-stop@2.0.0--topstop-viewer--c3d4e5f60123.glb"]
+    },
+    {
+      "key": "vial-holder@1.2.0--holder-lineart--d4e5f6012345",
+      "component": "vial-holder",
+      "design_version": "1.2.0",
+      "render_id": "holder-lineart",
+      "master_format": "step",
+      "source_files": ["Components/VialHolder/VialHolder.step"],
+      "parameters": {},
+      "options": {"view": "front", "format": "svg"},
+      "outputs": ["build/render/vial-holder@1.2.0--holder-lineart--d4e5f6012345.svg"]
+    },
+    {
+      "key": "vial-holder@1.2.0--holder-viewer--e5f601234567",
+      "component": "vial-holder",
+      "design_version": "1.2.0",
+      "render_id": "holder-viewer",
+      "master_format": "step",
+      "source_files": ["Components/VialHolder/VialHolder.step"],
+      "parameters": {},
+      "options": {"view": "iso", "format": "glb"},
+      "outputs": ["build/render/vial-holder@1.2.0--holder-viewer--e5f601234567.glb"]
+    },
+    {
+      "key": "blank-vial-cap@1.0.0--viewer--0000deadbeef",
+      "component": "blank-vial-cap",
+      "design_version": "1.0.0",
+      "render_id": "viewer",
+      "master_format": "f3z",
+      "source_files": ["Components/Vial Cap/0 ports/blank_vial_cap.f3z"],
+      "parameters": {},
+      "options": {"format": "glb"},
+      "status": "hand-exported",
+      "outputs": ["Components/Vial Cap/0 ports/blank_vial_cap.step"]
+    },
+    {
+      "key": "wiring-overview@1.0.0--overview--112233445566",
+      "component": "wiring-overview",
+      "design_version": "1.0.0",
+      "render_id": "overview",
+      "master_format": "none",
+      "source_files": [],
+      "parameters": {},
+      "options": {"format": "svg"},
+      "status": "hand-exported",
+      "outputs": ["Docs/diagrams/wiring-overview.svg"]
+    }
+  ]
+}
