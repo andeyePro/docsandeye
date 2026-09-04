@@ -1,0 +1,10 @@
+id: lid-assembly
+name: Lid Assembly
+kind: assembly
+design_version: 1.2.0
+master_format: f3z
+source_files: ["Assemblies/Lid/Lid.f3z"]
+derived_files: ["Assemblies/Lid/Lid v3.step", "Assemblies/Lid/Lid v3.stl"]
+depends_on: [electrode-top-stop, vial-cap-2x6.1-5x3.2]
+changelog:
+  - {version: 1.2.0, date: 2026-08-20, note: "Clearance for cap dovetail."}

@@ -1,0 +1,14 @@
+id: vial-cap-2x6.1-5x3.2
+name: Vial Cap (2×6.1 mm + 5×3.2 mm ports)
+kind: printed
+design_version: 2.1.0
+master_format: scad
+source_files: ["Components/Vial Cap/Vial Cap.scad"]
+parameters: {ports: 5, port_dia: 3.2, label: cap, vented: true, offsets: [1, 2.5]}
+derived_files: ["Components/Vial Cap/2x6.1 + 5x3.2mm ports/Vial Cap 2x6.1 + 5x3.2 v2.stl"]
+depends_on: [bosl2]
+supersedes: vial-cap-2x6.1-5x3.2@1.4.0
+licence: CC-BY-SA-4.0
+changelog:
+  - {version: 2.0.0, date: 2026-06-15, note: "Port layout rework."}
+  - {version: 2.1.0, date: 2026-08-11, note: "Dovetail added for cap o-ring."}
