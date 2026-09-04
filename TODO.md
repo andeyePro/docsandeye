@@ -9,7 +9,7 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### v0.1 — data, renders, staleness, no video
 
-- [ ] **Spec v0.1** (spec-first): content schemas for components, steps, videos and photos
+- [ ] **Spec v0.1** (spec-first; task_001 core awaiting approval — /vs --approve task_001): content schemas for components, steps, videos and photos
       (component@version pins, hero/in-frame, BuildUp/OKH-compatible field names, no exporters);
       staleness algorithm and `staleness.json`; the `/reshoot` dashboard; error handling for
       missing versions, unrenderable masters (`.f3z`) and denylisted paths.

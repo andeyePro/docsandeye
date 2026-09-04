@@ -1,5 +1,16 @@
 [
   {
+    "id": "task_001",
+    "description": "@docsandeye/core: content schemas, loader, staleness engine, reshoot index, render plan, version-bump guard, hosting seam",
+    "implementation_status": "awaiting-approval",
+    "test_status": "pending",
+    "assigned_to": "generator",
+    "mode": "rigorous",
+    "branch": "vsss/task_001-core",
+    "spec": ".claude/worktrees/task_001/.vs/spec.md",
+    "last_modified": "2026-09-04T20:49:26Z"
+  },
+  {
     "id": "task_002",
     "description": "docsandeye_render: Python render pipeline (OpenSCAD/CadQuery drivers, cache, STL\u2192GLB), stdlib-only, fixture-tested",
     "implementation_status": "awaiting-approval",
