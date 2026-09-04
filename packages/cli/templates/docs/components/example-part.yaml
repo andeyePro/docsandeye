@@ -1,0 +1,13 @@
+# One file per component; the id must match the file name.
+# Printed parts point `source_files` at their CAD master (scad/step/f3z) and get rendered by `docsandeye render`;
+# off-the-shelf parts use `master_format: none` and describe where to buy them.
+id: example-part
+name: Example Part
+kind: off-the-shelf
+design_version: 1.0.0
+master_format: none
+supplier:
+  name: Example Supplier
+  mpn: EXAMPLE-001
+changelog:
+  - {version: 1.0.0, date: {{date}}, note: "Initial release."}

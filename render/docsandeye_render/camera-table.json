@@ -1,0 +1,56 @@
+{
+  "back": {
+    "projection_dir": [0, 1, 0],
+    "rotx": 90,
+    "roty": 0,
+    "rotz": 180
+  },
+  "bottom": {
+    "projection_dir": [0, 0, -1],
+    "rotx": 180,
+    "roty": 0,
+    "rotz": 0
+  },
+  "front": {
+    "projection_dir": [0, -1, 0],
+    "rotx": 90,
+    "roty": 0,
+    "rotz": 0
+  },
+  "front-top-left": {
+    "projection_dir": [-1, -1, 0.8],
+    "rotx": 60,
+    "roty": 0,
+    "rotz": 330
+  },
+  "front-top-right": {
+    "projection_dir": [1, -1, 0.8],
+    "rotx": 60,
+    "roty": 0,
+    "rotz": 30
+  },
+  "iso": {
+    "projection_dir": [1, -1, 1],
+    "rotx": 55,
+    "roty": 0,
+    "rotz": 25
+  },
+  "left": {
+    "projection_dir": [-1, 0, 0],
+    "rotx": 90,
+    "roty": 0,
+    "rotz": 90
+  },
+  "right": {
+    "projection_dir": [1, 0, 0],
+    "rotx": 90,
+    "roty": 0,
+    "rotz": 270
+  },
+  "top": {
+    "projection_dir": [0, 0, 1],
+    "rotx": 0,
+    "roty": 0,
+    "rotz": 0
+  }
+}

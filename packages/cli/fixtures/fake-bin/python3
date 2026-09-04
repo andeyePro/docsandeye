@@ -1,0 +1,36 @@
+#!/bin/sh
+# Fake python3 for the docsandeye CLI tests.
+# Appends exactly one JSON line to $DOCSI_FAKE_PYTHON_LOG:
+#   {"argv": [<all arguments after the program name>], "cwd": "<cwd>", "env": {"PYTHONPATH": <string or null>}}
+# Prints nothing. Exits with $DOCSI_FAKE_PYTHON_EXIT if set, else 0.
+
+json_escape() {
+  # Escape backslash and double quote for a JSON string body (arguments here never carry control characters).
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+}
+
+argv=""
+first=1
+for arg in "$@"; do
+  escaped=$(json_escape "$arg")
+  if [ "$first" -eq 1 ]; then
+    argv="\"$escaped\""
+    first=0
+  else
+    argv="$argv, \"$escaped\""
+  fi
+done
+
+if [ "${PYTHONPATH+set}" = "set" ]; then
+  pythonpath="\"$(json_escape "$PYTHONPATH")\""
+else
+  pythonpath="null"
+fi
+
+cwd=$(json_escape "$(pwd)")
+
+if [ -n "${DOCSI_FAKE_PYTHON_LOG:-}" ]; then
+  printf '{"argv": [%s], "cwd": "%s", "env": {"PYTHONPATH": %s}}\n' "$argv" "$cwd" "$pythonpath" >> "$DOCSI_FAKE_PYTHON_LOG"
+fi
+
+exit "${DOCSI_FAKE_PYTHON_EXIT:-0}"

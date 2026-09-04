@@ -4,3 +4,5 @@
 # harness state and worktrees: component@version keys look like emails to the WARN scanner
 path-warn:.vs/*
 path-warn:.claude/worktrees/*
+path-warn:render/fixtures/*
+path-warn:packages/*/fixtures/*
