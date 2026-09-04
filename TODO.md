@@ -9,22 +9,13 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### v0.1 — data, renders, staleness, no video
 
-- [ ] **Spec v0.1** (all six specs written and approved 2026-09-04; task_001 core DONE, see CHANGELOG; remaining tasks in progress): content schemas for components, steps, videos and photos
-      (component@version pins, hero/in-frame, BuildUp/OKH-compatible field names, no exporters);
-      staleness algorithm and `staleness.json`; the `/reshoot` dashboard; error handling for
-      missing versions, unrenderable masters (`.f3z`) and denylisted paths.
-- [ ] **Theme packs** (in progress — task_005): `pioreactor` (default; re-implemented from published token values, no copied
-      CSS or JS) and stock Starlight. Theme control cycles Pioreactor inherit → Pioreactor light →
-      Pioreactor dark → Starlight inherit → Starlight dark → Starlight light, with the logo variants
-      (mark over half-filled circle / sun / moon); fall back to a plain picker if the cycling logo is
-      expensive.
-- [ ] **Dogfood** (in task_005): this repo's own docs site built with the plugin; one synthetic example project
-      under `examples/`.
 - [ ] **First consumer: electroPioreactor AEP0.2** — content landed on the AEP02 branch of Martin's clone (commit 80780ae: 69 components, 12 steps, shoot list, stubs); Reviewer pass with 4 minor notes; awaiting Martin's own review (Docs&I-fromClaude item 10) and the docs.electroPioreactor.org/AEP deployment.
 - [ ] **Plus/Pro seam** (in task_001: the hosting-provider registry in `packages/core/src/hosting.ts`): a hosting-provider abstraction for video assets (local path or bucket URL)
       so a managed zero-carbon hosting tier can plug in later without schema changes. No paid code.
 
 - [ ] **Flaky CLI tests under the full parallel run**: `packages/cli/test/cli.test.ts` passes alone (54/54) but 1–3 cases (AC2 exit-65, AC6 non-git skip, AC7 hrefs/carbon) fail intermittently when the whole workspace suite runs alongside the plugin's `astro build` tests; passes on re-run. Likely a shared temp path, `process.chdir`, or a timeout under load — isolate per-test temp dirs and raise the exec timeout.
+- [ ] **Themes follow-up**: `packages/themes/src/state.ts` (cycle order, parse/format, storage round-trip) has no unit tests; add a vitest file. Also the head script could be injected by the plugin instead of the site config, and hand-exported jobs use `outputs[0]` for both render and viewer.
+- [ ] **Deploy**: docs.andeye.com Pages project (root `site`, `npm run build`, `dist`) is Martin's dashboard step; the AEP guide needs its own Pages project on the electroPioreactor repo (docs.electroPioreactor.org, business Cloudflare account).
 - [ ] **Plugin follow-up**: `docsSchema({ extend: stepFrontmatterSchema })` makes the step fields required on every docs entry; export a partial extension (or make the step fields optional in the extension) so ordinary documentation pages validate — the dogfood site uses `.partial()` meanwhile.
 - [ ] **Core follow-ups from downstream tasks**: `loadProject` should ignore `README.md` inside `docs/steps/` (task_006 could not place its steps README there); `checkVersionBumps` should treat a version commit that is a descendant of the source commit as satisfied (the CLI currently clears these with `git merge-base --is-ancestor`).
 

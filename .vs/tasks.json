@@ -46,13 +46,13 @@
   {
     "id": "task_005",
     "description": "@docsandeye/themes pioreactor pack (token re-implementation, no fonts shipped), <docsi-theme> six-state cycle with neutral mark, examples/synthetic-guide, site/ (docs.andeye.com dogfood)",
-    "implementation_status": "in_progress",
-    "test_status": "pending",
-    "assigned_to": "generator",
+    "implementation_status": "complete",
+    "test_status": "passing",
+    "assigned_to": "evaluator",
     "mode": "fuzzy",
     "branch": "vsss/task_005-themes",
     "spec": ".claude/worktrees/task_005/.vs/spec.md",
-    "last_modified": "2026-09-04T21:11:51Z"
+    "last_modified": "2026-09-04T22:48:37Z"
   },
   {
     "id": "task_006",
