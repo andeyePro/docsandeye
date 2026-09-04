@@ -1,0 +1,3 @@
+# vibe content-guard allowlist: one whole-line ERE per line.
+# Suppresses the mdns WARN on the runtime-config line of the vibe-managed .gitignore block.
+^\.claude/settings\.local\.json$

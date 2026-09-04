@@ -1,0 +1,57 @@
+# Docs&I
+
+**Interactive video documentation for open-source hardware, that knows when its own videos have gone stale.**
+
+Docs&I (`docsandeye` in code) builds assembly guides where every step has three things side by side:
+
+- a **short video** of the step, self-hosted, low-carbon;
+- the **full text**, complete on its own, never a caption;
+- **drawings rendered automatically from the CAD files**, so a guide can be complete with no photography at all.
+
+Each video declares which components are its **hero** (the subject of the shot) and which are merely **in frame**. When a hero component's design changes, the guide notices at build time and the video steps back: text and fresh renders become the primary content, and a reader who still wants the older video is first shown **what changed** (changelog and, later, old-versus-new geometry) before it plays, with a persistent "recorded with v1.3, current is v2.0" banner throughout. Maintainers get the inverse view: a dashboard of which videos need reshooting, and why.
+
+Docs&I is a member of the andeye `<X>&I` family (alongside Time&I, Money&I, Task&I and Mail&I). It is being built first for the [electroPioreactor](https://github.com/amy-bo/electroPioreactor), an open aseptic electro-bioreactor, and is designed to sit beside an existing docs site rather than replace it.
+
+## Status
+
+Pre-alpha. Research complete, specification in progress, no release yet. Watch this repo or [register interest](https://contact.andeye.com/?source=docs.andeye.com&subject=Docs%26I%20interest&message=Please%20email%20me%20when%20Docs%26I%20has%20a%20release.) and we will email you when there is something to try.
+
+## How it works
+
+- **Astro + Starlight.** Docs&I ships as a Starlight plugin (`starlight-docsandeye`) that drops into any existing Starlight site, plus a thin `docsandeye` CLI that scaffolds a site for hardware projects that have none. Search, sidebar, dark mode and i18n come from Starlight; the step, video, 3D-viewer and diff elements come from Docs&I as framework-agnostic custom elements that also embed in other site generators.
+- **Content is plain files in your hardware repo.** Components, steps and videos are YAML and Markdown under `docs/`, readable on GitHub, on a Radicle mirror, or offline, with no build step. Vocabulary is kept compatible with BuildUp (GitBuilding) part links and the Open Know-How manifest so content can be exported later.
+- **Components carry an explicit `design_version`.** Bumped by the designer, checked in CI against the git history of the source files, so a changed part cannot slip through unversioned. Every render is cached by component version, so a build where nothing changed renders nothing.
+- **Renders from source.** OpenSCAD for `.scad`, CadQuery for STEP: shaded stills, exploded and annotated views, SVG line-art and GLB for an in-page 3D viewer. Photographs are allowed too, with the same hero/in-frame tagging, for the parts CAD cannot show.
+- **Video without the byte tax.** Clips are encoded AV1-first with an H.264 fallback and embedded behind a poster with `preload="none"`, so a step page transfers zero video bytes until the reader presses play, and no third-party JavaScript ever. No YouTube iframes, no HLS/DASH for sub-90-second clips.
+- **Carbon is measured, not asserted.** Each step page has a byte budget for its initial load, enforced in CI, and the estimated gCO2e per page (CO2.js, Sustainable Web Design model) is published on the page.
+- **Accessibility and text-first by design.** The text path is already the fallback for a stale video, so the guide must be complete with video disabled: captions, poster frames, real headings, no information carried only in a clip.
+
+## Roadmap
+
+| Phase | Scope |
+|---|---|
+| **v0.1** | Component, step and video schemas; render CLI for `.scad` and STEP; staleness JSON and the reshoot dashboard; text, renders and 3D viewer per step; Pioreactor-style theme pack |
+| **v0.2** | Video manifests with hero/in-frame tagging; AV1 + H.264 encoding; posters and WebVTT captions; the full stale-video experience |
+| **v0.3** | Old geometry restored from git at the recorded version and overlaid against current (red removed, green added, grey unchanged) |
+| Later | BuildUp and Open Know-How export, PDF output, per-step reader comments, QR codes on printed parts, Whisper transcription for shoot-first workflows |
+
+## Beyond the free tool
+
+The open-source engine is complete on its own: bring your own hosting and your own camera. Two optional services are planned around it:
+
+- **Docs&I Plus: zero-carbon video hosting.** Managed hosting for your guide's clips on renewable-powered infrastructure with the AV1 pipeline, renditions and permanence handled for you, so a growing library of videos (including the superseded ones your stale-video flow still needs) never becomes a bandwidth bill or a carbon liability.
+- **Docs&I Pro: video production.** andeye Ltd shoots, edits and tags the step videos for your hardware project, delivered straight into your repo in the Docs&I format with hero/in-frame metadata already declared, so staleness tracking works from day one.
+
+Interested in either? [Tell us](https://contact.andeye.com/?source=docs.andeye.com&subject=Docs%26I%20Plus%20%2F%20Pro&message=I%27m%20interested%20in%20Docs%26I%20hosting%20or%20video%20production%20for%20my%20project.).
+
+## Licence and contributing
+
+Docs&I will be released under the **GNU AGPL-3.0** with an additional permission under section 7: **sites and assets generated by Docs&I are not covered works**, so the guides you publish carry no obligations from this licence. Contributions are accepted under the andeye Contributor Licence Agreement (you keep your copyright; signing is one comment on your first pull request). `LICENSE`, `CLA.md` and `CONTRIBUTING.md` land with the first code.
+
+Third-party notices: Astro and Starlight are MIT; OpenSCAD, CadQuery and their dependencies are used as external tools under their own licences.
+
+## Links
+
+- Site: [docs.andeye.com](https://docs.andeye.com) (coming)
+- Contact: [contact.andeye.com](https://contact.andeye.com/?source=docs.andeye.com)
+- First project: [electroPioreactor](https://github.com/amy-bo/electroPioreactor)
