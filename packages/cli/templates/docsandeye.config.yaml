@@ -1,0 +1,13 @@
+# Docs&I project configuration (read by `docsandeye` and the starlight-docsandeye plugin).
+theme: starlight
+guides:
+  - id: {{guide}}
+    title: "{{title}}"
+    base: /{{guide}}
+# Paths never read by the tooling (globs, relative to this file).
+denylist: []
+# Where committed media is served from: `local` keeps it in the site; `url-prefix` needs `base:`.
+hosting:
+  provider: local
+# Initial-load budget for a step page (HTML + CSS + JS + poster), warned about by `docsandeye check --dist dist`.
+byte_budget_kb: 150

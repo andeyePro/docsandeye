@@ -1,0 +1,5 @@
+# Small valid Docs&I project used by the CLI tests.
+# byte_budget_kb is deliberately low so fixtures/dist has one page over and one under budget.
+guides:
+  - {id: aep, title: "Aseptic ElectroPioreactor", base: /AEP}
+byte_budget_kb: 10
