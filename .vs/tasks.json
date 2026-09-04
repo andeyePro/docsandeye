@@ -2,24 +2,24 @@
   {
     "id": "task_001",
     "description": "@docsandeye/core: content schemas, loader, staleness engine, reshoot index, render plan, version-bump guard, hosting seam",
-    "implementation_status": "in_progress",
-    "test_status": "pending",
-    "assigned_to": "generator",
+    "implementation_status": "complete",
+    "test_status": "passing",
+    "assigned_to": "evaluator",
     "mode": "rigorous",
     "branch": "vsss/task_001-core",
     "spec": ".claude/worktrees/task_001/.vs/spec.md",
-    "last_modified": "2026-09-04T21:11:51Z"
+    "last_modified": "2026-09-04T21:34:44Z"
   },
   {
     "id": "task_002",
     "description": "docsandeye_render: Python render pipeline (OpenSCAD/CadQuery drivers, cache, STL\u2192GLB), stdlib-only, fixture-tested",
-    "implementation_status": "in_progress",
-    "test_status": "pending",
-    "assigned_to": "generator",
+    "implementation_status": "complete",
+    "test_status": "passing",
+    "assigned_to": "evaluator",
     "mode": "rigorous",
     "branch": "vsss/task_002-render",
     "spec": ".claude/worktrees/task_002/.vs/spec.md",
-    "last_modified": "2026-09-04T21:11:51Z"
+    "last_modified": "2026-09-04T21:36:35Z"
   },
   {
     "id": "task_003",
@@ -35,13 +35,13 @@
   {
     "id": "task_004",
     "description": "docsandeye CLI: init, render (plan + python), check (validation, git version-bump guard, byte budget, CO2.js carbon.json)",
-    "implementation_status": "in_progress",
-    "test_status": "pending",
-    "assigned_to": "generator",
+    "implementation_status": "complete",
+    "test_status": "passing",
+    "assigned_to": "evaluator",
     "mode": "rigorous",
     "branch": "vsss/task_004-cli",
     "spec": ".claude/worktrees/task_004/.vs/spec.md",
-    "last_modified": "2026-09-04T21:11:51Z"
+    "last_modified": "2026-09-04T21:56:21Z"
   },
   {
     "id": "task_005",
@@ -57,12 +57,12 @@
   {
     "id": "task_006",
     "description": "electroPioreactor AEP0.2 guide content: docs/{components,steps,media} + docsandeye.config.yaml on branch AEP02 (files only, no git)",
-    "implementation_status": "in_progress",
-    "test_status": "pending",
-    "assigned_to": "generator",
+    "implementation_status": "complete",
+    "test_status": "passing",
+    "assigned_to": "evaluator",
     "mode": "fuzzy",
     "branch": "vsss/task_006-aep",
     "spec": ".claude/worktrees/task_006/.vs/spec.md",
-    "last_modified": "2026-09-04T21:11:51Z"
+    "last_modified": "2026-09-04T21:51:19Z"
   }
 ]

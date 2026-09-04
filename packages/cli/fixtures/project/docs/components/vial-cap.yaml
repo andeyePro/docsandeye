@@ -1,0 +1,11 @@
+id: vial-cap
+name: Vial Cap
+kind: printed
+design_version: 1.1.0
+master_format: scad
+source_files: ["hardware/vial-cap/vial-cap.scad"]
+parameters:
+  wall_mm: 1.6
+changelog:
+  - {version: 1.0.0, date: 2026-01-10, note: "Initial release."}
+  - {version: 1.1.0, date: 2026-02-02, note: "Thicker wall."}

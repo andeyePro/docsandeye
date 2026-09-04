@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="docsandeye:step" content="step-01-a">
+<title>Step 1 — root-absolute hrefs</title>
+<link rel="stylesheet" href="/_astro/site.css">
+<link rel="stylesheet" href="/_astro/missing.css">
+<link rel="modulepreload" href="/_astro/entry.js">
+<script type="module" src="/_astro/app.js"></script>
+<script src="https://cdn.example.test/analytics.js"></script>
+<script>console.log('inline script bodies add nothing beyond the HTML size');</script>
+<style>/* inline style bodies add nothing beyond the HTML size */</style>
+</head>
+<body>
+<h1>Step 1</h1>
+<!-- The img carries only a srcset (no src) so the largest candidate is the sole image cost of this element. -->
+<img srcset="/_docsandeye/img/a-400.png 400w, /_docsandeye/img/a-800.png 800w" sizes="(max-width: 600px) 400px, 800px" alt="Assembled cap">
+<video controls poster="/_docsandeye/video/v1.jpg">
+  <source src="/_docsandeye/video/v1.mp4" type="video/mp4">
+</video>
+<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="">
+<img src="//cdn.example.test/protocol-relative.png" alt="">
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Python bytecode from running the test-suite in place
+__pycache__/
+*.py[cod]
+
+# Build output the pipeline writes when the project root is `render/`
+/build/

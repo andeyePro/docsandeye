@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docsandeye-render"
+version = "0.1.0"
+description = "Render Docs&I plans into PNG, STL, SVG and GLB artefacts"
+requires-python = ">=3.11"
+license = { text = "AGPL-3.0-or-later" }
+authors = [{ name = "Docs&I contributors" }]
+keywords = ["openscad", "cadquery", "cad", "documentation", "render"]
+classifiers = [
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Multimedia :: Graphics :: 3D Rendering",
+]
+# Deliberately empty: the package is stdlib-only.  OpenSCAD is an external
+# executable and CadQuery is an optional, separately installed extra.
+dependencies = []
+
+[project.optional-dependencies]
+step = ["cadquery>=2.4"]
+
+[project.scripts]
+docsandeye-render = "docsandeye_render.__main__:main"
+
+[tool.setuptools]
+packages = ["docsandeye_render", "docsandeye_render.drivers"]
+
+[tool.setuptools.package-data]
+docsandeye_render = ["camera-table.json"]
