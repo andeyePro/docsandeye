@@ -19,6 +19,17 @@ const fixturesDir = path.join(cliDir, 'fixtures');
 const projectFixture = path.join(fixturesDir, 'project');
 const distFixture = path.join(fixturesDir, 'dist');
 
+// This suite spawns a fresh `node dist/bin.js` per test. Under a full
+// workspace run, `packages/starlight-docsandeye`'s tests run real astro
+// builds concurrently and can starve the CPU badly enough that process
+// spawn + exit takes well past vitest's 5s default test timeout — a false
+// failure, not a real one. Raise both timeouts file-wide so a slow but
+// otherwise-correct run has room to finish instead of racing the clock.
+vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
+
+const CLI_EXEC_TIMEOUT_MS = 120_000;
+const CLI_EXEC_MAX_BUFFER = 16 * 1024 * 1024;
+
 interface ExecResult {
   stdout: string;
   stderr: string;
@@ -30,6 +41,8 @@ async function runCli(args: string[], env?: Record<string, string>): Promise<Exe
     const { stdout, stderr } = await execFileAsync('node', [binJs, ...args], {
       env: { ...process.env, ...env },
       encoding: 'utf8',
+      timeout: CLI_EXEC_TIMEOUT_MS,
+      maxBuffer: CLI_EXEC_MAX_BUFFER,
     });
     return { stdout, stderr, code: 0 };
   } catch (err: any) {
@@ -483,7 +496,7 @@ describe('AC7: check byte budget', () => {
     // No budget warnings without --dist
     expect(result.stderr).not.toContain('budget:');
     expect(result.stderr).not.toContain('carbon');
-  }, 10000);
+  }, 120_000);
 
   it('exits 66 when --dist directory does not exist', async () => {
     const result = await runCli(['check', '--project', tmpProject, '--dist', '/nonexistent']);
@@ -516,7 +529,7 @@ describe('AC8: check carbon figure', () => {
       const expectedGco2e = new co2({ model: 'swd', version: 4 }).perByte(bytes);
       expect((data as any).gco2e).toBeCloseTo(expectedGco2e, 5);
     }
-  }, 10000);
+  }, 120_000);
 
   it('uses canonicalJson format', async () => {
     await runCli(['check', '--project', tmpProject, '--dist', distFixture]);
