@@ -36,9 +36,8 @@ maintainer's machine only; the public-facing summary is README.md.
       the shared mount at `/repos/electroPioreactor`, converted from the existing assembly README;
       published at docs.electroPioreactor.org/AEP. Design for a sibling `/MEP` guide that shares
       most components and steps. Denylist `private-notes/**`, `.claude/**` and `.vibe/**` from ingestion (the PII setup notes live under `private-notes/`).
-- [ ] **Plus/Pro seam**: a hosting-provider abstraction for video assets (local path or bucket URL)
+- [ ] **Plus/Pro seam** (in task_001: the hosting-provider registry in `packages/core/src/hosting.ts`): a hosting-provider abstraction for video assets (local path or bucket URL)
       so a managed zero-carbon hosting tier can plug in later without schema changes. No paid code.
-- [ ] **CHANGELOG.md** created on the first closed task.
 
 ### v0.2 — video
 
