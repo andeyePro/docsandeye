@@ -16,7 +16,7 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### v0.2 — video
 
-- [ ] **Storage**: the `url-prefix` hosting provider already serves encoded media from any bucket (Cloudflare R2 + Pages, zero egress); still to do: an `r2` provider name with docs, the Wikimedia Commons path if clips are CC BY-SA and Commons accepts the scope, and an Internet Archive mirror recipe.
+- [ ] **Storage, remaining**: the Wikimedia Commons path (needs Martin's licence decision and a Commons scope check) and an Internet Archive mirror recipe. (`local`, `url-prefix` and `r2` providers are shipped and documented.)
 - [ ] **v0.2 real-toolchain check** (Mac): run `docsandeye encode` with real ffmpeg on one clip and `docsandeye render` with real OpenSCAD on the Vial Cap; fix any argv drift.
 
 ### v0.3 — geometry diff

@@ -4,6 +4,7 @@ Done-work log for Docs&I (`docsandeye`), newest first. Open work is in TODO.md.
 
 ## 2026-09-05
 
+- [x] **v0.2 docs refresh and r2 provider** — `a4bcdb2` docs.andeye.com pages now describe encode, playback, hosting (`local`, `url-prefix`, `r2`), strict-by-default budget and stale video; `fcb6d8c` `r2` built-in hosting provider with a `requiresBase` flag driving `parseConfig` (12 new tests); `9b28c84` README status for v0.2. Full suite 389 vitest, 151 Python; site 16 pages; check 0/0.
 - [x] **task_008 plugin video** — `935ed5f` `<docsi-video>` facade (`preload="none"`, AV1 then H.264, client-side 720/1080 pick, persistent recorded-with banner), the STALE `Watch the older video` flow, media-manifest loading and copy, hosted and degraded modes, fixtures for three site variants (generator, Fable); `066db46` `docsandeye check` is strict by default for over-budget pages, `--no-strict` restores warnings (Opus part of the same task); tester `c3f9ba4` (Sonnet): 356 vitest tests. Two spec wording slips noted in progress.md (AC8 counts, AC3 pane order). Spec archived at `.vs/archive/task_008/spec.md`.
 
 **v0.2 core delivered**: encoding pipeline, video element, stale-video flow, hard carbon gate. Remaining v0.2 items: hosting provider docs (R2 name, Commons, Archive mirror) and the real-toolchain check on a Mac.
