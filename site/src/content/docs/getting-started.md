@@ -19,9 +19,12 @@ git clone https://github.com/amy-bo/docsandeye.git
 cd docsandeye
 npm install
 npm run build
+npm rebuild
 ```
 
-`npm run build` compiles every workspace package. After it, `npx docsandeye` runs the CLI from the repository root.
+`npm run build` compiles every workspace package. `npm rebuild` then links the `docsandeye` binary into `node_modules/.bin`, which the first `npm install` skipped because `packages/cli/dist/` did not exist yet; a second `npm install` does the same job. After that, `npx docsandeye` runs the CLI from the repository root.
+
+Stay in the repository root for the rest of this page. Docs&I is not on npm yet, so a scaffolded project cannot install `docsandeye` and `starlight-docsandeye` from the registry; `init` detects that it is running from a clone and writes `file:` specifiers pointing back at this checkout instead. Every command below is run from the repository root and names the project with `--project`.
 
 ## 1. Init
 
@@ -29,10 +32,11 @@ Create a project next to the repository. The guide id is kebab-case and becomes 
 
 ```sh
 npx docsandeye init ../bench-lamp --guide lamp --title "Bench lamp"
-cd ../bench-lamp
 ```
 
-`init` writes `docsandeye.config.yaml`, a Starlight site (`astro.config.mjs`, `src/content.config.ts`, `package.json`) and one example component and step under `docs/`. It refuses to overwrite an existing project unless you pass `--force`.
+`init` writes `docsandeye.config.yaml`, a Starlight site (`astro.config.mjs`, `src/content.config.ts`, `package.json`) and one example component and step under `docs/`. It refuses to overwrite an existing project unless you pass `--force`. Every field of the config file is on [Project configuration](/authoring/config/).
+
+Because it ran from a clone, the generated `package.json` depends on `"docsandeye": "file:../docsandeye/packages/cli"` and `"starlight-docsandeye": "file:../docsandeye/packages/starlight-docsandeye"`, and its README says so. Outside the monorepo `init` writes registry ranges, which will work once there is a release.
 
 ## 2. Author
 
@@ -47,7 +51,7 @@ The file name must match the `id` inside it. Steps belong to a guide named in `d
 ## 3. Render
 
 ```sh
-npx docsandeye render
+npx docsandeye render --project ../bench-lamp
 ```
 
 The CLI writes `build/render-plan.json` from the steps' `renders` and `viewer` entries and hands it to the Python pipeline. Outputs land in `build/render/` with `build/render/manifest.json` beside them. Jobs are cached by component version, so a build where nothing changed renders nothing. Components with `master_format: none` or `f3z` are hand-exported: the pipeline records their `derived_files` and renders nothing for them.
@@ -57,7 +61,7 @@ Renders are produced locally and committed. Nothing is rendered in CI.
 ## 4. Encode
 
 ```sh
-npx docsandeye encode
+npx docsandeye encode --project ../bench-lamp
 ```
 
 The CLI writes `build/media-plan.json` from the `type: video` manifests and hands it to the same Python pipeline. Each clip becomes an AV1 WebM and an H.264 MP4 at 720 and 1080, a WebP poster and a copy of the captions, in `build/media/` with `build/media/manifest.json` beside them. Jobs are cached on the source file, so re-running encodes nothing new.
@@ -69,17 +73,17 @@ Encoded video is produced locally and committed, like renders. Nothing is encode
 ## 5. Diff (optional)
 
 ```sh
-npx docsandeye diff
+npx docsandeye diff --project ../bench-lamp
 ```
 
-For every media that has gone stale, `diff` restores the changed hero component's derived geometry as it was committed at the recorded version and writes it to `build/render/old/`, with `build/render/old/manifest.json` beside it. An `.stl` is converted to GLB on the way. The stale panel on the step page then shows that old model beside the current one. See [Old and new geometry](/staleness/#old-and-new-geometry).
+For every `STALE` media — a pin on a hero component whose design version has moved on; `CHANGED_IN_FRAME` pins are excluded — `diff` restores the changed hero component's derived geometry as it was committed at the recorded version and writes it to `build/render/old/`, with `build/render/old/manifest.json` beside it. An `.stl` is converted to GLB on the way. The stale panel on the step page then shows that old model beside the current one. See [Old and new geometry](/staleness/#old-and-new-geometry).
 
 This step is optional and it needs git history. Outside a git repository, or where the old version was never committed with its geometry, every job is skipped, the command still exits 0, and the site builds without the pane. Restored geometry is produced locally and committed, like renders and encoded video.
 
 ## 6. Check
 
 ```sh
-npx docsandeye check
+npx docsandeye check --project ../bench-lamp
 ```
 
 `check` validates every file, then runs the version-bump guard: a component whose CAD source files changed in git without a `design_version` bump is an error. Exit code 0 means clean.
@@ -87,12 +91,12 @@ npx docsandeye check
 ## 7. Build
 
 ```sh
-npm install
-npm run build
-npx docsandeye check --dist dist
+npm install --prefix ../bench-lamp
+npm run build --prefix ../bench-lamp
+npx docsandeye check --project ../bench-lamp --dist ../bench-lamp/dist
 ```
 
-`npm run build` runs `astro build`. The plugin adds one page per guide and per step, copies renders, media and encoded video into `dist/_docsandeye/`, and prints a summary. The second `check` measures the initial-load bytes of every step page against `byte_budget_kb`, estimates CO2e and writes `build/carbon.json`. A page over budget is an error; see [Carbon](/carbon/). Commit that file; the next build prints the figure on each step page.
+`npm install` in the project links this checkout through the `file:` specifiers from step 1, so it needs no npm release. `npm run build` runs `astro build`. The plugin adds one page per guide and per step, copies renders, media and encoded video into `dist/_docsandeye/`, and prints a summary. The second `check` measures the initial-load bytes of every step page against `byte_budget_kb`, estimates CO2e and writes `build/carbon.json`. A page over budget is an error; see [Carbon](/carbon/). Commit that file; the next build prints the figure on each step page.
 
 ## Maintainer builds
 

@@ -3,7 +3,7 @@ title: Components
 description: The component YAML format, one file per part, with design_version and CAD source files.
 ---
 
-A component is one YAML file under `docs/components/`. The file name is the component id: `docs/components/lamp-base.yaml` holds `id: lamp-base`.
+A component is one YAML file under `docs/components/`. The file name is the component id: `docs/components/lamp-base.yaml` holds `id: lamp-base`. The project itself — its guides, theme, hosting and budgets — is configured in [`docsandeye.config.yaml`](/authoring/config/).
 
 ## Example
 

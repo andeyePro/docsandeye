@@ -20,7 +20,12 @@ export default defineConfig({
 				{ label: 'Start', items: [{ slug: 'getting-started' }] },
 				{
 					label: 'Authoring',
-					items: [{ slug: 'authoring/components' }, { slug: 'authoring/steps' }, { slug: 'authoring/media' }],
+					items: [
+						{ slug: 'authoring/config' },
+						{ slug: 'authoring/components' },
+						{ slug: 'authoring/steps' },
+						{ slug: 'authoring/media' },
+					],
 				},
 				{
 					label: 'Reference',

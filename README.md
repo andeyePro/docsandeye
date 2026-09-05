@@ -17,6 +17,7 @@ Docs&I is a member of the andeye `<X>&I` family (alongside Time&I, Money&I, Task
 - Node 22 or later (Astro 7 requires it) and npm.
 - Python 3.11 or later for the render pipeline; it uses the standard library only.
 - OpenSCAD 2024 or later (Manifold backend) to render `.scad` masters, and CadQuery for STEP masters. Both are optional external tools: the pipeline reports what is missing and can skip.
+- ffmpeg 7 or later with `libsvtav1`, `libx264`, `libopus` and `libwebp` to encode video (v0.2). Optional: a project with no video, or one that has not been encoded yet, still builds.
 
 ## Status
 
@@ -29,10 +30,11 @@ Node 22 and Python 3.11 or later, then from a clone of this repository:
 ```
 npm install
 npm run build -w docsandeye-site
+npm rebuild
 npm run preview -w docsandeye-site
 ```
 
-Open the address the last command prints. The example guide is under `/example/`; the theme button in the header cycles through the six theme states; `docsandeye check --project examples/synthetic-guide --dist site/dist` prints the per-page byte budget result and writes `build/carbon.json`.
+`npm rebuild` links the `docsandeye` binary into `node_modules/.bin` once the packages are built; the first `npm install` skips it because nothing is compiled yet. Open the address the last command prints. The example guide is under `/example/`; the theme button in the header cycles through the six theme states; `npx docsandeye check --project examples/synthetic-guide --dist site/dist` prints the per-page byte budget result and writes `build/carbon.json`.
 
 ## What is built so far
 

@@ -78,6 +78,8 @@ The poster is made one of three ways. A `poster` file that is already `.webp` or
 
 Encoding needs ffmpeg 7 or later built with `libsvtav1`, `libx264`, `libopus` and `libwebp`. `python3 -m docsandeye_render doctor` reports whether it is installed. Jobs are cached on the source file's size and modification time, so an unchanged clip is not re-encoded.
 
+A manifest may name a `file` that is not committed yet — the usual case while a guide is written before it is shot, and what this site's own example guide does. The site build then prints one warning per missing file (`missing render/media file, not copied: …`) and carries on; it is a warning, not an error, and the page falls back to the text, the renders and the authored poster.
+
 ## Playback
 
 A step page renders each video as a `<docsi-video>` element wrapping a plain `<video preload="none">`. No video bytes are fetched until the reader presses play, so a video does not count toward the step page's [byte budget](/carbon/). The poster does.
