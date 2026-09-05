@@ -63,6 +63,48 @@ export function guideForRoutePattern<G extends Pick<Guide, 'base'>>(guides: read
 // ---------------------------------------------------------------------------
 // Renders and media
 
+/** `f3z` and `none` masters are hand-exported: their outputs are the component's `derived_files`, not a rendered file. */
+export function isHandExported(component: Pick<Component, 'master_format'>): boolean {
+  return component.master_format === 'f3z' || component.master_format === 'none';
+}
+
+/**
+ * The manifest job that carries a hand-exported component's derived files.
+ *
+ * Core's render plan emits ONE job per distinct `outputs` list for such a
+ * component — de-duplicated on `outputs[0]`, keeping whichever key sorts first
+ * — because every reference would otherwise ask the pipeline to produce the
+ * same bytes. So a component referenced by two step renders, or by a render
+ * and a viewer, has a manifest entry under only ONE of their `renderJobKey`s;
+ * the others must be resolved by what the job writes instead of by its key.
+ *
+ * Match on the outputs, in key order for determinism: the whole `outputs` list
+ * when it equals `derived_files`, else the first job whose `outputs[0]` does.
+ * Undefined when there is no manifest, no derived file to key on, or nothing
+ * in the manifest writes it.
+ */
+export function handExportedJobFor(
+  manifest: RenderManifest | null,
+  component: Pick<Component, 'derived_files'>,
+): { key: string; job: RenderManifestJob } | undefined {
+  const wanted = component.derived_files;
+  if (!manifest || wanted.length === 0 || wanted[0] === undefined) return undefined;
+  let byFirstOutput: { key: string; job: RenderManifestJob } | undefined;
+  for (const key of Object.keys(manifest.jobs).sort()) {
+    const job = manifest.jobs[key]!;
+    if (job.outputs.length === wanted.length && job.outputs.every((o, i) => o === wanted[i])) return { key, job };
+    if (byFirstOutput === undefined && job.outputs[0] === wanted[0]) byFirstOutput = { key, job };
+  }
+  return byFirstOutput;
+}
+
+/**
+ * The manifest job behind one step render or viewer. Rendered components are
+ * looked up by `renderJobKey`, which is unique per reference. Hand-exported
+ * components are looked up by outputs (see `handExportedJobFor`), because the
+ * plan has collapsed all their references into a single job; the returned
+ * `key` is then that job's own key, which need not be this reference's.
+ */
 export function renderJobFor(
   model: ProjectModel,
   manifest: RenderManifest | null,
@@ -73,6 +115,10 @@ export function renderJobFor(
   const component = model.components.get(componentId);
   if (!component) return undefined;
   const key = renderJobKey(component, renderId, options);
+  if (isHandExported(component)) {
+    const found = handExportedJobFor(manifest, component);
+    if (found) return found;
+  }
   return { key, job: manifest?.jobs[key] };
 }
 

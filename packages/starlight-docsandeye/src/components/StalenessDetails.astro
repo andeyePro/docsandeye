@@ -39,7 +39,7 @@ const diffs = entry.stale_heroes.filter((hero) => oldGeometryFor(oldGeometry, he
 
 <details class={isVideo ? 'docsi-stale docsi-stale-video' : 'docsi-stale'}>
 	<summary>{summary}</summary>
-	{diffs.map((hero) => <GeometryDiff hero={hero} oldGeometry={oldGeometry} renderManifest={renderManifest} base={base} />)}
+	{diffs.map((hero) => <GeometryDiff hero={hero} model={model} oldGeometry={oldGeometry} renderManifest={renderManifest} base={base} />)}
 	{
 		changelog.length > 0 && (
 			<ul class="docsi-changelog">
