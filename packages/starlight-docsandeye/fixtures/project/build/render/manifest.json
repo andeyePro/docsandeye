@@ -1,6 +1,13 @@
 {
   "version": 1,
   "jobs": {
+    "blank-cap@1.0.0--blank-front--f1c9a1f64504": {
+      "status": "hand-exported",
+      "driver": "none",
+      "outputs": ["Components/BlankCap/BlankCap v1.stl"],
+      "reason": "f3z has no headless renderer; keep the derived files up to date by hand",
+      "rendered_at": "2026-09-01T12:00:15Z"
+    },
     "vial-cap@2.0.0--cap-iso--0fd0f88538ea": {
       "status": "rendered",
       "driver": "openscad",

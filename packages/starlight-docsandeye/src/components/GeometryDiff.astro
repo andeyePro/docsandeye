@@ -5,22 +5,33 @@
  * `restored|cached`) and a figure for the current viewer GLB (when the render
  * manifest has one for `<component>@<current>`). Both are plain download links
  * until `docsi-model` upgrades them; captions never depend on JavaScript.
+ *
+ * A hand-exported hero (`f3z`/`none`) has at most one manifest job for all its
+ * references, under whichever render id sorted first, so its current geometry
+ * is resolved by outputs rather than by a `--viewer--` key.
  */
-import type { StalePin } from '@docsandeye/core';
-import { currentViewerJob, oldGeometryFor, OLD_RENDER_URL_PREFIX, type OldGeometryManifest, type RenderManifest } from '../data.ts';
-import { basename, renderUrl, withBase } from '../view.ts';
+import type { ProjectModel, StalePin } from '@docsandeye/core';
+import { currentViewerJob, oldGeometryFor, CURRENT_VIEWER_STATUSES, OLD_RENDER_URL_PREFIX, type OldGeometryManifest, type RenderManifest } from '../data.ts';
+import { basename, handExportedJobFor, isHandExported, renderUrl, withBase } from '../view.ts';
 
 interface Props {
 	hero: StalePin;
+	model: ProjectModel;
 	oldGeometry: OldGeometryManifest | null;
 	renderManifest: RenderManifest | null;
 	base: string;
 }
 
-const { hero, oldGeometry, renderManifest, base } = Astro.props;
+const { hero, model, oldGeometry, renderManifest, base } = Astro.props;
 const oldJob = oldGeometryFor(oldGeometry, hero.component, hero.shot_with);
 const oldUrl = oldJob ? withBase(`${OLD_RENDER_URL_PREFIX}${basename(oldJob.output)}`, base) : undefined;
-const current = currentViewerJob(renderManifest, hero.component, hero.current);
+const component = model.components.get(hero.component);
+const handExported =
+	component && isHandExported(component) ? handExportedJobFor(renderManifest, component) : undefined;
+const current =
+	handExported && CURRENT_VIEWER_STATUSES.has(handExported.job.status) && handExported.job.outputs.length > 0
+		? handExported
+		: currentViewerJob(renderManifest, hero.component, hero.current);
 const newUrl = current ? renderUrl(current.job, base) : undefined;
 ---
 
