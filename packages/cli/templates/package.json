@@ -12,7 +12,7 @@
   "dependencies": {
     "@astrojs/starlight": "^0.42.0",
     "astro": "^7.3.1",
-    "docsandeye": "^0.1.0",
-    "starlight-docsandeye": "^0.1.0"
+    "docsandeye": "{{docsandeye_spec}}",
+    "starlight-docsandeye": "{{starlight_docsandeye_spec}}"
   }
 }

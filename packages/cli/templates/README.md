@@ -20,4 +20,6 @@ npm run build              # astro build → dist/
 docsandeye check --dist dist   # validation, version-bump guard, byte budget + CO2e per step page
 ```
 
+{{deps_note}}
+
 Renders are produced locally and committed; nothing is rendered in CI.

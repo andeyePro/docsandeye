@@ -142,6 +142,14 @@ Problems print one per line on stderr as `file:path: code: message`. The last li
 
 | Variable | Meaning |
 | --- | --- |
-| `DOCSANDEYE_RENDER_PYTHONPATH` | Directory holding the `docsandeye_render` package. Default: the repository's `render/`. |
+| `DOCSANDEYE_RENDER_PYTHONPATH` | Directory holding the `docsandeye_render` package. Default: `render/` two levels above the CLI package, which is the repository's own `render/` when the CLI is run from a clone. |
 | `DOCSANDEYE_MAINTAINER` | `1` adds the reshoot dashboard to the site build. |
 | `DOCSANDEYE_BUILD_DATE` | `YYYY-MM-DD` reference date for the "updated" badge. Default today. |
+
+`render`, `encode` and `diff` need the Python pipeline. A project scaffolded outside this repository has no `render/` beside it, and the published `docsandeye` package ships only `dist/` and `templates/`, so a standalone project must point `DOCSANDEYE_RENDER_PYTHONPATH` at a checkout of the repository's `render/` itself:
+
+```sh
+DOCSANDEYE_RENDER_PYTHONPATH=../docsandeye/render npx docsandeye render
+```
+
+A project scaffolded from a clone by [`init`](/getting-started/#1-init) needs nothing: its `file:` dependency links resolve back into the repository, and the default finds `render/` there. `docsandeye_render` will be published as a Python package alongside the first npm release; until then it comes from the repository.
