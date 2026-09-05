@@ -1,10 +1,12 @@
 /**
- * Export plan: BuildUp-flavoured Markdown (one file per step plus an index)
- * and an Open Know-How (OKH) manifest, computed purely from the loaded model.
+ * Export plan: BuildUp-flavoured Markdown (one file per step, plus an index and
+ * a GitBuilding `buildconf.yaml`), an Open Know-How (OKH) manifest, and the
+ * list of media files to copy alongside them, computed purely from the model.
  *
  * The plan is a value, not an effect: no file reads, no writes, no clock, no
  * network. The CLI (`docsandeye export`) is what puts the bytes on disk.
  */
+import { resolveMediaUrl } from './hosting.js';
 import { stepsForGuide, type ProjectModel } from './load.js';
 import { parsePin, type Component, type Media, type Step } from './schemas.js';
 
@@ -18,11 +20,29 @@ export interface ExportFile {
   content: string;
 }
 
+/**
+ * A media file the CLI copies into the export tree so a `local`-hosted step's
+ * media link resolves. Paths are POSIX and repo-relative.
+ */
+export interface ExportAsset {
+  /** Source path as written in the media manifest's `file`, relative to the project root. */
+  from: string;
+  /** Destination inside the plan, always under `build/export/buildup/`. */
+  to: string;
+}
+
 export interface ExportPlan {
   version: typeof EXPORT_PLAN_VERSION;
-  /** `index.md` first, then one file per step in export order. */
+  /** `buildconf.yaml` first, then `index.md`, then one file per step in export order. */
   buildup: ExportFile[];
   okh: ExportFile;
+  /**
+   * Media files to copy alongside the plan's own files: one entry per distinct
+   * manifest `file` referenced by an exported step, and only for hosting
+   * provider `local`, where the link in a step file is that same relative path.
+   * Empty (never `undefined`) for every other provider.
+   */
+  assets: ExportAsset[];
 }
 
 // ---------------------------------------------------------------------------
@@ -225,12 +245,23 @@ function collectUsage(model: ProjectModel, steps: readonly Step[]): Usage[] {
   return [...usage.values()];
 }
 
+/**
+ * The href a step file links a clip at: the hosting provider's own resolution
+ * of the manifest's `file`. For `local` that is the repo-relative path
+ * unchanged, which is exactly where the CLI copies the file inside `buildup/`,
+ * so the link is relative to the step file; for `url-prefix` or `r2` it is the
+ * absolute URL the media is published at.
+ */
+function mediaHref(model: ProjectModel, manifest: Media): string {
+  return resolveMediaUrl(model.config.hosting, manifest.file);
+}
+
 function mediaLine(id: string, manifest: Media, model: ProjectModel): string {
   const heroes = manifest.hero.map((raw) => {
     const componentId = parsePin(raw)?.id ?? raw;
     return model.components.get(componentId)?.name ?? componentId;
   });
-  return `- ${id}: ${manifest.type}, recorded ${manifest.shot_date} with ${heroes.join(', ')}`;
+  return `- [${id}](${mediaHref(model, manifest)}): ${manifest.type}, recorded ${manifest.shot_date} with ${heroes.join(', ')}`;
 }
 
 /** One BuildUp Markdown file for a step. */
@@ -259,7 +290,7 @@ function stepMarkdown(model: ProjectModel, step: Step): string {
 function indexMarkdown(model: ProjectModel, steps: readonly Step[], usage: readonly Usage[]): string {
   const title = model.config.project?.title ?? model.config.guides[0]?.title ?? '';
   let out = `# ${title}\n\n`;
-  for (const step of steps) out += `- [${step.title}](${step.id}.md)\n`;
+  for (const step of steps) out += `- [${step.title}](${step.id}.md){step}\n`;
   out += '\n## Bill of materials\n\n';
   for (const item of [...usage].sort((a, b) => cmp(a.id, b.id))) {
     out += `- ${buildUpLink(item)}\n`;
@@ -304,11 +335,47 @@ function put(map: YamlMapping, key: string, value: string | undefined): void {
   if (value !== undefined) map[key] = value;
 }
 
+/**
+ * GitBuilding's project configuration. Its documented keys are `Title`,
+ * `Authors`, `Affiliation`, `Email` and `License`; `Email` is never written
+ * because the model holds no address, and any other key whose value the config
+ * does not supply is omitted rather than written empty.
+ */
+function buildconfYaml(model: ProjectModel): string {
+  const project = model.config.project;
+  const doc: YamlMapping = {};
+  put(doc, 'Title', project?.title ?? model.config.guides[0]?.title);
+  if (project?.licensor !== undefined) doc.Authors = [project.licensor];
+  put(doc, 'Affiliation', project?.licensor);
+  put(doc, 'License', project?.licence);
+  return emitYaml(doc);
+}
+
+/**
+ * The media files a `local`-hosted export needs beside its step files: one
+ * entry per distinct manifest `file`, in `from` order. Any other provider
+ * serves the media from its own host, so nothing is copied.
+ */
+function collectAssets(model: ProjectModel, steps: readonly Step[]): ExportAsset[] {
+  if (model.config.hosting.provider !== 'local') return [];
+  const files = new Set<string>();
+  for (const step of steps) {
+    for (const id of step.media ?? []) {
+      const manifest = model.media.get(id);
+      if (manifest) files.add(manifest.file);
+    }
+  }
+  return [...files]
+    .sort(cmp)
+    .map((file) => ({ from: file, to: `${EXPORT_OUTPUT_DIR}/buildup/${file}` }));
+}
+
 /** Build the whole export plan from the model. Pure and deterministic. */
 export function buildExportPlan(model: ProjectModel): ExportPlan {
   const steps = exportOrder(model);
   const usage = collectUsage(model, steps);
   const buildup: ExportFile[] = [
+    { path: `${EXPORT_OUTPUT_DIR}/buildup/buildconf.yaml`, content: buildconfYaml(model) },
     { path: `${EXPORT_OUTPUT_DIR}/buildup/index.md`, content: indexMarkdown(model, steps, usage) },
     ...steps.map((step) => ({ path: `${EXPORT_OUTPUT_DIR}/buildup/${step.id}.md`, content: stepMarkdown(model, step) })),
   ];
@@ -316,6 +383,7 @@ export function buildExportPlan(model: ProjectModel): ExportPlan {
     version: EXPORT_PLAN_VERSION,
     buildup,
     okh: { path: `${EXPORT_OUTPUT_DIR}/okh/okh.yml`, content: okhManifest(model, usage) },
+    assets: collectAssets(model, steps),
   };
 }
 

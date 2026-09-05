@@ -114,12 +114,14 @@ Writes BuildUp-flavoured Markdown and an Open Know-How manifest computed from th
 
 `okh/okh.yml` is an Open Know-How (OKH) manifest: a bill of materials built from every component referenced by a part or tool, plus whatever the optional [`project`](/authoring/config/#project) block in `docsandeye.config.yaml` supplies for the header (`name`, `repo`, `version`, `license`, `licensor`, `description`, `function`, `documentation-home`). A field the config does not supply is omitted from the manifest, never written empty.
 
+`buildup/buildconf.yaml` comes first in the tree: GitBuilding's own project configuration, carrying `Title`, `Authors`, `Affiliation` and `License` from the [`project`](/authoring/config/#project) block, each key omitted when the config does not supply it. The index links every step as a GitBuilding step rather than a plain Markdown link, `- [Print the parts](step-01-print-parts.md){step}`, and each `## Media` line links its clip at the URL the [hosting provider](/authoring/config/#hosting) resolves it to. Under the `local` provider that URL is the file's own repo-relative path, so `export` copies each referenced media file into `buildup/` beside the step files; a manifest naming a file that is not in the checkout prints `warning: media file not found: <file>` on stderr and the export carries on.
+
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `--project` | nearest project | Project root, as for `render`. |
 | `--out` | `build/export` | Output directory, relative to the project root. |
 
-Re-running overwrites the plan's own files and touches nothing else under `--out`. The last line of output is the summary: `exported N buildup files, 1 okh manifest`. An invalid project prints its problems and exits 1 with nothing written; no project found exits 66.
+Re-running overwrites the plan's own files and touches nothing else under `--out`. The last line of output is the summary: `exported N buildup files, 1 okh manifest, M assets copied`. An invalid project prints its problems and exits 1 with nothing written; no project found exits 66.
 
 ## check
 

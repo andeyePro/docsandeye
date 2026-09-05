@@ -1,0 +1,10 @@
+id: clip-b
+type: video
+file: assets/clip-b.mp4
+poster: assets/clip-b.jpg
+captions: assets/clip-b.en.vtt
+duration_s: 9
+shot_date: 2026-01-03
+shot_by: "Example Maker"
+hero: [widget@1.0.0]
+licence: CC-BY-SA-4.0

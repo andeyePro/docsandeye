@@ -8,4 +8,4 @@ Seat the lid and check the o-ring is not pinched.
 
 ## Media
 
-- photo-003-lid-closed: photo, recorded 2026-08-21 with Lid Assembly
+- [photo-003-lid-closed](https://media.example/assets/photo/photo-003-lid-closed.jpg): photo, recorded 2026-08-21 with Lid Assembly

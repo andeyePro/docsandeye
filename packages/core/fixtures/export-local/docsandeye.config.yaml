@@ -1,0 +1,4 @@
+guides:
+  - {id: g, title: "Local guide", base: /g}
+hosting:
+  provider: local

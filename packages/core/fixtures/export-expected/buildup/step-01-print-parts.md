@@ -9,4 +9,4 @@ Print every part listed below before you start assembly.
 
 ## Media
 
-- vid-003-cap-fitting: video, recorded 2026-08-12 with Vial Cap (2×6.1 mm + 5×3.2 mm ports)
+- [vid-003-cap-fitting](https://media.example/assets/video/vid-003-cap-fitting.mp4): video, recorded 2026-08-12 with Vial Cap (2×6.1 mm + 5×3.2 mm ports)

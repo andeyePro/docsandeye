@@ -103,7 +103,7 @@ export {
   emitYaml,
   substituteBuildUpLinks,
 } from './export-plan.js';
-export type { BuildUpRef, BuildUpSubstitution, ExportFile, ExportPlan, YamlMapping, YamlScalar, YamlValue } from './export-plan.js';
+export type { BuildUpRef, BuildUpSubstitution, ExportAsset, ExportFile, ExportPlan, YamlMapping, YamlScalar, YamlValue } from './export-plan.js';
 
 export { checkVersionBumps } from './guard.js';
 export type { VersionBumpFacts, VersionBumpResult, Violation } from './guard.js';

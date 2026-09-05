@@ -1,8 +1,8 @@
 # AEP0.2 build guide
 
-- [Print the parts](step-01-print-parts.md)
-- [Close the lid](step-03-lid.md)
-- [Electrolysis setup](step-05-electrolysis.md)
+- [Print the parts](step-01-print-parts.md){step}
+- [Close the lid](step-03-lid.md){step}
+- [Electrolysis setup](step-05-electrolysis.md){step}
 
 ## Bill of materials
 
