@@ -1,6 +1,6 @@
 ---
 title: Getting started
-description: Scaffold a Docs&I project, author content, render drawings, encode video, restore old geometry, check it and build the site.
+description: Scaffold a Docs&I project, author content, render drawings, encode video, restore old geometry, export it, check it and build the site.
 ---
 
 Docs&I is pre-alpha and not on npm yet. Work from a clone of the repository.
@@ -80,7 +80,17 @@ For every `STALE` media — a pin on a hero component whose design version has m
 
 This step is optional and it needs git history. Outside a git repository, or where the old version was never committed with its geometry, every job is skipped, the command still exits 0, and the site builds without the pane. Restored geometry is produced locally and committed, like renders and encoded video.
 
-## 6. Check
+## 6. Export (optional)
+
+```sh
+npx docsandeye export --project ../bench-lamp
+```
+
+Writes BuildUp-flavoured Markdown and an Open Know-How manifest under `build/export/`: `buildup/index.md` and one `buildup/<step-id>.md` per step, plus `okh/okh.yml`. Both are computed purely from the loaded model, so this step needs nothing else to have run first. See [`export`](/cli/#export).
+
+This step is optional: the site builds and the guide reads the same whether or not you run it. It is for handing the guide to something that reads BuildUp Markdown or an Open Know-How manifest, such as GitBuilding.
+
+## 7. Check
 
 ```sh
 npx docsandeye check --project ../bench-lamp
@@ -88,7 +98,7 @@ npx docsandeye check --project ../bench-lamp
 
 `check` validates every file, then runs the version-bump guard: a component whose CAD source files changed in git without a `design_version` bump is an error. Exit code 0 means clean.
 
-## 7. Build
+## 8. Build
 
 ```sh
 npm install --prefix ../bench-lamp

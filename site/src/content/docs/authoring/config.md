@@ -1,6 +1,6 @@
 ---
 title: Project configuration
-description: Every field of docsandeye.config.yaml — theme, guides, denylist, hosting and the page byte budget — with one complete example.
+description: Every field of docsandeye.config.yaml — theme, project, guides, denylist, hosting and the page byte budget — with one complete example.
 ---
 
 `docsandeye.config.yaml` sits at the root of a Docs&I project, beside `docs/`. Every command finds the project by walking up from the working directory to the first `docsandeye.config.yaml`, so `--project <dir>` is only needed when you run from somewhere else. `docsandeye init` writes one for you.
@@ -11,6 +11,18 @@ description: Every field of docsandeye.config.yaml — theme, guides, denylist, 
 # The theme pack. `starlight` (the default) is the stock look; any other name
 # resolves to @docsandeye/themes/<name>.css. See /themes/.
 theme: pioreactor
+
+# Optional project-level metadata, folded into okh.yml and the BuildUp index
+# by `docsandeye export`. See /cli/#export and /authoring/config/#project.
+project:
+  title: "Bench lamp"
+  description: "A 3D-printed bench lamp with a swappable LED module."
+  version: "1.2.0"
+  licence: "CERN-OHL-S-2.0"
+  licensor: "Acme Robotics"
+  repo: "https://github.com/example/bench-lamp"
+  function: "Lights a workbench from a swing arm."
+  documentation_home: "https://docs.example.org/bench-lamp"
 
 # One entry per guide. `base` is the URL prefix its pages are published under.
 guides:
@@ -43,10 +55,26 @@ Everything except `guides` has a default, so the shortest valid config is a `gui
 | Field | Required | Default | Meaning |
 | --- | --- | --- | --- |
 | `theme` | no | `starlight` | Theme pack name. `starlight` ships inside the plugin; any other name must resolve to `@docsandeye/themes/<name>.css`, and an unknown name fails the build. See [Themes](/themes/). |
+| `project` | no | — | Project-level metadata for `docsandeye export` (below). |
 | `guides` | **yes** | — | At least one guide. Each entry is `id`, `title` and `base` (below). Duplicate `id`s are a validation error. |
 | `denylist` | no | `[]` | Globs, relative to this file, that the project loader never reads. Merged with the defaults below. |
 | `hosting` | no | `{ provider: local }` | Where media files are served from (below). |
 | `byte_budget_kb` | no | `150` | Positive integer. The initial-load budget for a step page, in KB. `docsandeye check --dist dist` fails a page over budget. See [Carbon](/carbon/). |
+
+## `project`
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `title` | no | Fills `name` in `okh.yml` and the `# <title>` heading of `buildup/index.md`. Without a `project` block, or without `title` in it, both fall back to the first guide's `title`. |
+| `description` | no | Fills `description` in `okh.yml`. |
+| `version` | no | Free string. Fills `version` in `okh.yml`. |
+| `licence` | no | SPDX-style identifier for the project as a whole. Fills `license.hardware` in `okh.yml`. Components carry their own `licence` field for the bill of materials. |
+| `licensor` | no | Fills `licensor` in `okh.yml`. |
+| `repo` | no | Must be a URL. Fills `repo` in `okh.yml`. |
+| `function` | no | Fills `function` in `okh.yml`. |
+| `documentation_home` | no | Must be a URL. Fills `documentation-home` in `okh.yml`. |
+
+Every field is optional, and a field this block does not supply is simply omitted from `okh.yml`, never written empty. Unlike `guides`, `denylist` and `hosting`, `project` is a strict block: an unknown key is a `schema` problem at `project.<key>` rather than being silently dropped. See [`export`](/cli/#export).
 
 ## `guides`
 

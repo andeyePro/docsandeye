@@ -1,13 +1,13 @@
 ---
 title: CLI
-description: "The docsandeye command line: init, render, encode, diff and check, with options and exit codes."
+description: "The docsandeye command line: init, render, encode, diff, export and check, with options and exit codes."
 ---
 
 ```sh
 npx docsandeye --help
 ```
 
-Five commands: `init`, `render`, `encode`, `diff` and `check`. `--help` on any of them prints its usage; `--version` prints the package version.
+Six commands: `init`, `render`, `encode`, `diff`, `export` and `check`. `--help` on any of them prints its usage; `--version` prints the package version.
 
 ## init
 
@@ -94,6 +94,32 @@ A job fails when `git show` cannot read a file it has already found, or when the
 Exit code 0 unless a job failed, so a project outside git, or one whose old versions were never committed, exits 0 with every job skipped. The last line of output is the summary: `restored 1, cached 0, skipped 0, failed 0`. In the example project the lamp base has no derived geometry, so its single job is skipped.
 
 The plugin copies the output of every `restored` or `cached` job into `dist/_docsandeye/render/old/` and shows it inside the stale panel. See [Old and new geometry](/staleness/#old-and-new-geometry).
+
+## export
+
+```sh
+npx docsandeye export --project examples/synthetic-guide
+```
+
+Writes BuildUp-flavoured Markdown and an Open Know-How manifest computed from the loaded project model. No network, no render pipeline: the model is the only input.
+
+`buildup/index.md` and one `buildup/<step-id>.md` per step come first, in the first guide's order and then any remaining steps by `order`. Each step file's body has its parts and tools substituted inline as BuildUp links where the component's name occurs literally in the text, for example `Seat the [MMO anode (titanium mesh)]{qty: 1, cat: part} and check the depth with the [Vernier callipers]{qty: 1, cat: tool}.` Anything not substituted is listed instead, under `## Parts` or `## Tools`:
+
+```md
+## Parts
+
+- [Vial Cap (2×6.1 mm + 5×3.2 mm ports)]{qty: 2, cat: printed}
+- [Electrode Top Stop]{qty: 1, cat: printed}
+```
+
+`okh/okh.yml` is an Open Know-How (OKH) manifest: a bill of materials built from every component referenced by a part or tool, plus whatever the optional [`project`](/authoring/config/#project) block in `docsandeye.config.yaml` supplies for the header (`name`, `repo`, `version`, `license`, `licensor`, `description`, `function`, `documentation-home`). A field the config does not supply is omitted from the manifest, never written empty.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `--project` | nearest project | Project root, as for `render`. |
+| `--out` | `build/export` | Output directory, relative to the project root. |
+
+Re-running overwrites the plan's own files and touches nothing else under `--out`. The last line of output is the summary: `exported N buildup files, 1 okh manifest`. An invalid project prints its problems and exits 1 with nothing written; no project found exits 66.
 
 ## check
 
