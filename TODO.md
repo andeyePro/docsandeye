@@ -16,9 +16,8 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### v0.2 — video
 
-- [ ] **Video element and stale-video flow** (queued — task_008, starts when task_007's `bin.ts` change lands): `<docsi-video>` facade, AV1-first, client-side rendition pick, persistent banner, `Watch the older video` flow, hosted and degraded modes, strict byte budget by default.
-- [ ] Storage: Cloudflare R2 + Pages (zero egress); Wikimedia Commons path if clips are CC BY-SA
-      and Commons accepts the scope; Internet Archive mirror.
+- [ ] **Storage**: the `url-prefix` hosting provider already serves encoded media from any bucket (Cloudflare R2 + Pages, zero egress); still to do: an `r2` provider name with docs, the Wikimedia Commons path if clips are CC BY-SA and Commons accepts the scope, and an Internet Archive mirror recipe.
+- [ ] **v0.2 real-toolchain check** (Mac): run `docsandeye encode` with real ffmpeg on one clip and `docsandeye render` with real OpenSCAD on the Vial Cap; fix any argv drift.
 
 ### v0.3 — geometry diff
 

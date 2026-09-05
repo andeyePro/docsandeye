@@ -79,12 +79,12 @@
   {
     "id": "task_008",
     "description": "v0.2 plugin video: <docsi-video> facade, stale-video flow, hosted/degraded modes, strict byte budget default",
-    "implementation_status": "pending",
-    "test_status": "pending",
-    "assigned_to": "generator",
+    "implementation_status": "complete",
+    "test_status": "passing",
+    "assigned_to": "evaluator",
     "mode": "rigorous",
     "branch": "vsss/task_008-video-ux",
     "spec": ".claude/worktrees/task_008/.vs/spec.md",
-    "last_modified": "2026-09-05T01:43:52Z"
+    "last_modified": "2026-09-05T02:47:40Z"
   }
 ]

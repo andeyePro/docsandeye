@@ -4,6 +4,9 @@ Done-work log for Docs&I (`docsandeye`), newest first. Open work is in TODO.md.
 
 ## 2026-09-05
 
+- [x] **task_008 plugin video** — `935ed5f` `<docsi-video>` facade (`preload="none"`, AV1 then H.264, client-side 720/1080 pick, persistent recorded-with banner), the STALE `Watch the older video` flow, media-manifest loading and copy, hosted and degraded modes, fixtures for three site variants (generator, Fable); `066db46` `docsandeye check` is strict by default for over-budget pages, `--no-strict` restores warnings (Opus part of the same task); tester `c3f9ba4` (Sonnet): 356 vitest tests. Two spec wording slips noted in progress.md (AC8 counts, AC3 pane order). Spec archived at `.vs/archive/task_008/spec.md`.
+
+**v0.2 core delivered**: encoding pipeline, video element, stale-video flow, hard carbon gate. Remaining v0.2 items: hosting provider docs (R2 name, Commons, Archive mirror) and the real-toolchain check on a Mac.
 - [x] **task_007 video encoding** — `d0df130` core `buildMediaPlan`; `6417952` Python `encode` stage (ffmpeg behind an `EncoderDriver` seam, AV1 then H.264 at 720p and 1080p, WebP poster copy/convert/generate, captions copy, source-stat cache, `build/media/manifest.json`, `doctor` line); `cb8bc88` `docsandeye encode` (generator, Opus); testers `f150d41` (Haiku) then `adedd03` (Sonnet, escalated for exact argv coverage): 151 Python tests, 238 vitest in core and cli. Real ffmpeg still to be verified on a Mac. Spec archived at `.vs/archive/task_007/spec.md`.
 - [x] **Follow-ups batch** — `b119d3f` plugin exports `stepFrontmatterExtension` (optional step fields for ordinary docs pages); `f6b9d84` core loader ignores `README.md` in `docs/steps/`; `e9fd2a3` `checkVersionBumps` gains the `versionAfterSource` escape hatch; `d7b2cbe` unit tests for the theme cycle's pure functions. Full suite 311 vitest tests green.
 
