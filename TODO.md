@@ -17,14 +17,9 @@ maintainer's machine only; the public-facing summary is README.md.
 ### v0.2 — video
 
 - [ ] **Video encoding** (in progress — task_007): AV1 (SVT-AV1) + H.264 encodes at 720p and 1080p behind an ffmpeg seam, WebP posters, WebVTT copy, `build/media/manifest.json`, `docsandeye encode`. (Video and photo manifests with hero/in-frame tagging already exist in core.)
-- [ ] `<docsi-video>`: `preload="none"` poster facade, AV1-first source order, client-side rendition
-      pick (saveData / effectiveType / prefers-reduced-data), persistent "recorded with vX, current
-      vY" banner.
-- [ ] Stale-video UX: banner → "Watch the older video" → what-changed panel (changelog) → play.
-      CHANGED_IN_FRAME stays primary with a one-line note.
+- [ ] **Video element and stale-video flow** (queued — task_008, starts when task_007's `bin.ts` change lands): `<docsi-video>` facade, AV1-first, client-side rendition pick, persistent banner, `Watch the older video` flow, hosted and degraded modes, strict byte budget by default.
 - [ ] Storage: Cloudflare R2 + Pages (zero egress); Wikimedia Commons path if clips are CC BY-SA
       and Commons accepts the scope; Internet Archive mirror.
-- [ ] Carbon gate becomes a hard fail.
 
 ### v0.3 — geometry diff
 

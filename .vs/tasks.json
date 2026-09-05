@@ -75,5 +75,16 @@
     "branch": "vsss/task_007-encode",
     "spec": ".claude/worktrees/task_007/.vs/spec.md",
     "last_modified": "2026-09-05T01:41:50Z"
+  },
+  {
+    "id": "task_008",
+    "description": "v0.2 plugin video: <docsi-video> facade, stale-video flow, hosted/degraded modes, strict byte budget default",
+    "implementation_status": "pending",
+    "test_status": "pending",
+    "assigned_to": "generator",
+    "mode": "rigorous",
+    "branch": "vsss/task_008-video-ux",
+    "spec": ".claude/worktrees/task_008/.vs/spec.md",
+    "last_modified": "2026-09-05T01:43:52Z"
   }
 ]

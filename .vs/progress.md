@@ -34,3 +34,5 @@ README 64a0946 (chair). Flaky tests eacf83a (sonnet): root cause vitest default 
 Worktree followups (opus started, sonnet finished after the 429 halt): b119d3f, f6b9d84, e9fd2a3, d7b2cbe. Chair verified on main after merge: build ok, vitest 311/311.
 ## task_007 — video encoding — 2026-09-05T01:41:50Z
 Spec Critic pass after 3 iterations (5 blocking → 1 → 0); spec on vsss/task_007-encode. Approved to proceed under Martin's standing instructions (2026-09-04 "just get this done"; 2026-09-05 "continue"); posted as an FYI item. Generator: opus (wiring over settled seams — per Martin's Fable-only-where-it-clearly-helps rule).
+## task_008 — plugin video — 2026-09-05T01:43:52Z
+Spec Critic pass after 3 iterations (4 blocking → 1 → 0); spec on vsss/task_008-video-ux. Queued behind task_007's Generator because both edit packages/cli/src/bin.ts (single-writer rule); Generator will be fable (cross-layer) once 007 is pre-merged.
