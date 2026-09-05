@@ -1,7 +1,8 @@
 /**
  * `docsandeye check`: content validation, the version-bump guard against
  * real git history, and (with `--dist`) the per-page byte budget plus the
- * CO2.js estimate written to `build/carbon.json`.
+ * CO2.js estimate written to `build/carbon.json`. Since v0.2 an over-budget
+ * page is an error by default (`--no-strict` demotes it to a warning).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -17,7 +18,15 @@ export interface CheckOptions {
   root: string;
   /** Built site directory; budget and carbon steps run only when set. */
   dist?: string;
+  /** v0.2 default: over-budget pages are errors. `--no-strict` keeps them as warnings. */
   strict: boolean;
+}
+
+/** The one warning class strict mode promotes: `budget: <page> <kb> KB > <limit> KB`. */
+export const OVER_BUDGET_RE = /^budget: .* \d+ KB > \d+ KB$/;
+
+export function isOverBudgetLine(line: string): boolean {
+  return OVER_BUDGET_RE.test(line);
 }
 
 export interface GuardReport {
@@ -96,11 +105,15 @@ export async function runCheck(opts: CheckOptions, io: Io): Promise<number> {
     fs.writeFileSync(carbonPath, `${canonicalJson(carbonDocument(pages))}\n`);
   }
 
-  for (const line of errors) io.err(line);
-  for (const line of warnings) io.err(line);
+  // Strict promotes only the hard carbon gate (over-budget pages); informational
+  // warnings (guard skipped, missing assets) stay warnings either way.
+  const promoted = opts.strict ? warnings.filter(isOverBudgetLine) : [];
+  const remaining = opts.strict ? warnings.filter((w) => !isOverBudgetLine(w)) : warnings;
+  errors.push(...promoted);
 
-  const errorCount = opts.strict ? errors.length + warnings.length : errors.length;
-  const warningCount = opts.strict ? 0 : warnings.length;
-  io.out(`errors: ${errorCount}, warnings: ${warningCount}`);
-  return errorCount > 0 ? EXIT.PROBLEMS : EXIT.OK;
+  for (const line of errors) io.err(line);
+  for (const line of remaining) io.err(line);
+
+  io.out(`errors: ${errors.length}, warnings: ${remaining.length}`);
+  return errors.length > 0 ? EXIT.PROBLEMS : EXIT.OK;
 }
