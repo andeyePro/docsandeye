@@ -20,7 +20,7 @@ Docs&I is a member of the andeye `<X>&I` family (alongside Time&I, Money&I, Task
 
 ## Status
 
-v0.1 is built and merged (4 September 2026): the schemas and staleness engine, the render pipeline, the command line, the Starlight plugin, the Pioreactor-style theme pack with the six-state theme cycle, a synthetic example guide and this project's own documentation site. No npm release yet. [Register interest](https://contact.andeye.com/?source=docs.andeye.com&subject=Docs%26I%20interest&message=Please%20email%20me%20when%20Docs%26I%20has%20a%20release.) and we will email you when there is one.
+v0.1 and the core of v0.2 are built and merged (4 to 5 September 2026): the schemas and staleness engine, the render pipeline, the command line, the Starlight plugin, the Pioreactor-style theme pack with the six-state theme cycle, a synthetic example guide and this project's own documentation site; then the video encoding pipeline (AV1 then H.264 behind ffmpeg), the `<docsi-video>` facade with the stale-video flow, and a byte budget that fails the build by default. No npm release yet. [Register interest](https://contact.andeye.com/?source=docs.andeye.com&subject=Docs%26I%20interest&message=Please%20email%20me%20when%20Docs%26I%20has%20a%20release.) and we will email you when there is one.
 
 ## Try it
 
@@ -34,12 +34,12 @@ npm run preview -w docsandeye-site
 
 Open the address the last command prints. The example guide is under `/example/`; the theme button in the header cycles through the six theme states; `docsandeye check --project examples/synthetic-guide --dist site/dist` prints the per-page byte budget result and writes `build/carbon.json`.
 
-## What is in v0.1
+## What is built so far
 
 - `@docsandeye/core`: Zod schemas for components, steps, media and config; the project loader with a denylist; the staleness engine and `staleness.json`; the reshoot index; the render plan; the version-bump guard; the hosting-provider registry.
-- `render/` (`docsandeye_render`): the Python pipeline, standard library only, with OpenSCAD and CadQuery drivers behind a seam, a version-keyed cache and a binary STL to GLB converter.
-- `docsandeye` CLI: `init`, `render`, `check` (validation, git version-bump guard, 150 KB byte budget, CO2.js carbon figure).
-- `starlight-docsandeye`: guide and step routes, `<docsi-step>`, `<docsi-model>` and `<docsi-lightbox>` custom elements that read without JavaScript, staleness details, sidebar badges, the maintainer reshoot dashboard.
+- `render/` (`docsandeye_render`): the Python pipeline, standard library only, with OpenSCAD and CadQuery drivers behind a seam, a version-keyed cache, a binary STL to GLB converter, and the v0.2 `encode` stage (ffmpeg behind a seam: AV1 then H.264 at 720p and 1080p, WebP posters, captions).
+- `docsandeye` CLI: `init`, `render`, `encode`, `check` (validation, git version-bump guard, 150 KB byte budget that fails the build by default, CO2.js carbon figure).
+- `starlight-docsandeye`: guide and step routes, `<docsi-step>`, `<docsi-model>`, `<docsi-lightbox>` and `<docsi-video>` custom elements that read without JavaScript, the stale-video flow with its persistent recorded-with banner, sidebar badges, the maintainer reshoot dashboard.
 - `@docsandeye/themes`: the `pioreactor` pack from published token values, no font files, and the `<docsi-theme>` control.
 - `examples/synthetic-guide` and `site/`: a bench-lamp example processed end to end, and the documentation site built with the plugin.
 
