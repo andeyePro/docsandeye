@@ -2,6 +2,10 @@
 
 Done-work log for Docs&I (`docsandeye`), newest first. Open work is in TODO.md.
 
+## 2026-09-05
+
+- [x] **Follow-ups batch** — `b119d3f` plugin exports `stepFrontmatterExtension` (optional step fields for ordinary docs pages); `f6b9d84` core loader ignores `README.md` in `docs/steps/`; `e9fd2a3` `checkVersionBumps` gains the `versionAfterSource` escape hatch; `d7b2cbe` unit tests for the theme cycle's pure functions. Full suite 311 vitest tests green.
+
 ## 2026-09-04
 
 - [x] **Morning-review polish** — `64a0946` README: v0.1 status, Try it, What is in v0.1; `eacf83a` CLI tests: the intermittent failures under the full parallel run were vitest's 5 s default timeout being exceeded while the plugin's `astro build` tests starve the CPU; timeouts raised to 120 s, three consecutive full runs green (277/277).
