@@ -15,7 +15,8 @@ export type { DocsandeyeVitePlugin } from './src/virtual.ts';
 export { CARBON_PATH, RENDER_MANIFEST_PATH, loadDocsandeyeData } from './src/data.ts';
 export type { CarbonPage, CarbonReport, DocsandeyeData, DocsandeyeEnv, RenderManifest, RenderManifestJob } from './src/data.ts';
 
-export { STOCK_THEME, resolveThemeCss } from './src/theme.ts';
+export { STOCK_THEME, THEME_HEAD_MARKER, THEME_HEAD_SPECIFIER, hasThemeHead, resolveThemeCss, resolveThemeHead } from './src/theme.ts';
+export type { HeadEntry } from './src/theme.ts';
 export { collectStaticAssets, copyStaticAssets } from './src/assets.ts';
 export type { StaticAsset } from './src/assets.ts';
 

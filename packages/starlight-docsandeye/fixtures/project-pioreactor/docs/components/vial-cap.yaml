@@ -1,0 +1,11 @@
+id: vial-cap
+name: Vial Cap
+kind: printed
+design_version: 2.0.0
+master_format: scad
+source_files: ["Components/VialCap/VialCap.scad"]
+parameters: {ports: 5, port_dia: 3.2}
+licence: CC-BY-SA-4.0
+changelog:
+  - {version: 1.0.0, date: 2026-01-10, note: "Initial release."}
+  - {version: 2.0.0, date: 2026-08-20, note: "Port layout rework."}

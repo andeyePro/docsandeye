@@ -2,7 +2,6 @@
 import { defineConfig, passthroughImageService } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import docsandeye from 'starlight-docsandeye';
-import { themeHead } from '@docsandeye/themes/head.js';
 
 // docs.andeye.com. The example guide comes from ../examples/synthetic-guide and
 // is served under /example/ (its guide `base`). Renders and media are copied
@@ -16,7 +15,6 @@ export default defineConfig({
 			description: 'Interactive video documentation for open-source hardware that knows when its own videos have gone stale.',
 			plugins: [docsandeye({ projectRoot: '../examples/synthetic-guide' })],
 			components: { ThemeSelect: '@docsandeye/themes/ThemeSelect.astro' },
-			head: themeHead(),
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/amy-bo/docsandeye' }],
 			sidebar: [
 				{ label: 'Start', items: [{ slug: 'getting-started' }] },

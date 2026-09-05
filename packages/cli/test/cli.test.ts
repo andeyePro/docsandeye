@@ -3,13 +3,14 @@
  * Tests the built bin.js via execFile, using fixtures and temporary directories.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { buildRenderPlan, canonicalJson, parseConfig, loadProject } from '@docsandeye/core';
+import { runGuard } from '../src/check.ts';
 import { co2 } from '@tgwf/co2';
 
 const execFileAsync = promisify(execFile);
@@ -723,5 +724,79 @@ describe('AC12: Package hygiene', () => {
     const pkgContent = fs.readFileSync(path.join(cliDir, 'package.json'), 'utf8');
     const pkg = JSON.parse(pkgContent);
     expect(pkg.type).toBe('module');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC6 (follow-up): commit ordering is a fact handed to core, not a post-filter
+// ---------------------------------------------------------------------------
+
+describe('AC6: version-bump guard commit ordering', () => {
+  let repo: string;
+
+  function git(...args: string[]): void {
+    execFileSync('git', args, {
+      cwd: repo,
+      stdio: 'pipe',
+      env: {
+        ...process.env,
+        // Bare identity strings (git does not require an address here), so the
+        // scratch repo needs no committer configuration of its own.
+        GIT_AUTHOR_NAME: 'docsandeye-test',
+        GIT_AUTHOR_EMAIL: 'docsandeye-test',
+        GIT_COMMITTER_NAME: 'docsandeye-test',
+        GIT_COMMITTER_EMAIL: 'docsandeye-test',
+      },
+    });
+  }
+
+  function commitAll(message: string): void {
+    git('add', '-A');
+    git('commit', '--no-verify', '--no-gpg-sign', '-m', message);
+  }
+
+  function guardErrors(): Promise<string[]> {
+    return runGuard(repo, loadProject(repo)).then((r) => r.errors);
+  }
+
+  const scad = () => path.join(repo, 'hardware', 'vial-cap', 'vial-cap.scad');
+  const capYaml = () => path.join(repo, 'docs', 'components', 'vial-cap.yaml');
+
+  beforeEach(() => {
+    repo = fs.realpathSync(tempDir());
+    copyDir(projectFixture, repo);
+    fs.mkdirSync(path.dirname(scad()), { recursive: true });
+    fs.writeFileSync(scad(), 'wall = 1.6;\n');
+    git('init', '-q', '-b', 'main');
+    commitAll('initial');
+  });
+
+  afterEach(() => {
+    rmrf(repo);
+  });
+
+  it('clears the guard when the design_version bump lands in a later commit than the source change', async () => {
+    // Source edit first: the version commit is now an ancestor of it, so the
+    // hashes differ and only the ordering can clear it.
+    fs.writeFileSync(scad(), 'wall = 2.0;\n');
+    commitAll('thicker wall');
+    expect(await guardErrors()).toEqual([expect.stringContaining('guard: vial-cap:')]);
+
+    // The bump, in a commit that descends from the source change.
+    fs.writeFileSync(capYaml(), fs.readFileSync(capYaml(), 'utf8').replace('design_version: 1.1.0', 'design_version: 1.2.0'));
+    commitAll('bump vial-cap to 1.2.0');
+    expect(await guardErrors()).toEqual([]);
+  });
+
+  it('still flags a source change made after the last design_version bump', async () => {
+    fs.writeFileSync(capYaml(), fs.readFileSync(capYaml(), 'utf8').replace('design_version: 1.1.0', 'design_version: 1.2.0'));
+    commitAll('bump vial-cap to 1.2.0');
+    fs.writeFileSync(scad(), 'wall = 2.4;\n');
+    commitAll('another wall change, no bump');
+
+    const errors = await guardErrors();
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('guard: vial-cap:');
+    expect(errors[0]).toContain('design_version is still 1.2.0');
   });
 });
