@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import type { HookParameters, StarlightPlugin } from '@astrojs/starlight/types';
 import { loadDocsandeyeData } from './data.ts';
 import { createDocsandeyeIntegration } from './integration.ts';
-import { resolveThemeCss } from './theme.ts';
+import { hasThemeHead, type HeadEntry, resolveThemeCss, resolveThemeHead } from './theme.ts';
 
 export const PLUGIN_NAME = 'starlight-docsandeye';
 export const DOCSANDEYE_CSS = 'starlight-docsandeye/src/styles/docsandeye.css';
@@ -46,9 +46,18 @@ export default function docsandeye(options: DocsandeyeOptions = {}): StarlightPl
         const data = loadDocsandeyeData(projectRoot, process.env);
         const themeCss = resolveThemeCss(data.config.theme, astroRoot);
 
+        // A themed site needs the first-paint script in <head>; the plugin adds
+        // it so a site config never has to. A site that still adds it itself
+        // keeps its own entry and gets no second copy.
+        const head: HeadEntry[] = [...((config.head as HeadEntry[] | undefined) ?? [])];
+        for (const entry of resolveThemeHead(data.config.theme, astroRoot, (message) => logger?.warn?.(message))) {
+          if (!hasThemeHead(head, entry)) head.push(entry);
+        }
+
         updateConfig({
           customCss: [...(config.customCss ?? []), DOCSANDEYE_CSS, themeCss],
           components: { ...PLUGIN_COMPONENTS, ...(config.components ?? {}) },
+          head,
         });
 
         addIntegration?.(createDocsandeyeIntegration({ data, projectRoot }));

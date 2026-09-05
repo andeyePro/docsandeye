@@ -22,8 +22,11 @@ const BUILD_TIMEOUT = 600_000;
 const PKG_ROOT = path.resolve(import.meta.dirname, '..');
 const SITE_DIR = path.join(PKG_ROOT, 'fixtures/site');
 const BAD_SITE_DIR = path.join(PKG_ROOT, 'fixtures/site-bad-theme');
+const PIOREACTOR_SITE_DIR = path.join(PKG_ROOT, 'fixtures/site-pioreactor');
 const DIST = path.join(SITE_DIR, 'dist');
 const DIST_MAINTAINER = path.join(SITE_DIR, 'dist-maintainer');
+const DIST_PIOREACTOR = path.join(PIOREACTOR_SITE_DIR, 'dist');
+const DIST_PIOREACTOR_MANUAL_HEAD = path.join(PIOREACTOR_SITE_DIR, 'dist-manual-head');
 
 let siteBuildOk = false;
 let maintainerBuildOk = false;
@@ -49,6 +52,24 @@ beforeAll(async () => {
     maxBuffer: 1024 * 1024 * 64,
   });
   maintainerBuildOk = true;
+
+  // A site on a theme pack, built twice: once as an ordinary site (the plugin
+  // is the only thing that can put the first-paint script in <head>), and once
+  // with the site config adding the script itself (the plugin must not add a
+  // second copy).
+  await execFileP('npx', ['astro', 'build'], {
+    cwd: PIOREACTOR_SITE_DIR,
+    env: { ...process.env, DOCSANDEYE_BUILD_DATE: '2026-09-04' },
+    timeout: BUILD_TIMEOUT,
+    maxBuffer: 1024 * 1024 * 64,
+  });
+
+  await execFileP('npx', ['astro', 'build', '--outDir', './dist-manual-head'], {
+    cwd: PIOREACTOR_SITE_DIR,
+    env: { ...process.env, DOCSANDEYE_BUILD_DATE: '2026-09-04', DOCSANDEYE_FIXTURE_MANUAL_HEAD: '1' },
+    timeout: BUILD_TIMEOUT,
+    maxBuffer: 1024 * 1024 * 64,
+  });
 
   try {
     await execFileP('npx', ['astro', 'build'], {
@@ -522,6 +543,37 @@ describe('AC10 guide index', () => {
     const doc = readHtml(DIST_MAINTAINER, 'AEP/index.html');
     const links = doc.querySelectorAll('a').map((a) => a.getAttribute('href'));
     expect(links).toContain('/reshoot/');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC11 (first-paint script portion): the plugin puts the themes head script in
+// <head> for a theme pack, exactly once, and leaves a stock-pack site alone.
+// ---------------------------------------------------------------------------
+
+describe('AC11 theme wiring: first-paint script in <head>', () => {
+  const MARKER = 'data-docsi-theme';
+
+  function countMarker(distDir: string, relPath: string): number {
+    return rawHtml(distDir, relPath).split(MARKER).length - 1;
+  }
+
+  it('a theme-pack site gets the script even though its config never adds one', () => {
+    const html = rawHtml(DIST_PIOREACTOR, 'AEP/step-01-raft/index.html');
+    expect(html).toContain(MARKER);
+    // The script itself: it restores the stored pack before first paint.
+    expect(html).toContain('docsiPack');
+    expect(countMarker(DIST_PIOREACTOR, 'AEP/step-01-raft/index.html')).toBe(1);
+    expect(countMarker(DIST_PIOREACTOR, 'AEP/index.html')).toBe(1);
+  });
+
+  it('a theme-pack site that adds the script itself gets exactly one copy', () => {
+    expect(countMarker(DIST_PIOREACTOR_MANUAL_HEAD, 'AEP/step-01-raft/index.html')).toBe(1);
+    expect(countMarker(DIST_PIOREACTOR_MANUAL_HEAD, 'AEP/index.html')).toBe(1);
+  });
+
+  it('the stock starlight pack gets no first-paint script', () => {
+    expect(rawHtml(DIST, 'AEP/step-01-raft/index.html')).not.toContain(MARKER);
   });
 });
 
