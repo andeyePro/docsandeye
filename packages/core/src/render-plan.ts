@@ -1,6 +1,17 @@
 /**
  * Render plan (`build/render-plan.json`) consumed by the Python render pipeline.
  * One job per distinct key; keys are content-addressed over `{parameters, options}`.
+ *
+ * Hand-exported components (`master_format` `f3z` or `none`) are the exception.
+ * Their outputs are the component's `derived_files`, which do not vary with the
+ * render id or the render options, so a component referenced by both a step
+ * render and a viewer would otherwise yield several jobs asking the pipeline to
+ * produce byte-identical output. The plan therefore emits ONE hand-exported job
+ * per distinct `outputs` list — de-duplicated on the first output path, keeping
+ * the job whose key sorts first (the one that leads the plan's own ordering).
+ * The survivor keeps the ordinary `<component>@<version>--<render_id>--<hash>`
+ * key format; nothing about the key changes. A hand-exported component with no
+ * `derived_files` at all has no output path to key on and is left alone.
  */
 import { createHash } from 'node:crypto';
 import { canonicalJson } from './canonical-json.js';
@@ -66,10 +77,34 @@ export function buildRenderPlan(model: ProjectModel): RenderPlan {
     }
   }
 
-  const sorted = [...jobs.values()].sort((a, b) =>
+  const sorted = [...dedupeHandExported(jobs.values())].sort((a, b) =>
     a.component !== b.component ? cmp(a.component, b.component) : a.render_id !== b.render_id ? cmp(a.render_id, b.render_id) : cmp(a.key, b.key),
   );
   return { version: RENDER_PLAN_VERSION, project_root: '.', jobs: sorted };
+}
+
+/**
+ * Collapse hand-exported jobs that would write the same files: at most one job
+ * per first output path, the one whose key sorts first. Jobs that render (and
+ * hand-exported jobs with no outputs at all) pass through untouched.
+ */
+function dedupeHandExported(jobs: Iterable<RenderJob>): RenderJob[] {
+  const kept: RenderJob[] = [];
+  const byOutput = new Map<string, number>();
+  for (const job of jobs) {
+    const output = job.status === 'hand-exported' ? job.outputs[0] : undefined;
+    if (output === undefined) {
+      kept.push(job);
+      continue;
+    }
+    const seen = byOutput.get(output);
+    if (seen === undefined) {
+      byOutput.set(output, kept.push(job) - 1);
+      continue;
+    }
+    if (cmp(job.key, kept[seen]!.key) < 0) kept[seen] = job;
+  }
+  return kept;
 }
 
 function addJob(jobs: Map<string, RenderJob>, component: Component, renderId: string, options: RenderJobOptions): void {
