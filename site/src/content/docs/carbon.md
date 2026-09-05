@@ -11,7 +11,11 @@ Every step page has a byte budget for its initial load. `docsandeye check --dist
 byte_budget_kb: 150
 ```
 
-`docsandeye.config.yaml` sets the budget in kilobytes (1024 bytes). Default 150. A page over budget is a warning; `--strict` turns warnings into errors for CI.
+`docsandeye.config.yaml` sets the budget in kilobytes (1024 bytes). Default 150.
+
+A page over budget is an error. `docsandeye check --dist dist` prints it on stderr and exits 1, so a build that grows past the budget fails in CI without any flag. Pass `--no-strict` to report over-budget pages as warnings instead; the command then exits 0 if nothing else is wrong. `--strict` is accepted and does nothing, since it is the default.
+
+Strictness changes the severity of one line and nothing else. Other warnings, such as a skipped version-bump guard or a missing local asset, stay warnings either way. The measurement is the same in both modes: every page's bytes and CO2e estimate are written to `build/carbon.json` and published on the page, over budget or not.
 
 ## What is counted
 
@@ -40,7 +44,7 @@ Grams of CO2e per view come from CO2.js using the Sustainable Web Design model, 
 }
 ```
 
-Keys are site-relative paths with leading and trailing slash. Commit the file. The plugin reads it at build time; a page with no entry shows no figure.
+Keys are site-relative paths with leading and trailing slash. Every measured page gets an entry, including one over budget. Commit the file. The plugin reads it at build time; a page with no entry shows no figure.
 
 ## Keeping under budget
 

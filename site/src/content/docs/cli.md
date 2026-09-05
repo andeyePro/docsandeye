@@ -1,13 +1,13 @@
 ---
 title: CLI
-description: "The docsandeye command line: init, render and check, with options and exit codes."
+description: "The docsandeye command line: init, render, encode and check, with options and exit codes."
 ---
 
 ```sh
 npx docsandeye --help
 ```
 
-Three commands: `init`, `render` and `check`. `--help` on any of them prints its usage; `--version` prints the package version.
+Four commands: `init`, `render`, `encode` and `check`. `--help` on any of them prints its usage; `--version` prints the package version.
 
 ## init
 
@@ -41,6 +41,24 @@ Writes `build/render-plan.json` and runs `python3 -m docsandeye_render` on it. O
 
 The last line of output is the summary: `rendered 0, cached 0, hand-exported 3, skipped 0, failed 0`.
 
+## encode
+
+```sh
+npx docsandeye encode --project examples/synthetic-guide
+```
+
+Writes `build/media-plan.json` from the project's `type: video` manifests and runs `python3 -m docsandeye_render encode` on it. Outputs land in `build/media/`: an AV1 WebM and an H.264 MP4 at 720 and 1080, a WebP poster, and the captions file when the manifest has one. `build/media/manifest.json` records each job's status, driver, outputs, poster mode, source probe and time.
+
+| Option | Meaning |
+| --- | --- |
+| `--project` | Project root. Default as for `render`. |
+| `--force` | Re-encode every job, ignoring the cache. |
+| `--allow-missing` | Skip jobs whose encoder is not installed instead of failing. |
+
+Encoding needs ffmpeg 7 or later with `libsvtav1`, `libx264`, `libopus` and `libwebp`. Without it the command exits 2, or records every job as `skipped` and exits 0 under `--allow-missing`. The last line of output is the summary: `encoded 1, cached 0, skipped 0, failed 0`.
+
+`python3 -m docsandeye_render doctor` lists the render and encode tools it can find.
+
 ## check
 
 ```sh
@@ -53,7 +71,10 @@ Validates every component, step and media file, runs the version-bump guard agai
 | --- | --- |
 | `--project` | Project root. Default as for `render`. |
 | `--dist` | Built site to measure. |
-| `--strict` | Treat warnings as errors. |
+| `--no-strict` | Report an over-budget page as a warning instead of an error. |
+| `--strict` | Accepted for compatibility. It is the default and does nothing. |
+
+A page over its [byte budget](/carbon/) is an error, so `check --dist` fails a build that grows past it. `--no-strict` demotes those to warnings. Nothing else changes with the flag: a skipped guard or a missing asset is a warning either way.
 
 Problems print one per line on stderr as `file:path: code: message`. The last line on stdout is `errors: N, warnings: M`.
 
@@ -62,8 +83,8 @@ Problems print one per line on stderr as `file:path: code: message`. The last li
 | Code | Meaning |
 | --- | --- |
 | 0 | OK. |
-| 1 | Problems reported, or the render pipeline reported failures. |
-| 2 | The render pipeline is unavailable (`python3` missing) or aborted. |
+| 1 | Problems reported, or the render or encode pipeline reported failures. |
+| 2 | The render or encode pipeline is unavailable (`python3` or the tool missing) or aborted. |
 | 64 | Usage error. |
 | 65 | `init` refused to overwrite an existing project. |
 | 66 | No project found, or the `--dist` directory does not exist. |
