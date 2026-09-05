@@ -56,3 +56,5 @@ Executor (opus) 8898984; chair verified build 16 pages on main after merge.
 Executor (opus) 25652fd; chair verified build + vitest on main after merge. Follow-up filed: URL-encode render output paths; STL as <img> for hand-exported step renders.
 ## task_014 — render URLs — merged — 2026-09-05T04:32:05Z
 Executor (opus) dd34d43; chair verified build + vitest 489 on main after merge. Follow-ups filed (viewer STL, core resolveMediaUrl encoding, download styling).
+## iter 10b — docs quality pass — merged — 2026-09-05T06:38:05Z
+Sonnet review (7 findings) → Opus executor 0dbaba2 + 48527f8 (resumed after the window-2 halt); chair verified build 17 pages, full vitest, check 0/0 on main after merge. Dry run of getting-started from a clean clone passes through render/encode/diff/check/build.
