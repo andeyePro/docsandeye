@@ -46,3 +46,5 @@ Evaluator: tester 356/356 (fresh), Python 126 OK; Generator touched no test file
 Executor (opus) a4bcdb2 + fcb6d8c; one justified deviation (one-line schemas.ts change moving the base-required rule onto the provider flag). Chair verified on main after merge: build 16 pages, vitest 389, check 0/0. Unconfirmed doc claims listed in the executor report are conventions (ffmpeg 7+ hint, r2 naming), not code behaviour — acceptable.
 ## task_011 — geometry diff slice 1 — 2026-09-05T03:14:02Z
 Spec Critic pass after 3 iterations (4 blocking → 1 → 0); spec on vsss/task_011-geometry-diff. Queued behind task_010 (overlapping files: cli git.ts, plugin fixtures/render manifest). Generator will be fable (four-layer slice).
+## task_010 — follow-up batch 2 — merged — 2026-09-05T03:16:29Z
+Executor (opus) f95d0ab, 322c5d3, a90d617, 3b878ec; chair verified on main after merge: build 16 pages, vitest 402, check --dist 0/0. Follow-up ticket filed (hand-exported renders by outputs). carbon.json regenerated on main; site/README.md head-script sentence fixed.

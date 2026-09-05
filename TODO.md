@@ -11,7 +11,7 @@ maintainer's machine only; the public-facing summary is README.md.
 
 - [ ] **First consumer: electroPioreactor AEP0.2** — content landed on the AEP02 branch of Martin's clone (commit 80780ae: 69 components, 12 steps, shoot list, stubs); Reviewer pass with 4 minor notes; awaiting Martin's own review (Docs&I-fromClaude item 10) and the docs.electroPioreactor.org/AEP deployment.
 
-- [ ] **CLI follow-up**: switch `check` from its `git merge-base --is-ancestor` workaround to core's new `versionAfterSource` fact flag; switch `site/src/content.config.ts` to the plugin's `stepFrontmatterExtension`; the themes head script could be injected by the plugin; hand-exported jobs use `outputs[0]` for both render and viewer.
+- [ ] **Hand-exported renders by outputs**: `MediaPane.astro` resolves renders by job key; after the de-dup (3b878ec) a hand-exported component referenced by several renders or a viewer only has one manifest entry, so the other references would render no figure. Resolve hand-exported renders by `outputs` rather than key (plugin + pipeline). No fixture hits this today.
 - [ ] **Deploy**: docs.andeye.com Pages project (root `site`, `npm run build`, `dist`) is Martin's dashboard step; the AEP guide needs its own Pages project on the electroPioreactor repo (docs.electroPioreactor.org, business Cloudflare account).
 
 ### v0.2 — video
