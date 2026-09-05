@@ -11,8 +11,9 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import __version__, runner
+from . import __version__, encode, media_plan, runner
 from .drivers import default_drivers
+from .drivers.ffmpeg import FfmpegDriver
 from .plan import PlanError, load
 
 __all__ = ["main", "build_parser"]
@@ -37,6 +38,15 @@ def build_parser() -> argparse.ArgumentParser:
     render.add_argument("--project-root", type=Path, default=None,
                         help="override the plan's project_root")
 
+    encode_cmd = sub.add_parser("encode", help="encode every video job in a media plan")
+    encode_cmd.add_argument("--plan", required=True, type=Path, help="path to media-plan.json")
+    encode_cmd.add_argument("--out", required=True, type=Path, help="output directory")
+    encode_cmd.add_argument("--force", action="store_true", help="ignore the cache")
+    encode_cmd.add_argument("--allow-missing", action="store_true",
+                            help="skip jobs whose tool is not installed instead of failing")
+    encode_cmd.add_argument("--project-root", type=Path, default=None,
+                            help="override the plan's project_root")
+
     sub.add_parser("doctor", help="report which render tools are installed")
     return parser
 
@@ -50,11 +60,13 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "doctor":
         return _doctor()
+    if args.command == "encode":
+        return _encode(args)
     return _render(args)
 
 
 def _doctor() -> int:
-    for driver in default_drivers():
+    for driver in [*default_drivers(), FfmpegDriver()]:
         version = driver.version() if driver.available() else None
         if version is not None:
             print(f"{driver.name}: found {version}")
@@ -69,9 +81,7 @@ def _render(args: argparse.Namespace) -> int:
     try:
         plan = load(args.plan)
     except PlanError as exc:
-        location = "" if exc.index is None else f"job {exc.index}: "
-        field = "" if exc.field is None else f"{exc.field}: "
-        print(f"{args.plan}: {location}{field}{exc.message}", file=sys.stderr)
+        print(f"{args.plan}: {_where(exc)}{exc.message}", file=sys.stderr)
         return 1
 
     result = runner.run(
@@ -82,7 +92,35 @@ def _render(args: argparse.Namespace) -> int:
         allow_missing=args.allow_missing,
         project_root=args.project_root,
     )
+    return _report(result)
 
+
+def _encode(args: argparse.Namespace) -> int:
+    try:
+        plan = media_plan.load(args.plan)
+    except PlanError as exc:
+        print(f"{args.plan}: {_where(exc)}{exc.message}", file=sys.stderr)
+        return 1
+
+    result = encode.run(
+        plan,
+        args.out,
+        driver=FfmpegDriver(),
+        force=args.force,
+        allow_missing=args.allow_missing,
+        project_root=args.project_root,
+    )
+    return _report(result)
+
+
+def _where(exc: PlanError) -> str:
+    location = "" if exc.index is None else f"job {exc.index}: "
+    field = "" if exc.field is None else f"{exc.field}: "
+    return f"{location}{field}"
+
+
+def _report(result) -> int:
+    """The shared reporting shape: abort lines, failure lines, one summary line."""
     if result.aborted:
         error = result.abort_error
         print(f"{result.abort_key}: {error}", file=sys.stderr)

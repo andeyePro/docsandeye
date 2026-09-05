@@ -86,5 +86,8 @@ export type { Appearance, AppearanceRole, ReshootEntry } from './reshoot.js';
 export { RENDER_OUTPUT_DIR, RENDER_PLAN_VERSION, buildRenderPlan, renderJobKey, renderParamsHash } from './render-plan.js';
 export type { RenderJob, RenderJobOptions, RenderPlan } from './render-plan.js';
 
+export { MEDIA_OUTPUT_DIR, MEDIA_PLAN_VERSION, MEDIA_RENDITIONS, buildMediaPlan } from './media-plan.js';
+export type { MediaJob, MediaJobOutputs, MediaPlan } from './media-plan.js';
+
 export { checkVersionBumps } from './guard.js';
 export type { VersionBumpFacts, VersionBumpResult, Violation } from './guard.js';
