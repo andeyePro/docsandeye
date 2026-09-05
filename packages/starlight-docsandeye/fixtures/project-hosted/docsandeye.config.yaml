@@ -1,0 +1,5 @@
+theme: starlight
+guides:
+  - {id: aep, title: "Aseptic", base: /AEP}
+  - {id: mep, title: "Mixed", base: /MEP}
+hosting: {provider: url-prefix, base: https://media.example/}

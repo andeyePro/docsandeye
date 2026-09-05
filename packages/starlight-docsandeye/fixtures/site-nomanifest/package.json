@@ -1,0 +1,11 @@
+{
+  "name": "docsandeye-fixture-site-nomanifest",
+  "private": true,
+  "type": "module",
+  "description": "Starlight site fixture for starlight-docsandeye; packages resolve from the monorepo root (not a workspace, nothing to install here). The dependencies block lets Astro detect framework packages for SSR bundling.",
+  "dependencies": {
+    "@astrojs/starlight": "0.42.0",
+    "astro": "7.3.1",
+    "starlight-docsandeye": "0.1.0"
+  }
+}

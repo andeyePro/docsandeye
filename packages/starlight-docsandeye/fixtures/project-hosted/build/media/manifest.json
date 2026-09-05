@@ -1,0 +1,75 @@
+{
+  "jobs": {
+    "vid-01-raft": {
+      "driver": "ffmpeg",
+      "encoded_at": "2026-09-02T09:00:00Z",
+      "outputs": {
+        "av1_1080": "build/media/vid-01-raft-1080.webm",
+        "av1_720": "build/media/vid-01-raft-720.webm",
+        "h264_1080": "build/media/vid-01-raft-1080.mp4",
+        "h264_720": "build/media/vid-01-raft-720.mp4",
+        "poster": "build/media/vid-01-raft.webp"
+      },
+      "poster_mode": "convert",
+      "skipped_renditions": [],
+      "source_probe": {
+        "duration_s": 12.0,
+        "height": 1080,
+        "width": 1920
+      },
+      "source_stat": {
+        "mtime_ns": 1756800000000000000,
+        "size": 24
+      },
+      "status": "cached"
+    },
+    "vid-02-seat": {
+      "driver": "ffmpeg",
+      "encoded_at": "2026-09-02T09:01:00Z",
+      "outputs": {
+        "av1_1080": "build/media/vid-02-seat-1080.webm",
+        "av1_720": "build/media/vid-02-seat-720.webm",
+        "captions": "build/media/vid-02-seat.en.vtt",
+        "h264_1080": "build/media/vid-02-seat-1080.mp4",
+        "h264_720": "build/media/vid-02-seat-720.mp4",
+        "poster": "build/media/vid-02-seat.webp"
+      },
+      "poster_mode": "convert",
+      "skipped_renditions": [],
+      "source_probe": {
+        "duration_s": 20.0,
+        "height": 1080,
+        "width": 1920
+      },
+      "source_stat": {
+        "mtime_ns": 1756800000000000000,
+        "size": 24
+      },
+      "status": "encoded"
+    },
+    "vid-03-old": {
+      "driver": "ffmpeg",
+      "encoded_at": "2026-09-02T09:02:00Z",
+      "outputs": {
+        "av1_720": "build/media/vid-03-old-720.webm",
+        "h264_720": "build/media/vid-03-old-720.mp4",
+        "poster": "build/media/vid-03-old.webp"
+      },
+      "poster_mode": "convert",
+      "skipped_renditions": [
+        1080
+      ],
+      "source_probe": {
+        "duration_s": 15.0,
+        "height": 720,
+        "width": 1280
+      },
+      "source_stat": {
+        "mtime_ns": 1756800000000000000,
+        "size": 24
+      },
+      "status": "encoded"
+    }
+  },
+  "version": 1
+}

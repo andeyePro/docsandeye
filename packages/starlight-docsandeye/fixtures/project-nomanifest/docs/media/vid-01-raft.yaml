@@ -1,0 +1,9 @@
+id: vid-01-raft
+type: video
+file: assets/video/vid-01-raft.mp4
+poster: assets/video/vid-01-raft.jpg
+duration_s: 12
+shot_date: 2026-02-01
+shot_by: "Example Maker"
+hero: [anode@1.0.0]
+licence: CC-BY-SA-4.0

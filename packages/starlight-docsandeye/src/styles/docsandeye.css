@@ -19,6 +19,8 @@
   --docsi-stale-fg: var(--sl-color-orange-high);
   --docsi-badge-stale-bg: var(--sl-color-orange-low);
   --docsi-badge-updated-bg: var(--sl-color-green-low);
+  --docsi-banner-bg: var(--docsi-accent-low);
+  --docsi-banner-fg: var(--docsi-text);
   --docsi-font-body: var(--sl-font);
   --docsi-font-mono: var(--sl-font-mono);
 }
@@ -97,6 +99,69 @@ docsi-step {
   border-radius: 0.5rem;
   color: var(--docsi-text-muted);
   font-size: var(--sl-text-sm);
+}
+
+/* ---- video --------------------------------------------------------------- */
+/* `clip` rounds the corners without making the figure a scroll container, so the
+   banner's sticky positioning still works against the page. */
+.docsi-media figure.docsi-video-figure {
+  overflow: clip;
+}
+
+docsi-video {
+  display: block;
+  position: relative;
+  background: var(--docsi-bg);
+}
+
+docsi-video video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+/* The version banner: shown on upgrade, sticky at the top of the video box for the whole playback. */
+.docsi-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  background: var(--docsi-banner-bg);
+  color: var(--docsi-banner-fg);
+  font-size: var(--sl-text-sm);
+  line-height: 1.4;
+}
+
+docsi-video noscript a,
+details.docsi-stale > noscript a {
+  display: block;
+  padding: 0.4rem 0.75rem;
+  color: var(--docsi-accent-high);
+  font-size: var(--sl-text-sm);
+}
+
+.docsi-watch-older {
+  margin: 0 0.9rem 0.6rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--docsi-stale-fg);
+  border-radius: 999px;
+  background: var(--docsi-bg);
+  color: var(--docsi-stale-fg);
+  font: inherit;
+  font-size: var(--sl-text-sm);
+  cursor: pointer;
+}
+
+.docsi-older {
+  padding: 0 0.6rem 0.6rem;
+}
+
+.docsi-older docsi-video {
+  border-radius: 0.5rem;
+  overflow: clip;
 }
 
 /* ---- 3D model ------------------------------------------------------------ */

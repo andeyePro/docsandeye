@@ -24,7 +24,7 @@ function mapLiteral(map: Map<string, unknown>): string {
   return `new Map(${js([...map.entries()])})`;
 }
 
-/** Serialise the data as an ES module exporting `config`, `model`, `staleness`, `renderManifest`, `carbon`, `buildDate`, `maintainer`. */
+/** Serialise the data as an ES module exporting `config`, `model`, `staleness`, `renderManifest`, `mediaManifest`, `carbon`, `buildDate`, `maintainer`. */
 export function serialiseDocsandeyeData(data: DocsandeyeData): string {
   const { model } = data;
   return [
@@ -32,10 +32,11 @@ export function serialiseDocsandeyeData(data: DocsandeyeData): string {
     `export const model = { config, components: ${mapLiteral(model.components)}, steps: ${mapLiteral(model.steps)}, media: ${mapLiteral(model.media)}, problems: ${js(model.problems)} };`,
     `export const staleness = ${js(data.staleness)};`,
     `export const renderManifest = ${js(data.renderManifest)};`,
+    `export const mediaManifest = ${js(data.mediaManifest)};`,
     `export const carbon = ${js(data.carbon)};`,
     `export const buildDate = ${js(data.buildDate)};`,
     `export const maintainer = ${js(data.maintainer)};`,
-    'export default { config, model, staleness, renderManifest, carbon, buildDate, maintainer };',
+    'export default { config, model, staleness, renderManifest, mediaManifest, carbon, buildDate, maintainer };',
     '',
   ].join('\n');
 }
