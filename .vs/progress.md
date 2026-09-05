@@ -54,3 +54,5 @@ Evaluator: fresh vitest 438/438 in the worktree and on main after merge; Python 
 Executor (opus) 8898984; chair verified build 16 pages on main after merge.
 ## task_013 — hand-exported renders by outputs — merged — 2026-09-05T04:14:38Z
 Executor (opus) 25652fd; chair verified build + vitest on main after merge. Follow-up filed: URL-encode render output paths; STL as <img> for hand-exported step renders.
+## task_014 — render URLs — merged — 2026-09-05T04:32:05Z
+Executor (opus) dd34d43; chair verified build + vitest 489 on main after merge. Follow-ups filed (viewer STL, core resolveMediaUrl encoding, download styling).
