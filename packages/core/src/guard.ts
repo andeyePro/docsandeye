@@ -10,6 +10,13 @@ export interface VersionBumpFacts {
   sourceCommit: string;
   /** Commit that last changed the component's `design_version`. */
   versionCommit: string;
+  /**
+   * When true, the caller has already established that the version bump
+   * happened at or after the source change (e.g. by commit ordering rather
+   * than commit-hash equality), so no violation is raised for this
+   * component even though `sourceCommit` and `versionCommit` differ.
+   */
+  versionAfterSource?: boolean;
 }
 
 export interface Violation {
@@ -38,7 +45,7 @@ export function checkVersionBumps(model: ProjectModel, facts: Record<string, Ver
       unchecked.push(id);
       continue;
     }
-    if (fact.sourceCommit !== fact.versionCommit) {
+    if (fact.sourceCommit !== fact.versionCommit && !fact.versionAfterSource) {
       violations.push({
         component: id,
         designVersion: component.design_version,

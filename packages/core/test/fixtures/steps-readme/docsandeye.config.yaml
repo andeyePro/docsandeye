@@ -1,0 +1,4 @@
+guides:
+  - id: main
+    title: Steps README Guide
+    base: /

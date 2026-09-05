@@ -10,18 +10,13 @@ maintainer's machine only; the public-facing summary is README.md.
 ### v0.1 — data, renders, staleness, no video
 
 - [ ] **First consumer: electroPioreactor AEP0.2** — content landed on the AEP02 branch of Martin's clone (commit 80780ae: 69 components, 12 steps, shoot list, stubs); Reviewer pass with 4 minor notes; awaiting Martin's own review (Docs&I-fromClaude item 10) and the docs.electroPioreactor.org/AEP deployment.
-- [ ] **Plus/Pro seam** (in task_001: the hosting-provider registry in `packages/core/src/hosting.ts`): a hosting-provider abstraction for video assets (local path or bucket URL)
-      so a managed zero-carbon hosting tier can plug in later without schema changes. No paid code.
 
-- [ ] **Themes follow-up**: `packages/themes/src/state.ts` (cycle order, parse/format, storage round-trip) has no unit tests; add a vitest file. Also the head script could be injected by the plugin instead of the site config, and hand-exported jobs use `outputs[0]` for both render and viewer.
+- [ ] **CLI follow-up**: switch `check` from its `git merge-base --is-ancestor` workaround to core's new `versionAfterSource` fact flag; switch `site/src/content.config.ts` to the plugin's `stepFrontmatterExtension`; the themes head script could be injected by the plugin; hand-exported jobs use `outputs[0]` for both render and viewer.
 - [ ] **Deploy**: docs.andeye.com Pages project (root `site`, `npm run build`, `dist`) is Martin's dashboard step; the AEP guide needs its own Pages project on the electroPioreactor repo (docs.electroPioreactor.org, business Cloudflare account).
-- [ ] **Plugin follow-up**: `docsSchema({ extend: stepFrontmatterSchema })` makes the step fields required on every docs entry; export a partial extension (or make the step fields optional in the extension) so ordinary documentation pages validate — the dogfood site uses `.partial()` meanwhile.
-- [ ] **Core follow-ups from downstream tasks**: `loadProject` should ignore `README.md` inside `docs/steps/` (task_006 could not place its steps README there); `checkVersionBumps` should treat a version commit that is a descendant of the source commit as satisfied (the CLI currently clears these with `git merge-base --is-ancestor`).
 
 ### v0.2 — video
 
-- [ ] Video and photo manifests with hero/in-frame tagging; AV1 (SVT-AV1) + H.264 encodes at 720p
-      and 1080p; WebP/AVIF posters; WebVTT captions from the scripted narration.
+- [ ] **Video encoding** (in progress — task_007): AV1 (SVT-AV1) + H.264 encodes at 720p and 1080p behind an ffmpeg seam, WebP posters, WebVTT copy, `build/media/manifest.json`, `docsandeye encode`. (Video and photo manifests with hero/in-frame tagging already exist in core.)
 - [ ] `<docsi-video>`: `preload="none"` poster facade, AV1-first source order, client-side rendition
       pick (saveData / effectiveType / prefers-reduced-data), persistent "recorded with vX, current
       vY" banner.
