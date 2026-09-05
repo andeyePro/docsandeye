@@ -1,0 +1,16 @@
+#!/bin/sh
+# Fake `ffmpeg` for the docsandeye_render encode tests (see .vs/spec.md, fixtures).
+#   -version            -> print a version banner on stdout, exit 0
+#   $DOCSI_FAKE_FFMPEG_FAIL set -> `fake failure` on stderr, exit 1
+#   otherwise           -> append one JSON line to $DOCSI_FAKE_FFMPEG_LOG, write
+#                          `fake-ffmpeg-output` to the LAST argument, exit 0
+set -u
+[ "${1-}" = "-version" ] && { echo "ffmpeg version 7.1.1"; exit 0; }
+[ -n "${DOCSI_FAKE_FFMPEG_FAIL-}" ] && { echo "fake failure" >&2; exit 1; }
+e() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
+a=''
+for x in "$@"; do a="$a${a:+, }\"$(e "$x")\""; last=$x; done
+[ -n "${DOCSI_FAKE_FFMPEG_LOG-}" ] &&
+  printf '{"argv": [%s], "cwd": "%s"}\n' "$a" "$(e "$(pwd)")" >> "$DOCSI_FAKE_FFMPEG_LOG"
+[ -n "${last-}" ] && printf 'fake-ffmpeg-output' > "$last"
+exit 0

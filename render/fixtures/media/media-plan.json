@@ -1,0 +1,12 @@
+{"version": 1, "project_root": ".", "jobs": [
+{"key": "vid-a", "media": "vid-a", "source": "src/vid-a.mp4",
+ "poster_source": "src/vid-a.jpg", "captions": "src/vid-a.en.vtt",
+ "duration_s": 47, "renditions": [720, 1080],
+ "outputs": {"av1_720": "build/media/vid-a-720.webm", "h264_720": "build/media/vid-a-720.mp4",
+             "av1_1080": "build/media/vid-a-1080.webm", "h264_1080": "build/media/vid-a-1080.mp4",
+             "poster": "build/media/vid-a.webp", "captions": "build/media/vid-a.en.vtt"}},
+{"key": "vid-b-720", "media": "vid-b-720", "source": "src/vid-b-720.mp4",
+ "poster_source": "src/vid-b-720.jpg", "duration_s": 12, "renditions": [720, 1080],
+ "outputs": {"av1_720": "build/media/vid-b-720-720.webm", "h264_720": "build/media/vid-b-720-720.mp4",
+             "av1_1080": "build/media/vid-b-720-1080.webm", "h264_1080": "build/media/vid-b-720-1080.mp4",
+             "poster": "build/media/vid-b-720.webp"}}]}
