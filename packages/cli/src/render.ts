@@ -50,7 +50,8 @@ export async function runRender(opts: RenderOptions, io: Io): Promise<number> {
   return spawnPython(pythonArgs(opts), opts.root, io);
 }
 
-function spawnPython(args: string[], cwd: string, io: Io): Promise<number> {
+/** Run `python3 <args>` in `cwd` with the pipeline on `PYTHONPATH`; resolves to its exit code. */
+export function spawnPython(args: string[], cwd: string, io: Io): Promise<number> {
   return new Promise((resolve) => {
     const child = spawn('python3', args, {
       cwd,
