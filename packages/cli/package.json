@@ -12,7 +12,7 @@
     "templates"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && chmod +x dist/bin.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run"
   },

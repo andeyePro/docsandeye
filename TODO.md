@@ -9,7 +9,7 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### v0.1 — data, renders, staleness, no video
 
-- [ ] **First consumer: electroPioreactor AEP0.2** — content landed on the AEP02 branch of Martin's clone (commit 80780ae: 69 components, 12 steps, shoot list, stubs); Reviewer pass with 4 minor notes; awaiting Martin's own review (Docs&I-fromClaude item 10) and the docs.electroPioreactor.org/AEP deployment.
+- [ ] **First consumer: electroPioreactor AEP0.2** — content on the AEP02 branch of Martin's clone (80780ae: 69 components, 12 steps, shoot list, stubs). Verified 2026-09-05: the plugin builds it into 17 pages and `docsandeye check --dist` passes with 0 errors, 0 warnings. Waiting on Martin: content review, the `el_len` decision, and where the AEP site lives (npm release vs a second site folder in this repo; Docs&I-fromClaude item 19) before the docs.electroPioreactor.org deployment.
 
 - [ ] **Deploy**: docs.andeye.com Pages project (root `site`, `npm run build`, `dist`) is Martin's dashboard step; the AEP guide needs its own Pages project on the electroPioreactor repo (docs.electroPioreactor.org, business Cloudflare account).
 
