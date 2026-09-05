@@ -53,4 +53,4 @@ starlight({
 
 ## Marks
 
-The mark cut into the icon is neutral: a circle with a lens line. The package holds an empty `mark-pioreactor.svg` as a swap point. Nothing reads it. Using the Pioreactor mark is a trademark question (T29). Activating the swap needs sign-off on T29 and a `theme_mark` key in core's config schema, neither of which exists yet.
+The mark cut into the icon is a plain letter P, not the Pioreactor triple-dot mark. The package holds an empty `mark-pioreactor.svg` as a swap point. Nothing reads it. Using the Pioreactor mark is a trademark question (T29). Activating the swap needs sign-off on T29 and a `theme_mark` key in core's config schema, neither of which exists yet.

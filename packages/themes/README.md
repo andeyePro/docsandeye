@@ -82,7 +82,7 @@ Without JavaScript the control stays hidden (`hidden` attribute, server-rendered
 `marks/` holds the three bases and the marks:
 
 - `base-auto.svg`, `base-light.svg`, `base-dark.svg`: the backgrounds.
-- `mark-neutral.svg`: the default mark, a circle with a horizontal lens line.
+- `mark-neutral.svg`: the default mark, a letter P (for Pioreactor, without using its trademarked triple-dot mark), cut out of the base icon.
 - `mark-pioreactor.svg`: the swap point. Shipped empty. Nothing reads it.
 
 The mark swap rule: the Pioreactor triple-dot mark is a trademark and its use is an open question (T29). Activating `mark-pioreactor.svg` requires two things that this package does not provide: Martin's sign-off on T29, and a `theme_mark` key in core's config schema for `docsandeye.config.yaml` so the choice is explicit in the project. Until both exist, dropping content into the file changes nothing.
