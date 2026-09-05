@@ -21,7 +21,7 @@ Docs&I is a member of the andeye `<X>&I` family (alongside Time&I, Money&I, Task
 
 ## Status
 
-v0.1 and the core of v0.2 are built and merged (4 to 5 September 2026): the schemas and staleness engine, the render pipeline, the command line, the Starlight plugin, the Pioreactor-style theme pack with the six-state theme cycle, a synthetic example guide and this project's own documentation site; then the video encoding pipeline (AV1 then H.264 behind ffmpeg), the `<docsi-video>` facade with the stale-video flow, and a byte budget that fails the build by default. No npm release yet. [Register interest](https://contact.andeye.com/?source=docs.andeye.com&subject=Docs%26I%20interest&message=Please%20email%20me%20when%20Docs%26I%20has%20a%20release.) and we will email you when there is one.
+v0.1 and the core of v0.2 are built and merged (4 to 5 September 2026): the schemas and staleness engine, the render pipeline, the command line, the Starlight plugin, the Pioreactor-style theme pack with the six-state theme cycle, a synthetic example guide and this project's own documentation site; then the video encoding pipeline (AV1 then H.264 behind ffmpeg), the `<docsi-video>` facade with the stale-video flow, and a byte budget that fails the build by default; then the first v0.3 slice (old and new geometry side by side on a stale step) and `docsandeye export` for BuildUp Markdown and an Open Know-How manifest. No npm release yet. [Register interest](https://contact.andeye.com/?source=docs.andeye.com&subject=Docs%26I%20interest&message=Please%20email%20me%20when%20Docs%26I%20has%20a%20release.) and we will email you when there is one.
 
 ## Try it
 
@@ -38,9 +38,9 @@ npm run preview -w docsandeye-site
 
 ## What is built so far
 
-- `@docsandeye/core`: Zod schemas for components, steps, media and config; the project loader with a denylist; the staleness engine and `staleness.json`; the reshoot index; the render plan; the version-bump guard; the hosting-provider registry.
+- `@docsandeye/core`: Zod schemas for components, steps, media and config; the project loader with a denylist; the staleness engine and `staleness.json`; the reshoot index; the render plan; the version-bump guard; the hosting-provider registry; the export plan (BuildUp Markdown and OKH manifest) with a deterministic YAML emitter.
 - `render/` (`docsandeye_render`): the Python pipeline, standard library only, with OpenSCAD and CadQuery drivers behind a seam, a version-keyed cache, a binary STL to GLB converter, and the v0.2 `encode` stage (ffmpeg behind a seam: AV1 then H.264 at 720p and 1080p, WebP posters, captions).
-- `docsandeye` CLI: `init`, `render`, `encode`, `diff` (restore each stale hero's old geometry from git at the recorded version, converting a restored STL to GLB), `check` (validation, git version-bump guard, 150 KB byte budget that fails the build by default, CO2.js carbon figure).
+- `docsandeye` CLI: `init`, `render`, `encode`, `diff` (restore each stale hero's old geometry from git at the recorded version, converting a restored STL to GLB), `check` (validation, git version-bump guard, 150 KB byte budget that fails the build by default, CO2.js carbon figure), `export` (BuildUp step files with `[Name]{qty: N, cat: c}` part links, an index with the bill of materials, and `okh.yml` built only from data the project holds).
 - `starlight-docsandeye`: guide and step routes, `<docsi-step>`, `<docsi-model>`, `<docsi-lightbox>`, `<docsi-video>` and `<docsi-diff>` custom elements that read without JavaScript, the stale-video flow with its persistent recorded-with banner, the old-and-new geometry pane inside the stale panel, sidebar badges, the maintainer reshoot dashboard.
 - `@docsandeye/themes`: the `pioreactor` pack from published token values, no font files, and the `<docsi-theme>` control.
 - `examples/synthetic-guide` and `site/`: a bench-lamp example processed end to end, and the documentation site built with the plugin.
@@ -48,7 +48,7 @@ npm run preview -w docsandeye-site
 ## How it works
 
 - **Astro + Starlight.** Docs&I ships as a Starlight plugin (`starlight-docsandeye`) that drops into any existing Starlight site, plus a thin `docsandeye` CLI that scaffolds a site for hardware projects that have none. Search, sidebar, dark mode and i18n come from Starlight; the step, video, 3D-viewer and diff elements come from Docs&I as framework-agnostic custom elements that also embed in other site generators.
-- **Content is plain files in your hardware repo.** Components, steps and videos are YAML and Markdown under `docs/`, readable on GitHub, on a Radicle mirror, or offline, with no build step. Vocabulary is kept compatible with BuildUp (GitBuilding) part links and the Open Know-How manifest so content can be exported later.
+- **Content is plain files in your hardware repo.** Components, steps and videos are YAML and Markdown under `docs/`, readable on GitHub, on a Radicle mirror, or offline, with no build step. Vocabulary is kept compatible with BuildUp (GitBuilding) part links and the Open Know-How manifest, and `docsandeye export` writes both.
 - **Components carry an explicit `design_version`.** Bumped by the designer, checked in CI against the git history of the source files, so a changed part cannot slip through unversioned. Every render is cached by component version, so a build where nothing changed renders nothing.
 - **Renders from source.** OpenSCAD for `.scad`, CadQuery for STEP: shaded stills, exploded and annotated views, SVG line-art and GLB for an in-page 3D viewer. Photographs are allowed too, with the same hero/in-frame tagging, for the parts CAD cannot show.
 - **Video without the byte tax.** Clips are encoded AV1-first with an H.264 fallback and embedded behind a poster with `preload="none"`, so a step page transfers zero video bytes until the reader presses play, and no third-party JavaScript ever. No YouTube iframes, no HLS/DASH for sub-90-second clips.
@@ -62,7 +62,7 @@ npm run preview -w docsandeye-site
 | **v0.1** | Component, step and media schemas; render CLI for `.scad` and STEP; staleness JSON and the reshoot dashboard; text, renders and 3D viewer per step; a Pioreactor-style theme pack built from published colour values (it names Roboto and Source Code Pro but ships no font files, so pages stay light) |
 | **v0.2** | Video manifests with hero/in-frame tagging; AV1 + H.264 encoding; posters and WebVTT captions; the full stale-video experience |
 | **v0.3** | Shipped: `docsandeye diff` restores a stale shot's old geometry from git at the recorded version and the stale panel shows it side by side with the current model (`<docsi-diff>`). Deferred: the red/green/grey overlay of removed, added and unchanged geometry; re-rendering the restored CAD sources rather than restoring committed derived files; diffs for `CHANGED_IN_FRAME` pins |
-| Later | BuildUp and Open Know-How export, PDF output, per-step reader comments, QR codes on printed parts, Whisper transcription for shoot-first workflows |
+| Later | PDF output, per-step reader comments, QR codes on printed parts, Whisper transcription for shoot-first workflows (BuildUp and Open Know-How export shipped early) |
 
 ## Beyond the free tool
 

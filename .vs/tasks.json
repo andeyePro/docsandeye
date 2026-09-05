@@ -123,12 +123,12 @@
   {
     "id": "task_017",
     "description": "Exporters: docsandeye export writes BuildUp Markdown (step files + index with BOM) and an Open Know-How okh.yml from a new optional project: config block; deterministic YAML emitter",
-    "implementation_status": "in_progress",
-    "test_status": "pending",
-    "assigned_to": "spec_critic",
+    "implementation_status": "complete",
+    "test_status": "passing",
+    "assigned_to": "evaluator",
     "mode": "rigorous",
     "branch": "vsss/task_017-export",
-    "spec": ".claude/worktrees/task_017/.vs/spec.md",
-    "last_modified": "2026-09-05T07:01:16Z"
+    "spec": ".vs/archive/task_017/spec.md",
+    "last_modified": "2026-09-05T07:32:48Z"
   }
 ]

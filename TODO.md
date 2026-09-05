@@ -26,7 +26,8 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### Later
 
-- [ ] BuildUp and OKH exporters; PDF output; per-step reader comments; QR codes on printed parts.
+- [ ] Export follow-ups: GitBuilding `buildconf.yaml`, validation with `okh-tool`, copying media and derived files into the export tree (the `docsandeye export` BuildUp + OKH core shipped in task_017).
+- [ ] PDF output; per-step reader comments; QR codes on printed parts.
 - [ ] Dimensioned technical drawings (FreeCAD TechDraw headless is broken upstream, #5710).
 - [ ] Approach GitBuilding/GOSH after v0.1 exists.
 - [ ] Whisper transcription for shoot-first workflows (deliberately last).
