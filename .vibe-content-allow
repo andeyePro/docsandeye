@@ -6,3 +6,5 @@ path-warn:.vs/*
 path-warn:.claude/worktrees/*
 path-warn:render/fixtures/*
 path-warn:packages/*/fixtures/*
+path-warn:packages/*/test/*
+path-warn:render/tests/*

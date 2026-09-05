@@ -21,8 +21,7 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### v0.3 — geometry diff
 
-- [ ] Old geometry restored with `git show` at the recorded version, re-rendered through the same
-      cache, overlaid red (removed) / green (added) / grey (unchanged) in `<docsi-diff>`.
+- [ ] **Geometry diff, remaining**: the red (removed) / green (added) / grey (unchanged) overlay needs a mesh boolean or a voxel/sample comparison the container cannot run today (no trimesh/numpy); re-rendering restored `.scad`/`.step` sources at the recorded version through the pipeline; CHANGED_IN_FRAME diffs. (Slice 1 shipped: `docsandeye diff` restores committed derived geometry from git, converts to GLB, and `<docsi-diff>` shows old and new side by side in the stale details.)
 - [ ] `trimesh` normalised geometry hash as the false-positive gate on the version-bump guard.
 
 ### Later
