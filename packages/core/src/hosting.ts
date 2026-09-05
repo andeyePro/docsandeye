@@ -1,6 +1,6 @@
 /**
- * Hosting-provider seam. The free tier ships two providers (`local`,
- * `url-prefix`); anything else plugs in through `registerHostingProvider`.
+ * Hosting-provider seam. The free tier ships three providers (`local`,
+ * `url-prefix`, `r2`); anything else plugs in through `registerHostingProvider`.
  * No paid code lives here.
  */
 
@@ -13,6 +13,8 @@ export interface HostingConfig {
 
 export interface HostingProvider {
   name: string;
+  /** `true` when `hosting.base` is required; `parseConfig` rejects a config without one. */
+  requiresBase?: boolean;
   /** Map a project-relative media file path to the URL the site should use. */
   resolve(file: string, config: HostingConfig): string;
 }
@@ -44,17 +46,31 @@ export const localProvider: HostingProvider = {
   },
 };
 
+/** `config.base` and `file` joined with exactly one slash between them. */
+function joinBase(file: string, config: HostingConfig): string {
+  const base = typeof config.base === 'string' ? config.base : '';
+  return `${base.replace(/\/+$/, '')}/${file.replace(/^\/+/, '')}`;
+}
+
 export const urlPrefixProvider: HostingProvider = {
   name: 'url-prefix',
-  resolve(file, config) {
-    const base = typeof config.base === 'string' ? config.base : '';
-    return `${base.replace(/\/+$/, '')}/${file.replace(/^\/+/, '')}`;
-  },
+  requiresBase: true,
+  resolve: joinBase,
 };
 
-export const BUILTIN_HOSTING_PROVIDERS: readonly HostingProvider[] = [localProvider, urlPrefixProvider];
+/**
+ * Cloudflare R2 behind a public bucket domain. Resolution is the same join as
+ * `url-prefix`; the name exists so a config says where the bytes live.
+ */
+export const r2Provider: HostingProvider = {
+  name: 'r2',
+  requiresBase: true,
+  resolve: joinBase,
+};
 
-/** A fresh registry pre-loaded with the two built-in providers. */
+export const BUILTIN_HOSTING_PROVIDERS: readonly HostingProvider[] = [localProvider, urlPrefixProvider, r2Provider];
+
+/** A fresh registry pre-loaded with the built-in providers. */
 export function createHostingRegistry(): HostingRegistry {
   const registry = new Registry();
   for (const provider of BUILTIN_HOSTING_PROVIDERS) registry.providers.set(provider.name, provider);
@@ -71,12 +87,12 @@ export function registerHostingProvider(
 ): HostingProvider {
   if (!name) throw new TypeError('hosting provider name must be a non-empty string');
   if (typeof impl?.resolve !== 'function') throw new TypeError(`hosting provider "${name}" must implement resolve(file, config)`);
-  const provider: HostingProvider = { name, resolve: impl.resolve.bind(impl) };
+  const provider: HostingProvider = { name, requiresBase: impl.requiresBase === true, resolve: impl.resolve.bind(impl) };
   registry.providers.set(name, provider);
   return provider;
 }
 
-/** Restores the default registry to exactly the two built-ins (test isolation). */
+/** Restores the default registry to exactly the built-ins (test isolation). */
 export function resetHostingRegistry(registry: HostingRegistry = defaultHostingRegistry): void {
   registry.providers.clear();
   for (const provider of BUILTIN_HOSTING_PROVIDERS) registry.providers.set(provider.name, provider);
