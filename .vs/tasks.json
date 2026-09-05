@@ -141,5 +141,16 @@
     "branch": "vsss/task_018-export-docs",
     "spec": "inline (session file Iter 13)",
     "last_modified": "2026-09-05T13:14:40Z"
+  },
+  {
+    "id": "task_019",
+    "description": "Export follow-up: buildconf.yaml, GitBuilding {step} links, media links, local asset copy into the export tree",
+    "implementation_status": "in_progress",
+    "test_status": "pending",
+    "assigned_to": "spec_critic",
+    "mode": "rigorous",
+    "branch": "vsss/task_019-export-gitbuilding",
+    "spec": ".claude/worktrees/task_019/.vs/spec.md",
+    "last_modified": "2026-09-05T13:17:09Z"
   }
 ]
