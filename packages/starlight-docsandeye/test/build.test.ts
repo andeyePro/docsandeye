@@ -137,6 +137,7 @@ describe('AC3 routes', () => {
     'MEP/index.html',
     'AEP/step-01-raft/index.html',
     'AEP/step-02-cap/index.html',
+    'AEP/step-05-topstop/index.html',
     'MEP/step-01-raft/index.html',
     'MEP/step-03-mep-only/index.html',
   ];
@@ -434,23 +435,23 @@ describe('AC7 sidebar badges', () => {
 // ---------------------------------------------------------------------------
 
 describe('AC8 reshoot dashboard', () => {
-  it('table rows: top-stop now precedes vial-cap (v0.2: vid-03-old gives top-stop a stale hero too, tying it with vial-cap on staleHeroCount=1; ties break by component id ascending, "top-stop" < "vial-cap"); anode is also present', () => {
+  it('table rows: vial-cap now precedes top-stop (task_011: vid-04-old-nogeom gives vial-cap a second stale hero — photo-02-cap and vid-04-old-nogeom both pin vial-cap@1.0.0 — so vial-cap\'s staleHeroCount=2 outranks top-stop\'s staleHeroCount=1); anode is also present', () => {
     const doc = readHtml(DIST_MAINTAINER, 'reshoot/index.html');
     const rows = doc.querySelectorAll('table.docsi-reshoot tbody tr');
     expect(rows.length).toBe(3);
 
     const first = rows[0]!;
-    expect(first.getAttribute('data-component')).toBe('top-stop');
+    expect(first.getAttribute('data-component')).toBe('vial-cap');
     expect(first.classList.contains('docsi-stale')).toBe(true);
-    expect(first.text).toContain('Top Stop');
-    expect(first.querySelector('code')?.text.trim()).toBe('top-stop');
-    expect(first.querySelectorAll('td')[1]?.text).toContain('1.3.0');
+    expect(first.text).toContain('Vial Cap');
+    expect(first.querySelector('code')?.text.trim()).toBe('vial-cap');
 
     const second = rows[1]!;
-    expect(second.getAttribute('data-component')).toBe('vial-cap');
+    expect(second.getAttribute('data-component')).toBe('top-stop');
     expect(second.classList.contains('docsi-stale')).toBe(true);
-    expect(second.text).toContain('Vial Cap');
-    expect(second.querySelector('code')?.text.trim()).toBe('vial-cap');
+    expect(second.text).toContain('Top Stop');
+    expect(second.querySelector('code')?.text.trim()).toBe('top-stop');
+    expect(second.querySelectorAll('td')[1]?.text).toContain('1.3.0');
 
     const byComponent = new Map(rows.map((r) => [r.getAttribute('data-component'), r]));
     expect(byComponent.has('top-stop')).toBe(true);
@@ -517,10 +518,10 @@ describe('AC9 page metadata and carbon figure', () => {
 // ---------------------------------------------------------------------------
 
 describe('AC10 guide index', () => {
-  it('AEP/index.html lists the aep steps as links in order, with titles and parts counts', () => {
+  it('AEP/index.html lists the aep steps as links in order, with titles and parts counts (task_011: step-05-topstop adds a third)', () => {
     const doc = readHtml(DIST, 'AEP/index.html');
     const items = doc.querySelectorAll('ol.docsi-guide-steps li');
-    expect(items.length).toBe(2);
+    expect(items.length).toBe(3);
 
     const first = items[0]!;
     expect(first.getAttribute('data-step')).toBe('step-01-raft');
@@ -531,6 +532,11 @@ describe('AC10 guide index', () => {
     expect(second.getAttribute('data-step')).toBe('step-02-cap');
     expect(second.querySelector('a')?.text.trim()).toBe('Fit the vial cap');
     expect(second.querySelector('.docsi-parts-count')?.text.trim()).toBe('3 parts');
+
+    const third = items[2]!;
+    expect(third.getAttribute('data-step')).toBe('step-05-topstop');
+    expect(third.querySelector('a')?.text.trim()).toBe('Fit the top stops');
+    expect(third.querySelector('.docsi-parts-count')?.text.trim()).toBe('1 part');
   });
 
   it('AEP/index.html has no link to /reshoot/ in the default (non-maintainer) build', () => {
