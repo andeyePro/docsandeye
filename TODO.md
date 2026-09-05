@@ -16,8 +16,7 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### v0.2 — video
 
-- [ ] Video and photo manifests with hero/in-frame tagging; AV1 (SVT-AV1) + H.264 encodes at 720p
-      and 1080p; WebP/AVIF posters; WebVTT captions from the scripted narration.
+- [ ] **Video encoding** (in progress — task_007): AV1 (SVT-AV1) + H.264 encodes at 720p and 1080p behind an ffmpeg seam, WebP posters, WebVTT copy, `build/media/manifest.json`, `docsandeye encode`. (Video and photo manifests with hero/in-frame tagging already exist in core.)
 - [ ] `<docsi-video>`: `preload="none"` poster facade, AV1-first source order, client-side rendition
       pick (saveData / effectiveType / prefers-reduced-data), persistent "recorded with vX, current
       vY" banner.

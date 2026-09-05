@@ -64,5 +64,16 @@
     "branch": "vsss/task_006-aep",
     "spec": ".claude/worktrees/task_006/.vs/spec.md",
     "last_modified": "2026-09-04T21:51:19Z"
+  },
+  {
+    "id": "task_007",
+    "description": "v0.2 video encoding: media plan (core), ffmpeg encoder seam + encode runner (python), docsandeye encode (cli)",
+    "implementation_status": "in_progress",
+    "test_status": "pending",
+    "assigned_to": "generator",
+    "mode": "rigorous",
+    "branch": "vsss/task_007-encode",
+    "spec": ".claude/worktrees/task_007/.vs/spec.md",
+    "last_modified": "2026-09-05T01:41:50Z"
   }
 ]
