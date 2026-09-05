@@ -86,5 +86,38 @@
     "branch": "vsss/task_008-video-ux",
     "spec": ".claude/worktrees/task_008/.vs/spec.md",
     "last_modified": "2026-09-05T02:47:40Z"
+  },
+  {
+    "id": "task_009",
+    "description": "v0.2 docs refresh + r2 hosting provider (direct-edit class, opus executor)",
+    "implementation_status": "complete",
+    "test_status": "passing",
+    "assigned_to": "evaluator",
+    "mode": "fuzzy",
+    "branch": "vsss/task_009-docs-v02",
+    "spec": "(args-only; optimiser iter 6)",
+    "last_modified": "2026-09-05T03:14:02Z"
+  },
+  {
+    "id": "task_010",
+    "description": "CLI/plugin/core follow-up batch: versionAfterSource flag, stepFrontmatterExtension in site, plugin-injected theme head script, hand-exported job de-dup",
+    "implementation_status": "in_progress",
+    "test_status": "pending",
+    "assigned_to": "generator",
+    "mode": "rigorous",
+    "branch": "vsss/task_010-cli-followups",
+    "spec": "(args-only; optimiser iter 7)",
+    "last_modified": "2026-09-05T03:14:02Z"
+  },
+  {
+    "id": "task_011",
+    "description": "v0.3 slice 1: restore old derived geometry from git at the recorded version, STL\u2192GLB, <docsi-diff> side by side in the stale details",
+    "implementation_status": "pending",
+    "test_status": "pending",
+    "assigned_to": "generator",
+    "mode": "rigorous",
+    "branch": "vsss/task_011-geometry-diff",
+    "spec": ".claude/worktrees/task_011/.vs/spec.md",
+    "last_modified": "2026-09-05T03:14:02Z"
   }
 ]
