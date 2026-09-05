@@ -25,7 +25,7 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### Later
 
-- [ ] Export follow-ups: GitBuilding `buildconf.yaml`, validation with `okh-tool`, copying media and derived files into the export tree (the `docsandeye export` BuildUp + OKH core shipped in task_017).
+- [ ] Export follow-ups: a GitBuilding part library file for the BOM (its YAML schema needs checking against gitbuilding.io online), validation of `okh.yml` with `okh-tool`, copying posters, captions and derived CAD files into the export tree, and a real `gitbuilding build` on the exported tree (needs the Python package on a Mac). Shipped: BuildUp step files, index with BOM and `{step}` links, `buildconf.yaml`, `okh.yml`, media links and local media copy.
 - [ ] PDF output; per-step reader comments; QR codes on printed parts.
 - [ ] Dimensioned technical drawings (FreeCAD TechDraw headless is broken upstream, #5710).
 - [ ] Approach GitBuilding/GOSH after v0.1 exists.
