@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "jobs": {
+    "odd-cap@1.0.0--odd-front--f1c9a1f64504": {
+      "status": "hand-exported",
+      "driver": "none",
+      "outputs": ["Components/Odd Cap/Odd Cap #1 v2.stl"],
+      "reason": "f3z has no headless renderer; keep the derived files up to date by hand",
+      "rendered_at": "2026-09-01T12:00:00Z"
+    },
+    "model-kit@3.0.0--kit-iso--62235a6baef5": {
+      "status": "hand-exported",
+      "driver": "none",
+      "outputs": ["Components/Model Kit/Model Kit v3.stl", "Components/Model Kit/Model Kit v3.glb"],
+      "reason": "f3z has no headless renderer; keep the derived files up to date by hand",
+      "rendered_at": "2026-09-01T12:00:05Z"
+    },
+    "plain-cap@2.0.0--plain-iso--63ccca40d91f": {
+      "status": "rendered",
+      "driver": "openscad",
+      "outputs": ["build/render/plain-cap@2.0.0--plain-iso--63ccca40d91f.png"],
+      "rendered_at": "2026-09-01T12:00:10Z"
+    }
+  }
+}

@@ -29,10 +29,30 @@ export function basename(file: string): string {
   return parts[parts.length - 1] || file;
 }
 
-/** Prefix a site-root-relative path with Astro's `BASE_URL` (`/`, `/docs/`, `/docs`). */
+/**
+ * Percent-encode every segment of a site-root-relative path, keeping `/` as the
+ * separator: `_docsandeye/render/BlankCap v1.stl` →
+ * `_docsandeye/render/BlankCap%20v1.stl`.
+ *
+ * Derived files and media outputs are named by whatever the maintainer's CAD or
+ * camera wrote, so a space, a `#` or a `?` in a basename is ordinary. Emitted
+ * verbatim into an `href`/`src` a `#` truncates the URL at the fragment and a
+ * space is at best browser-repaired; encoded, the server still resolves them,
+ * because the copy step keeps the on-disk basename unencoded (see `assets.ts`)
+ * and both static hosts and the dev-server handler decode before looking up.
+ */
+export function encodePathSegments(pathname: string): string {
+  return pathname.split('/').map(encodeURIComponent).join('/');
+}
+
+/**
+ * Prefix a site-root-relative path with Astro's `BASE_URL` (`/`, `/docs/`,
+ * `/docs`), percent-encoding the path's own segments. `siteBase` comes from the
+ * site config and is passed through as authored.
+ */
 export function withBase(pathname: string, siteBase = '/'): string {
   const base = siteBase.replace(/\/+$/, '');
-  return `${base}/${pathname.replace(/^\/+/, '')}`;
+  return `${base}/${encodePathSegments(pathname.replace(/^\/+/, ''))}`;
 }
 
 /** Guide `base` segments (`/AEP` → `['AEP']`, `/` → `[]`). */
@@ -122,10 +142,64 @@ export function renderJobFor(
   return { key, job: manifest?.jobs[key] };
 }
 
+/** URL of one render output (by basename) under `/_docsandeye/render/`, percent-encoded. */
+export function renderOutputUrl(output: string, siteBase = '/'): string {
+  return withBase(`${RENDER_URL_PREFIX}${basename(output)}`, siteBase);
+}
+
 /** URL of a render job's first output under `/_docsandeye/render/`. */
 export function renderUrl(job: RenderManifestJob, siteBase = '/'): string | undefined {
   const output = job.outputs[0];
-  return output ? withBase(`${RENDER_URL_PREFIX}${basename(output)}`, siteBase) : undefined;
+  return output ? renderOutputUrl(output, siteBase) : undefined;
+}
+
+/** Extensions a browser can put in an `<img>`; anything else is a download or a 3D model. */
+export const IMAGE_EXTENSIONS: ReadonlySet<string> = new Set(['.png', '.svg', '.webp', '.avif', '.jpg', '.jpeg']);
+/** Extensions `<docsi-model>`'s viewer can load. */
+export const MODEL_EXTENSIONS: ReadonlySet<string> = new Set(['.glb', '.gltf']);
+
+/** Lower-cased extension including the dot (`''` when there is none). */
+export function extension(file: string): string {
+  const name = basename(file);
+  const dot = name.lastIndexOf('.');
+  return dot <= 0 ? '' : name.slice(dot).toLowerCase();
+}
+
+export function isImageOutput(file: string): boolean {
+  return IMAGE_EXTENSIONS.has(extension(file));
+}
+
+export function isViewableModel(file: string): boolean {
+  return MODEL_EXTENSIONS.has(extension(file));
+}
+
+/** How a step render's resolved output can be shown on the page. */
+export type RenderPresentation =
+  | { kind: 'image'; url: string }
+  | { kind: 'model'; url: string }
+  | { kind: 'download'; url: string; filename: string };
+
+/**
+ * What to put in a step render's figure.
+ *
+ * A rendered component writes an image and gets an `<img>`. A hand-exported one
+ * (`f3z`/`none`) is shown through whatever its derived files actually are: an
+ * `.stl`/`.step`/`.3mf` is not an image, and an `<img>` pointing at one renders
+ * as a broken image, so it becomes `<docsi-model>` when a `.glb`/`.gltf` exists
+ * to view — the job's own outputs first, then the component's other derived
+ * files — and a download link otherwise.
+ */
+export function renderPresentation(
+  job: RenderManifestJob,
+  component: Pick<Component, 'derived_files'> | undefined,
+  siteBase = '/',
+): RenderPresentation | undefined {
+  const output = job.outputs[0];
+  if (output === undefined) return undefined;
+  if (isImageOutput(output)) return { kind: 'image', url: renderOutputUrl(output, siteBase) };
+  const model = [...job.outputs, ...(component?.derived_files ?? [])].find(isViewableModel);
+  if (model !== undefined) return { kind: 'model', url: renderOutputUrl(model, siteBase) };
+  return { kind: 'download', url: renderOutputUrl(output, siteBase), filename: basename(output) };
 }
 
 /** URL of a media file or poster: copied under `/_docsandeye/media/` for local hosting, else via the hosting provider. */

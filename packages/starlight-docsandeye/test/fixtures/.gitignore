@@ -1,0 +1,5 @@
+# Astro writes a per-project cache/types directory into each fixture site, and
+# render-urls.test.ts builds an ephemeral scratch copy of site-render-urls.
+*/.astro/
+*/dist*/
+site-*-scratch*/

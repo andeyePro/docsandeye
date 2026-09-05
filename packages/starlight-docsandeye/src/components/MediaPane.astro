@@ -2,7 +2,7 @@
 import type { ProjectModel, StalenessReport, Step } from '@docsandeye/core';
 import * as docsi from 'virtual:docsandeye/model';
 import type { MediaManifest, RenderManifest } from '../data.ts';
-import { componentName, renderJobFor, renderUrl } from '../view.ts';
+import { componentName, renderJobFor, renderPresentation, renderUrl } from '../view.ts';
 import MediaItem from './MediaItem.astro';
 import StalenessDetails from './StalenessDetails.astro';
 import VideoBlock from './VideoBlock.astro';
@@ -23,6 +23,10 @@ const mediaManifest: MediaManifest | null =
 const base = import.meta.env.BASE_URL;
 const hosting = model.config.hosting;
 
+// A render is shown as an image only when its resolved output IS one: a
+// hand-exported component's derived `.stl`/`.step`/`.3mf` gets a 3D viewer (when
+// a `.glb`/`.gltf` exists beside it) or a download link instead of a broken
+// `<img>`. See `renderPresentation`.
 const renders = step.renders.map((render) => {
 	const found = renderJobFor(model, renderManifest, render.component, render.id, {
 		annotate: render.annotate,
@@ -30,7 +34,12 @@ const renders = step.renders.map((render) => {
 		format: render.format,
 		view: render.view,
 	});
-	return { render, url: found?.job ? renderUrl(found.job, base) : undefined };
+	const presentation = found?.job ? renderPresentation(found.job, model.components.get(render.component), base) : undefined;
+	return {
+		render,
+		presentation,
+		caption: `${componentName(model, render.component)} — ${render.view}${render.explode ? ', exploded' : ''}`,
+	};
 });
 
 const viewer = step.viewer
@@ -51,14 +60,19 @@ const stale = mediaItems.filter((m) => m.entry.status === 'STALE');
 ---
 
 {
-	renders.map(({ render, url }) =>
-		url ? (
-			<figure class="docsi-render" data-render={render.id}>
-				<img src={url} alt={render.id} />
-				<figcaption>
-					{componentName(model, render.component)} — {render.view}
-					{render.explode ? ', exploded' : ''}
-				</figcaption>
+	renders.map(({ render, presentation, caption }) =>
+		presentation ? (
+			<figure class="docsi-render" data-render={render.id} data-kind={presentation.kind}>
+				{presentation.kind === 'image' && <img src={presentation.url} alt={render.id} />}
+				{presentation.kind === 'model' && (
+					<docsi-model data-src={presentation.url}>
+						<a href={presentation.url}>Download 3D model</a>
+					</docsi-model>
+				)}
+				{presentation.kind === 'download' && (
+					<a class="docsi-download" href={presentation.url}>Download {presentation.filename}</a>
+				)}
+				<figcaption>{presentation.kind === 'download' ? render.id : caption}</figcaption>
 			</figure>
 		) : (
 			<p class="docsi-render-missing" data-render={render.id}>

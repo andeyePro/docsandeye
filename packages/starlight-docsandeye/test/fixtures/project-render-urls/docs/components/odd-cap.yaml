@@ -1,0 +1,9 @@
+id: odd-cap
+name: Odd Cap
+kind: printed
+design_version: 1.0.0
+master_format: f3z
+source_files: ["Components/Odd Cap/Odd Cap.f3z"]
+# STL only, and the basename carries both a space and a "#" — unencoded in an
+# href the "#" would truncate the URL at the fragment.
+derived_files: ["Components/Odd Cap/Odd Cap #1 v2.stl"]

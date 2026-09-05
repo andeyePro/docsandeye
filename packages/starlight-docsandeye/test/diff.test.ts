@@ -106,6 +106,9 @@ describe('AC6 + AC7: <docsi-diff> for vid-03-old (top-stop 1.0.0 -> 1.3.0)', () 
     expect(diff!.getAttribute('data-new')).toBe('1.3.0');
   });
 
+  // Percent-encoded per segment, so the `@` of `<component>@<version>` is `%40`
+  // in the markup; the file on disk keeps its unencoded name (see the copy-step
+  // assertion below).
   it('old figure: exact caption, docsi-model data-src, and download link text/href', () => {
     const doc = parse(html);
     const diff = doc.querySelector('docsi-diff')!;
@@ -114,9 +117,9 @@ describe('AC6 + AC7: <docsi-diff> for vid-03-old (top-stop 1.0.0 -> 1.3.0)', () 
     expect(oldFigure!.querySelector('figcaption')!.text.trim()).toBe('Recorded with v1.0.0');
 
     const model = oldFigure!.querySelector('docsi-model')!;
-    expect(model.getAttribute('data-src')).toBe('/_docsandeye/render/old/top-stop@1.0.0.glb');
+    expect(model.getAttribute('data-src')).toBe('/_docsandeye/render/old/top-stop%401.0.0.glb');
     const link = model.querySelector('a')!;
-    expect(link.getAttribute('href')).toBe('/_docsandeye/render/old/top-stop@1.0.0.glb');
+    expect(link.getAttribute('href')).toBe('/_docsandeye/render/old/top-stop%401.0.0.glb');
     expect(link.text.trim()).toBe('Download the old 3D model');
   });
 
@@ -128,9 +131,9 @@ describe('AC6 + AC7: <docsi-diff> for vid-03-old (top-stop 1.0.0 -> 1.3.0)', () 
     expect(newFigure!.querySelector('figcaption')!.text.trim()).toBe('Current v1.3.0');
 
     const model = newFigure!.querySelector('docsi-model')!;
-    expect(model.getAttribute('data-src')).toBe('/_docsandeye/render/top-stop@1.3.0--viewer--00628eabad92.glb');
+    expect(model.getAttribute('data-src')).toBe('/_docsandeye/render/top-stop%401.3.0--viewer--00628eabad92.glb');
     const link = model.querySelector('a')!;
-    expect(link.getAttribute('href')).toBe('/_docsandeye/render/top-stop@1.3.0--viewer--00628eabad92.glb');
+    expect(link.getAttribute('href')).toBe('/_docsandeye/render/top-stop%401.3.0--viewer--00628eabad92.glb');
     expect(link.text.trim()).toBe('Download the current 3D model');
   });
 
@@ -180,7 +183,7 @@ describe('AC6: static copy and the new step-05-topstop route', () => {
     const doc = readHtml('AEP/step-05-topstop/index.html');
     const model = doc.querySelector('docsi-model');
     expect(model).toBeTruthy();
-    expect(model!.getAttribute('data-src')).toBe('/_docsandeye/render/top-stop@1.3.0--viewer--00628eabad92.glb');
+    expect(model!.getAttribute('data-src')).toBe('/_docsandeye/render/top-stop%401.3.0--viewer--00628eabad92.glb');
     expect(doc.querySelector('docsi-diff')).toBeFalsy();
   });
 });
