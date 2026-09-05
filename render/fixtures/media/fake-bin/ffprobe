@@ -1,0 +1,16 @@
+#!/bin/sh
+# Fake `ffprobe` for the docsandeye_render encode tests (see .vs/spec.md, fixtures).
+# Logs to $DOCSI_FAKE_FFMPEG_LOG like the fake ffmpeg, then prints 1920x1080 —
+# or 1280x720 when the last argument contains `720`.
+set -u
+e() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
+a=''
+for x in "$@"; do a="$a${a:+, }\"$(e "$x")\""; last=$x; done
+[ -n "${DOCSI_FAKE_FFMPEG_LOG-}" ] &&
+  printf '{"argv": [%s], "cwd": "%s"}\n' "$a" "$(e "$(pwd)")" >> "$DOCSI_FAKE_FFMPEG_LOG"
+case "${last-}" in
+  *720*) w=1280; h=720 ;;
+  *) w=1920; h=1080 ;;
+esac
+printf '{"streams":[{"codec_type":"video","width":%s,"height":%s}],"format":{"duration":"47.000000"}}\n' "$w" "$h"
+exit 0
