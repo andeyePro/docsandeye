@@ -1,6 +1,6 @@
 ---
 title: Getting started
-description: Scaffold a Docs&I project, author content, render drawings, encode video, check it and build the site.
+description: Scaffold a Docs&I project, author content, render drawings, encode video, restore old geometry, check it and build the site.
 ---
 
 Docs&I is pre-alpha and not on npm yet. Work from a clone of the repository.
@@ -66,7 +66,17 @@ Skip this step and the site still builds: a video with no manifest entry falls b
 
 Encoded video is produced locally and committed, like renders. Nothing is encoded in CI.
 
-## 5. Check
+## 5. Diff (optional)
+
+```sh
+npx docsandeye diff
+```
+
+For every media that has gone stale, `diff` restores the changed hero component's derived geometry as it was committed at the recorded version and writes it to `build/render/old/`, with `build/render/old/manifest.json` beside it. An `.stl` is converted to GLB on the way. The stale panel on the step page then shows that old model beside the current one. See [Old and new geometry](/staleness/#old-and-new-geometry).
+
+This step is optional and it needs git history. Outside a git repository, or where the old version was never committed with its geometry, every job is skipped, the command still exits 0, and the site builds without the pane. Restored geometry is produced locally and committed, like renders and encoded video.
+
+## 6. Check
 
 ```sh
 npx docsandeye check
@@ -74,7 +84,7 @@ npx docsandeye check
 
 `check` validates every file, then runs the version-bump guard: a component whose CAD source files changed in git without a `design_version` bump is an error. Exit code 0 means clean.
 
-## 6. Build
+## 7. Build
 
 ```sh
 npm install

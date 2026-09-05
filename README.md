@@ -8,7 +8,7 @@ Docs&I (`docsandeye` in code) builds assembly guides where every step has three 
 - the **full text**, complete on its own, never a caption;
 - **drawings rendered automatically from the CAD files**, so a guide can be complete with no photography at all.
 
-Each video declares which components are its **hero** (the subject of the shot) and which are merely **in frame**. When a hero component's design changes, the guide notices at build time and the video steps back: text and fresh renders become the primary content, and a reader who still wants the older video is first shown **what changed** (changelog and, later, old-versus-new geometry) before it plays, with a persistent "recorded with v1.3, current is v2.0" banner throughout. Maintainers get the inverse view: a dashboard of which videos need reshooting, and why.
+Each video declares which components are its **hero** (the subject of the shot) and which are merely **in frame**. When a hero component's design changes, the guide notices at build time and the video steps back: text and fresh renders become the primary content, and a reader who still wants the older video is first shown **what changed** (the changelog, and the old geometry beside the current one) before it plays, with a persistent "recorded with v1.3, current is v2.0" banner throughout. Maintainers get the inverse view: a dashboard of which videos need reshooting, and why.
 
 Docs&I is a member of the andeye `<X>&I` family (alongside Time&I, Money&I, Task&I and Mail&I). It is being built first for the [electroPioreactor](https://github.com/amy-bo/electroPioreactor), an open aseptic electro-bioreactor, and is designed to sit beside an existing docs site rather than replace it.
 
@@ -38,8 +38,8 @@ Open the address the last command prints. The example guide is under `/example/`
 
 - `@docsandeye/core`: Zod schemas for components, steps, media and config; the project loader with a denylist; the staleness engine and `staleness.json`; the reshoot index; the render plan; the version-bump guard; the hosting-provider registry.
 - `render/` (`docsandeye_render`): the Python pipeline, standard library only, with OpenSCAD and CadQuery drivers behind a seam, a version-keyed cache, a binary STL to GLB converter, and the v0.2 `encode` stage (ffmpeg behind a seam: AV1 then H.264 at 720p and 1080p, WebP posters, captions).
-- `docsandeye` CLI: `init`, `render`, `encode`, `check` (validation, git version-bump guard, 150 KB byte budget that fails the build by default, CO2.js carbon figure).
-- `starlight-docsandeye`: guide and step routes, `<docsi-step>`, `<docsi-model>`, `<docsi-lightbox>` and `<docsi-video>` custom elements that read without JavaScript, the stale-video flow with its persistent recorded-with banner, sidebar badges, the maintainer reshoot dashboard.
+- `docsandeye` CLI: `init`, `render`, `encode`, `diff` (restore each stale hero's old geometry from git at the recorded version, converting a restored STL to GLB), `check` (validation, git version-bump guard, 150 KB byte budget that fails the build by default, CO2.js carbon figure).
+- `starlight-docsandeye`: guide and step routes, `<docsi-step>`, `<docsi-model>`, `<docsi-lightbox>`, `<docsi-video>` and `<docsi-diff>` custom elements that read without JavaScript, the stale-video flow with its persistent recorded-with banner, the old-and-new geometry pane inside the stale panel, sidebar badges, the maintainer reshoot dashboard.
 - `@docsandeye/themes`: the `pioreactor` pack from published token values, no font files, and the `<docsi-theme>` control.
 - `examples/synthetic-guide` and `site/`: a bench-lamp example processed end to end, and the documentation site built with the plugin.
 
@@ -59,7 +59,7 @@ Open the address the last command prints. The example guide is under `/example/`
 |---|---|
 | **v0.1** | Component, step and media schemas; render CLI for `.scad` and STEP; staleness JSON and the reshoot dashboard; text, renders and 3D viewer per step; a Pioreactor-style theme pack built from published colour values (it names Roboto and Source Code Pro but ships no font files, so pages stay light) |
 | **v0.2** | Video manifests with hero/in-frame tagging; AV1 + H.264 encoding; posters and WebVTT captions; the full stale-video experience |
-| **v0.3** | Old geometry restored from git at the recorded version and overlaid against current (red removed, green added, grey unchanged) |
+| **v0.3** | Shipped: `docsandeye diff` restores a stale shot's old geometry from git at the recorded version and the stale panel shows it side by side with the current model (`<docsi-diff>`). Deferred: the red/green/grey overlay of removed, added and unchanged geometry; re-rendering the restored CAD sources rather than restoring committed derived files; diffs for `CHANGED_IN_FRAME` pins |
 | Later | BuildUp and Open Know-How export, PDF output, per-step reader comments, QR codes on printed parts, Whisper transcription for shoot-first workflows |
 
 ## Beyond the free tool
