@@ -11,7 +11,6 @@ maintainer's machine only; the public-facing summary is README.md.
 
 - [ ] **First consumer: electroPioreactor AEP0.2** — content landed on the AEP02 branch of Martin's clone (commit 80780ae: 69 components, 12 steps, shoot list, stubs); Reviewer pass with 4 minor notes; awaiting Martin's own review (Docs&I-fromClaude item 10) and the docs.electroPioreactor.org/AEP deployment.
 
-- [ ] **Docs nit**: getting-started's Diff step says it runs for every media that has gone stale; the other pages say STALE only. One-word fix, deferred while Martin reads the site.
 - [ ] **Deploy**: docs.andeye.com Pages project (root `site`, `npm run build`, `dist`) is Martin's dashboard step; the AEP guide needs its own Pages project on the electroPioreactor repo (docs.electroPioreactor.org, business Cloudflare account).
 
 ### v0.2 — video

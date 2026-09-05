@@ -130,5 +130,16 @@
     "branch": "vsss/task_017-export",
     "spec": ".vs/archive/task_017/spec.md",
     "last_modified": "2026-09-05T07:32:48Z"
+  },
+  {
+    "id": "task_018",
+    "description": "Docs for docsandeye export: cli.md section, project block in authoring/config.md, getting-started step, index clause",
+    "implementation_status": "in_progress",
+    "test_status": "pending",
+    "assigned_to": "executor",
+    "mode": "quick",
+    "branch": "vsss/task_018-export-docs",
+    "spec": "inline (session file Iter 13)",
+    "last_modified": "2026-09-05T07:33:56Z"
   }
 ]
