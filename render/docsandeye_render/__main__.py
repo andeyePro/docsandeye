@@ -11,7 +11,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import __version__, encode, media_plan, runner
+from . import __version__, convert, encode, media_plan, runner
 from .drivers import default_drivers
 from .drivers.ffmpeg import FfmpegDriver
 from .plan import PlanError, load
@@ -47,6 +47,8 @@ def build_parser() -> argparse.ArgumentParser:
     encode_cmd.add_argument("--project-root", type=Path, default=None,
                             help="override the plan's project_root")
 
+    convert.add_glb_parser(sub)
+
     sub.add_parser("doctor", help="report which render tools are installed")
     return parser
 
@@ -62,6 +64,8 @@ def main(argv: list[str] | None = None) -> int:
         return _doctor()
     if args.command == "encode":
         return _encode(args)
+    if args.command == "glb":
+        return convert.run_glb(args)
     return _render(args)
 
 
