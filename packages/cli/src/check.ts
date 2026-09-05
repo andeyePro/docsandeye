@@ -6,7 +6,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { canonicalJson, checkVersionBumps, type ProjectModel, type VersionBumpFacts, type Violation } from '@docsandeye/core';
+import { canonicalJson, checkVersionBumps, type ProjectModel, type VersionBumpFacts } from '@docsandeye/core';
 import { analyseDist, carbonDocument } from './budget.js';
 import { EXIT, formatProblem, loadProjectSafely, type Io } from './common.js';
 import { isAncestor, isInsideWorkTree, lastCommitTouching, lastDesignVersionChange } from './git.js';
@@ -55,12 +55,12 @@ export async function runGuard(root: string, model: ProjectModel): Promise<Guard
     if (component.source_files.length === 0) continue;
     const sourceCommit = await lastCommitTouching(root, component.source_files);
     const versionCommit = await lastDesignVersionChange(root, componentFile(root, id));
-    if (sourceCommit !== undefined && versionCommit !== undefined) facts[id] = { sourceCommit, versionCommit };
+    if (sourceCommit === undefined || versionCommit === undefined) continue;
+    facts[id] = { sourceCommit, versionCommit, versionAfterSource: await bumpedAfterSourceChange(root, sourceCommit, versionCommit) };
   }
 
   const { violations, unchecked } = checkVersionBumps(model, facts);
   for (const v of violations) {
-    if (await bumpedAfterSourceChange(root, v)) continue;
     report.errors.push(`guard: ${v.component}: source changed in ${v.sourceCommit.slice(0, 7)} but design_version is still ${v.designVersion}`);
   }
   for (const id of unchecked) report.warnings.push(`guard: ${id}: no git history for its source files`);
@@ -69,12 +69,15 @@ export async function runGuard(root: string, model: ProjectModel): Promise<Guard
 
 /**
  * Core's guard compares the two commits for equality, so a bump made in a
- * later commit than the source edit still surfaces as a violation. The CLI
- * owns git, so it settles the ordering: a version commit that descends from
- * the source commit means the bump happened after the change and clears it.
+ * later commit than the source edit would surface as a violation on hashes
+ * alone. The CLI owns git, so it settles the ordering here and hands the
+ * answer to core as `versionAfterSource`: a version commit that descends
+ * from (or equals) the source commit means the bump happened after the
+ * change, and core raises no violation for it.
  */
-async function bumpedAfterSourceChange(root: string, v: Violation): Promise<boolean> {
-  return isAncestor(root, v.sourceCommit, v.versionCommit);
+async function bumpedAfterSourceChange(root: string, sourceCommit: string, versionCommit: string): Promise<boolean> {
+  if (sourceCommit === versionCommit) return true;
+  return isAncestor(root, sourceCommit, versionCommit);
 }
 
 export async function runCheck(opts: CheckOptions, io: Io): Promise<number> {
