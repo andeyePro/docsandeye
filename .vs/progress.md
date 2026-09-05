@@ -52,3 +52,5 @@ Executor (opus) f95d0ab, 322c5d3, a90d617, 3b878ec; chair verified on main after
 Evaluator: fresh vitest 438/438 in the worktree and on main after merge; Python OK; Generator touched no test files; diff within Ownership. Tester used the WARN-tier VIBE_ALLOW_COMMIT=1 override once (component@version strings in tests) — path-warn entries for test trees added on main so it is not needed again. Generator tier that passed: fable. Merged --no-ff into main; archived under .vs/archive/task_011/.
 ## iter 9 — docs for v0.3 slice 1 — merged — 2026-09-05T04:03:03Z
 Executor (opus) 8898984; chair verified build 16 pages on main after merge.
+## task_013 — hand-exported renders by outputs — merged — 2026-09-05T04:14:38Z
+Executor (opus) 25652fd; chair verified build + vitest on main after merge. Follow-up filed: URL-encode render output paths; STL as <img> for hand-exported step renders.

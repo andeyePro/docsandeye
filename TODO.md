@@ -11,7 +11,7 @@ maintainer's machine only; the public-facing summary is README.md.
 
 - [ ] **First consumer: electroPioreactor AEP0.2** — content landed on the AEP02 branch of Martin's clone (commit 80780ae: 69 components, 12 steps, shoot list, stubs); Reviewer pass with 4 minor notes; awaiting Martin's own review (Docs&I-fromClaude item 10) and the docs.electroPioreactor.org/AEP deployment.
 
-- [ ] **Hand-exported renders by outputs**: `MediaPane.astro` resolves renders by job key; after the de-dup (3b878ec) a hand-exported component referenced by several renders or a viewer only has one manifest entry, so the other references would render no figure. Resolve hand-exported renders by `outputs` rather than key (plugin + pipeline). No fixture hits this today.
+- [ ] **URL-encode render output paths**: `renderUrl` takes `outputs[0]` verbatim, so a derived file with spaces (`BlankCap v1.stl`) yields an unencoded `src`; encode path segments in the plugin. Also a hand-exported step render currently emits an `<img>` pointing at an STL; consider a `<docsi-model>` or a download link for non-image derived files.
 - [ ] **Deploy**: docs.andeye.com Pages project (root `site`, `npm run build`, `dist`) is Martin's dashboard step; the AEP guide needs its own Pages project on the electroPioreactor repo (docs.electroPioreactor.org, business Cloudflare account).
 
 ### v0.2 — video
