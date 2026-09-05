@@ -2,7 +2,7 @@
 import type { ProjectModel, StalenessReport, Step } from '@docsandeye/core';
 import * as docsi from 'virtual:docsandeye/model';
 import type { MediaManifest, RenderManifest } from '../data.ts';
-import { componentName, renderJobFor, renderPresentation, renderUrl } from '../view.ts';
+import { componentName, renderJobFor, renderPresentation } from '../view.ts';
 import MediaItem from './MediaItem.astro';
 import StalenessDetails from './StalenessDetails.astro';
 import VideoBlock from './VideoBlock.astro';
@@ -42,10 +42,19 @@ const renders = step.renders.map((render) => {
 	};
 });
 
+// The step viewer goes through the same presentation rule as a render: its
+// resolved output is only put in `<docsi-model>` when the viewer can actually
+// load it. A hand-exported component whose derived files are `.stl`/`.step`/
+// `.3mf` with no `.glb`/`.gltf` beside them gets the labelled download link
+// instead of a viewer that would sit there empty. See `renderPresentation`.
 const viewer = step.viewer
 	? (() => {
 			const found = renderJobFor(model, renderManifest, step.viewer.component, 'viewer', { format: step.viewer.format });
-			return { component: step.viewer.component, url: found?.job ? renderUrl(found.job, base) : undefined };
+			const component = model.components.get(step.viewer.component);
+			return {
+				component: step.viewer.component,
+				presentation: found?.job ? renderPresentation(found.job, component, base) : undefined,
+			};
 		})()
 	: undefined;
 
@@ -83,10 +92,20 @@ const stale = mediaItems.filter((m) => m.entry.status === 'STALE');
 }
 {
 	viewer &&
-		(viewer.url ? (
-			<docsi-model data-src={viewer.url}>
-				<a href={viewer.url}>Download 3D model</a>
-			</docsi-model>
+		(viewer.presentation ? (
+			<Fragment>
+				{viewer.presentation.kind === 'image' && (
+					<img src={viewer.presentation.url} alt={componentName(model, viewer.component)} />
+				)}
+				{viewer.presentation.kind === 'model' && (
+					<docsi-model data-src={viewer.presentation.url}>
+						<a href={viewer.presentation.url}>Download 3D model</a>
+					</docsi-model>
+				)}
+				{viewer.presentation.kind === 'download' && (
+					<a class="docsi-download" href={viewer.presentation.url}>Download {viewer.presentation.filename}</a>
+				)}
+			</Fragment>
 		) : (
 			<p class="docsi-render-missing" data-render="viewer">
 				3D model of {componentName(model, viewer.component)} has not been produced yet.

@@ -46,10 +46,30 @@ export const localProvider: HostingProvider = {
   },
 };
 
-/** `config.base` and `file` joined with exactly one slash between them. */
+/**
+ * Percent-encode every segment of a project-relative file path, keeping `/` as
+ * the separator: `build/media/Clip #2 720.mp4` →
+ * `build/media/Clip%20%232%20720.mp4`.
+ *
+ * Media files are named by whatever the maintainer's camera or editor wrote, so
+ * a space, a `#` or a `?` in a basename is ordinary. Emitted verbatim into a
+ * `src`/`href` a `#` truncates the URL at the fragment and a `?` starts a query
+ * string, so the host is asked for the wrong object; encoded, the object key on
+ * the bucket (or the path on the origin) is unchanged, because uploads keep the
+ * on-disk name and every HTTP server decodes before looking it up.
+ */
+function encodePathSegments(pathname: string): string {
+  return pathname.split('/').map(encodeURIComponent).join('/');
+}
+
+/**
+ * `config.base` and `file` joined with exactly one slash between them, with
+ * `file`'s own segments percent-encoded. `base` is an absolute URL the
+ * maintainer authored and is passed through exactly as written.
+ */
 function joinBase(file: string, config: HostingConfig): string {
   const base = typeof config.base === 'string' ? config.base : '';
-  return `${base.replace(/\/+$/, '')}/${file.replace(/^\/+/, '')}`;
+  return `${base.replace(/\/+$/, '')}/${encodePathSegments(file.replace(/^\/+/, ''))}`;
 }
 
 export const urlPrefixProvider: HostingProvider = {

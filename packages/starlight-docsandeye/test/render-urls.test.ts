@@ -137,6 +137,12 @@ describe('fixture precondition', () => {
     expect(step.renders.map((r) => r.id)).toEqual(['odd-front', 'kit-iso', 'plain-iso']);
     expect(Object.keys(manifest.jobs)).toHaveLength(3);
   });
+
+  it('the step viewer is the STL-only hand export, which the 3D viewer cannot load', () => {
+    const viewer = model.steps.get('step-01-encode')!.viewer!;
+    expect(viewer.component).toBe('odd-cap');
+    expect(model.components.get('odd-cap')!.derived_files.some(isViewableModel)).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -247,6 +253,18 @@ describe('renderPresentation', () => {
     expect(renderPresentation({ status: 'failed', outputs: [] }, undefined)).toBeUndefined();
   });
 
+  it('the step viewer resolves to the same download presentation as the render', () => {
+    // The viewer is resolved with `renderId: 'viewer'`; odd-cap is
+    // hand-exported, so it resolves by outputs onto the same job.
+    const viewer = model.steps.get('step-01-encode')!.viewer!;
+    const found = renderJobFor(model, manifest, viewer.component, 'viewer', { format: viewer.format })!;
+    expect(renderPresentation(found.job!, model.components.get(viewer.component))).toEqual({
+      kind: 'download',
+      url: ODD_URL,
+      filename: ODD_BASENAME,
+    });
+  });
+
   it('finds a GLB the job itself writes even without the component', () => {
     expect(renderPresentation({ status: 'rendered', outputs: ['build/render/a b.glb'] }, undefined)).toEqual({
       kind: 'model',
@@ -295,6 +313,31 @@ describe('built page: /ENC/step-01-encode/', () => {
     const img = readHtml(PAGE).querySelector('figure.docsi-render[data-render="plain-iso"] img')!;
     expect(img.getAttribute('src')).toBe(PLAIN_URL);
     expect(img.getAttribute('alt')).toBe('plain-iso');
+  });
+
+  it('the step viewer is a standalone download link with the encoded href, not a <docsi-model>', () => {
+    const doc = readHtml(PAGE);
+    // Two download links on this page: the odd-front figure's, and the
+    // viewer's. The viewer's is the one that is not inside a figure.
+    const standalone = doc
+      .querySelectorAll('a.docsi-download')
+      .filter((a) => a.parentNode?.rawTagName?.toLowerCase() !== 'figure');
+    expect(standalone, 'expected exactly one download link outside a figure (the viewer)').toHaveLength(1);
+    expect(standalone[0]!.getAttribute('href')).toBe(ODD_URL);
+    expect(standalone[0]!.text.replace(/\s+/g, ' ').trim()).toBe(`Download ${ODD_BASENAME}`);
+  });
+
+  it('the only <docsi-model> on the page is the kit-iso figure, whose src is the GLB', () => {
+    const viewers = readHtml(PAGE).querySelectorAll('docsi-model');
+    expect(viewers).toHaveLength(1);
+    expect(viewers[0]!.getAttribute('data-src')).toBe(KIT_GLB_URL);
+  });
+
+  it('no <docsi-model> anywhere points at something its viewer cannot load', () => {
+    for (const viewer of readHtml(PAGE).querySelectorAll('docsi-model')) {
+      const src = decodeURIComponent(viewer.getAttribute('data-src') ?? '');
+      expect(isViewableModel(src), `<docsi-model data-src="${src}">`).toBe(true);
+    }
   });
 
   it('nothing on the page puts geometry in an <img>', () => {

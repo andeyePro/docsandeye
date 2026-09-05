@@ -240,28 +240,90 @@ describe('built pages: every hand-exported reference renders', () => {
     });
   }
 
-  it('MEP/step-03-mep-only: the viewer is a <docsi-model> pointing at the derived file', () => {
+  // The viewer goes through `renderPresentation` too: blank-cap's only derived
+  // file is an STL, which `<docsi-model>`'s viewer cannot load, so the step
+  // viewer is the labelled download link — not an empty viewer box.
+  it('MEP/step-03-mep-only: the STL-only viewer is a labelled download link, not a <docsi-model>', () => {
     const doc = readHtml('MEP/step-03-mep-only/index.html');
-    const viewer = doc.querySelector('docsi-model');
-    expect(viewer, 'expected a docsi-model for the step viewer').toBeTruthy();
-    expect(viewer!.getAttribute('data-src')).toBe(DERIVED_URL);
-    const link = viewer!.querySelector('a');
-    expect(link?.getAttribute('href')).toBe(DERIVED_URL);
-    expect(link?.text.trim()).toBe('Download 3D model');
+    expect(doc.querySelector('docsi-model'), 'an STL must not be handed to the 3D viewer').toBeFalsy();
+    const link = doc.querySelector('a.docsi-download');
+    expect(link, 'expected a download link for the step viewer').toBeTruthy();
+    expect(link!.getAttribute('href')).toBe(DERIVED_URL);
+    expect(link!.text.replace(/\s+/g, ' ').trim()).toBe(`Download ${DERIVED_BASENAME}`);
     expect(doc.querySelector('.docsi-render-missing')).toBeFalsy();
+  });
+
+  it('MEP/step-03-mep-only: no <img> points at the STL either', () => {
+    for (const img of readHtml('MEP/step-03-mep-only/index.html').querySelectorAll('img')) {
+      const src = decodeURIComponent(img.getAttribute('src') ?? '');
+      expect(src, `<img src="${src}">`).not.toMatch(/\.(stl|step|stp|3mf)$/i);
+    }
   });
 
   it('the derived file is copied into dist/_docsandeye/render/ under its unencoded name', () => {
     expect(fs.existsSync(path.join(DIST, '_docsandeye/render', DERIVED_BASENAME))).toBe(true);
   });
 
+  // The other half of the same rule: a viewer whose resolved output IS a
+  // viewable model keeps `<docsi-model>` and its light-DOM download link.
   it('the vial-cap render and viewer on step-02-cap are unaffected', () => {
     const doc = readHtml('AEP/step-02-cap/index.html');
     expect(doc.querySelector('figure.docsi-render[data-render="cap-iso"] img')?.getAttribute('src')).toBe(
       '/_docsandeye/render/vial-cap%402.0.0--cap-iso--0fd0f88538ea.png',
     );
-    expect(doc.querySelector('docsi-model')?.getAttribute('data-src')).toBe(
-      '/_docsandeye/render/vial-cap%402.0.0--viewer--d2ced720dce2.glb',
-    );
+    const viewer = doc.querySelector('docsi-model');
+    expect(viewer, 'a GLB viewer must still be a docsi-model').toBeTruthy();
+    expect(viewer!.getAttribute('data-src')).toBe('/_docsandeye/render/vial-cap%402.0.0--viewer--d2ced720dce2.glb');
+    const link = viewer!.querySelector('a');
+    expect(link?.getAttribute('href')).toBe('/_docsandeye/render/vial-cap%402.0.0--viewer--d2ced720dce2.glb');
+    expect(link?.text.trim()).toBe('Download 3D model');
+    expect(doc.querySelector('a.docsi-download')).toBeFalsy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The download link is styled: it is now the only thing a viewer or a figure
+// shows for a non-image, non-viewable derived file, so unstyled it is a bare
+// browser-default link inside the media column.
+// ---------------------------------------------------------------------------
+
+function walkCss(dir: string, rel = ''): string[] {
+  const out: string[] = [];
+  for (const entry of fs.readdirSync(path.join(dir, rel), { withFileTypes: true })) {
+    const next = rel ? `${rel}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) out.push(...walkCss(dir, next));
+    else if (entry.name.endsWith('.css')) out.push(next);
+  }
+  return out;
+}
+
+describe('.docsi-download is styled from the existing tokens', () => {
+  const builtCss = (): string => {
+    const files = walkCss(DIST);
+    expect(files.length, 'expected at least one built stylesheet').toBeGreaterThan(0);
+    return files.map((f) => fs.readFileSync(path.join(DIST, f), 'utf8')).join('\n').replace(/\s+/g, '');
+  };
+
+  it('the built CSS carries a .docsi-download rule with the accent colour and padding', () => {
+    // The minifier may reorder declarations, so assert on the rule body rather
+    // than a fixed property order.
+    const match = /(?:^|[};])\.docsi-download\{([^}]*)\}/.exec(builtCss());
+    expect(match, 'expected a .docsi-download{...} rule in the built CSS').toBeTruthy();
+    expect(match![1]).toContain('color:var(--docsi-accent-high)');
+    expect(match![1]).toContain('background:var(--docsi-bg)');
+    expect(match![1]).toMatch(/padding:/);
+  });
+
+  it('the standalone viewer link gets the same card border as docsi-model', () => {
+    const match = /\.docsi-media>\.docsi-download\{([^}]*)\}/.exec(builtCss());
+    expect(match, 'expected a .docsi-media > .docsi-download rule').toBeTruthy();
+    expect(match![1]).toContain('var(--sl-color-hairline)');
+  });
+
+  it('the rule defines no new --docsi-* token', () => {
+    const source = fs.readFileSync(path.join(PKG_ROOT, 'src/styles/docsandeye.css'), 'utf8');
+    const rules = source.match(/\.docsi-download[^{]*\{[^}]*\}/g) ?? [];
+    expect(rules.length, 'expected .docsi-download rules in the source stylesheet').toBeGreaterThan(0);
+    for (const rule of rules) expect(rule, rule).not.toMatch(/--docsi-[a-z-]+\s*:/);
   });
 });
