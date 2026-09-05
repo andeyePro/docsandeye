@@ -1,0 +1,8 @@
+id: widget
+name: Widget
+kind: printed
+design_version: 1.0.0
+master_format: scad
+source_files: ["Components/Widget/Widget.scad"]
+changelog:
+  - {version: 1.0.0, date: 2026-01-10, note: "Initial release."}

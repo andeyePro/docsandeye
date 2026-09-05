@@ -30,3 +30,5 @@ Runs: 276/277 (1 CLI fail), then 274/277 (3 CLI fails, different cases), then 27
 Evaluator: Reviewer pass, 0 blocking / 2 minor / 1 nit; chair re-ran on main after merge: npm run build (16 pages), check 0/0, render hand-exported 3, check --dist 0/0. Subjective look surfaced to Martin with the preview SVG. Generator tier that passed: fable. Merged --no-ff into main; archived under .vs/archive/task_005/. v0.1 scope complete.
 ## iter 4 — README polish + flaky CLI tests — 2026-09-04T23:01:06Z
 README 64a0946 (chair). Flaky tests eacf83a (sonnet): root cause vitest default 5 s testTimeout under parallel astro builds; fixed in the test file only; 3 consecutive root runs 277/277.
+## follow-ups batch — merged — 2026-09-05T01:32:51Z
+Worktree followups (opus started, sonnet finished after the 429 halt): b119d3f, f6b9d84, e9fd2a3, d7b2cbe. Chair verified on main after merge: build ok, vitest 311/311.

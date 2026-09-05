@@ -42,6 +42,14 @@ const YAML_EXTENSIONS = new Set(['.yaml', '.yml']);
 const MARKDOWN_EXTENSIONS = new Set(['.md']);
 
 /**
+ * Basenames (compared case-insensitively) that are never a collection entry.
+ * `docs/steps` takes `.md`, so a README written for the maintainers of the
+ * project would otherwise be parsed as a step; the YAML collections already
+ * ignore it by extension.
+ */
+const IGNORED_BASENAMES = new Set(['readme.md']);
+
+/**
  * True when `relPath` (POSIX-style, repo-relative) matches any denylist glob.
  * picomatch with `{dot: true}`: `**` spans zero or more segments.
  */
@@ -143,6 +151,7 @@ function loadCollection<T extends { id: string }>(
 
   const names = fs.readdirSync(dirAbs).sort();
   for (const name of names) {
+    if (IGNORED_BASENAMES.has(name.toLowerCase())) continue;
     if (!extensions.has(path.extname(name).toLowerCase())) continue;
     const rel = `${dirRel}/${name}`;
     if (isDenylisted(rel, denylist)) continue;

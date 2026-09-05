@@ -19,5 +19,5 @@ export { STOCK_THEME, resolveThemeCss } from './src/theme.ts';
 export { collectStaticAssets, copyStaticAssets } from './src/assets.ts';
 export type { StaticAsset } from './src/assets.ts';
 
-export { stepFrontmatterSchema } from './schema.ts';
-export type { StepFrontmatter } from './schema.ts';
+export { stepFrontmatterSchema, stepFrontmatterExtension } from './schema.ts';
+export type { StepFrontmatter, StepFrontmatterExtension } from './schema.ts';

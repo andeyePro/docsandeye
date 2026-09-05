@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { loadProject, isDenylisted, stepsForGuide } from '../src/index.js';
 import { join } from 'node:path';
+import { cpSync, mkdtempSync, renameSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const fixturesDir = join(import.meta.dirname, '../fixtures');
 
@@ -179,5 +181,37 @@ describe('AC14: Guide filtering', () => {
         expect(firstGuideSteps.some(s => s.id === 'step-05-electrolysis')).toBe(true);
       }
     }
+  });
+});
+
+// Follow-up: a maintainer README beside the steps is not a step.
+describe('loadProject: README.md inside docs/steps', () => {
+  const readmeFixture = join(import.meta.dirname, 'fixtures/steps-readme');
+
+  it('ignores README.md and reports no problem for it', () => {
+    const model = loadProject(readmeFixture);
+    expect([...model.steps.keys()]).toEqual(['step-01-print-widget']);
+    expect(model.steps.has('README')).toBe(false);
+    expect(model.problems).toHaveLength(0);
+  });
+
+  it('ignores the name case-insensitively', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'docsi-steps-readme-'));
+    try {
+      cpSync(readmeFixture, dir, { recursive: true });
+      renameSync(join(dir, 'docs/steps/README.md'), join(dir, 'docs/steps/readme.md'));
+      const model = loadProject(dir);
+      expect([...model.steps.keys()]).toEqual(['step-01-print-widget']);
+      expect(model.problems).toHaveLength(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('still loads other Markdown files in the directory', () => {
+    const model = loadProject(readmeFixture);
+    const step = model.steps.get('step-01-print-widget')!;
+    expect(step.title).toBe('Print the widget');
+    expect(step.guide).toEqual(['main']);
   });
 });
