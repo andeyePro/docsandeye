@@ -134,12 +134,12 @@
   {
     "id": "task_018",
     "description": "Docs for docsandeye export: cli.md section, project block in authoring/config.md, getting-started step, index clause",
-    "implementation_status": "in_progress",
-    "test_status": "pending",
-    "assigned_to": "executor",
+    "implementation_status": "complete",
+    "test_status": "passing",
+    "assigned_to": "evaluator",
     "mode": "quick",
     "branch": "vsss/task_018-export-docs",
     "spec": "inline (session file Iter 13)",
-    "last_modified": "2026-09-05T07:33:56Z"
+    "last_modified": "2026-09-05T13:14:40Z"
   }
 ]
