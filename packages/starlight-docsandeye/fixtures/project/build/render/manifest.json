@@ -12,6 +12,12 @@
       "driver": "openscad",
       "outputs": ["build/render/vial-cap@2.0.0--viewer--d2ced720dce2.glb"],
       "rendered_at": "2026-09-01T12:00:05Z"
+    },
+    "top-stop@1.3.0--viewer--00628eabad92": {
+      "status": "rendered",
+      "driver": "openscad",
+      "outputs": ["build/render/top-stop@1.3.0--viewer--00628eabad92.glb"],
+      "rendered_at": "2026-09-01T12:00:10Z"
     }
   }
 }

@@ -12,7 +12,7 @@ tools:
 renders:
   - {id: cap-iso, component: vial-cap}
 viewer: {component: vial-cap, format: glb}
-media: [photo-02-cap, vid-02-seat, vid-03-old]
+media: [photo-02-cap, vid-02-seat, vid-03-old, vid-04-old-nogeom]
 safety: "Wear eye protection when seating the cap; the glass vial can shatter."
 ---
 Push the **vial cap** onto the vial until the o-ring seats with a click.

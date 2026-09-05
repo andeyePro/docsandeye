@@ -1,0 +1,46 @@
+---
+/**
+ * One changed hero's geometry, old beside current: `<docsi-diff>` with a figure
+ * for the model restored by `docsandeye diff` (always, when its job is
+ * `restored|cached`) and a figure for the current viewer GLB (when the render
+ * manifest has one for `<component>@<current>`). Both are plain download links
+ * until `docsi-model` upgrades them; captions never depend on JavaScript.
+ */
+import type { StalePin } from '@docsandeye/core';
+import { currentViewerJob, oldGeometryFor, OLD_RENDER_URL_PREFIX, type OldGeometryManifest, type RenderManifest } from '../data.ts';
+import { basename, renderUrl, withBase } from '../view.ts';
+
+interface Props {
+	hero: StalePin;
+	oldGeometry: OldGeometryManifest | null;
+	renderManifest: RenderManifest | null;
+	base: string;
+}
+
+const { hero, oldGeometry, renderManifest, base } = Astro.props;
+const oldJob = oldGeometryFor(oldGeometry, hero.component, hero.shot_with);
+const oldUrl = oldJob ? withBase(`${OLD_RENDER_URL_PREFIX}${basename(oldJob.output)}`, base) : undefined;
+const current = currentViewerJob(renderManifest, hero.component, hero.current);
+const newUrl = current ? renderUrl(current.job, base) : undefined;
+---
+
+{
+	oldUrl && (
+		<docsi-diff data-component={hero.component} data-old={hero.shot_with} data-new={hero.current}>
+			<figure class="docsi-diff-old">
+				<figcaption>Recorded with v{hero.shot_with}</figcaption>
+				<docsi-model data-src={oldUrl}>
+					<a href={oldUrl}>Download the old 3D model</a>
+				</docsi-model>
+			</figure>
+			{newUrl && (
+				<figure class="docsi-diff-new">
+					<figcaption>Current v{hero.current}</figcaption>
+					<docsi-model data-src={newUrl}>
+						<a href={newUrl}>Download the current 3D model</a>
+					</docsi-model>
+				</figure>
+			)}
+		</docsi-diff>
+	)
+}

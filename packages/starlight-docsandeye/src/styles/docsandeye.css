@@ -201,6 +201,45 @@ docsi-model a {
   border-radius: 0.5rem;
 }
 
+/* ---- geometry diff (old vs current model, inside a STALE details) --------- */
+docsi-diff {
+  display: grid;
+  grid-template-columns: 100%;
+  gap: 0.6rem;
+  margin: 0 0.9rem 0.6rem;
+}
+
+/* Added on upgrade when both figures are present; without JavaScript they stack. */
+docsi-diff.docsi-diff-pair {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 60rem) {
+  docsi-diff.docsi-diff-pair {
+    grid-template-columns: 100%;
+  }
+}
+
+details.docsi-stale docsi-diff figure {
+  margin: 0;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  background: var(--docsi-bg);
+  color: var(--docsi-text);
+}
+
+docsi-diff figcaption {
+  padding: 0.4rem 0.75rem;
+  font-size: var(--sl-text-sm);
+  color: var(--docsi-text-muted);
+}
+
+docsi-diff docsi-model {
+  border: 0;
+  border-top: 1px solid var(--sl-color-hairline);
+  border-radius: 0;
+}
+
 /* ---- staleness ----------------------------------------------------------- */
 details.docsi-stale {
   border: 1px solid var(--docsi-stale-fg);

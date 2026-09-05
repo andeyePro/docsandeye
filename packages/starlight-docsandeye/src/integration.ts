@@ -2,15 +2,16 @@
  * The Astro integration behind the Starlight plugin: one prerendered route
  * per guide index and per step, the maintainer-only `/reshoot` route, the
  * virtual data module, a dev-server handler for `/_docsandeye/*`, and the
- * static copy step after the build (render outputs, authored media and the
- * encode pipeline's media outputs).
+ * static copy step after the build (render outputs, authored media, the
+ * encode pipeline's media outputs and the old geometry restored by
+ * `docsandeye diff`).
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
 import { collectStaticAssets, copyStaticAssets, type StaticAsset } from './assets.ts';
-import type { DocsandeyeData } from './data.ts';
+import { OLD_RENDER_URL_PREFIX, SHOWN_OLD_STATUSES, type DocsandeyeData } from './data.ts';
 import { MEDIA_URL_PREFIX, basename, guidePattern } from './view.ts';
 import { createDocsandeyeVitePlugin } from './virtual.ts';
 
@@ -61,10 +62,27 @@ export function collectMediaOutputs(data: DocsandeyeData, projectRoot: string): 
   return [...byUrl.values()];
 }
 
-/** Static assets plus media outputs, de-duplicated by URL (first wins). */
+/**
+ * Old geometry (`build/render/old/manifest.json`) to copy under
+ * `/_docsandeye/render/old/`: the output of every `restored|cached` job.
+ */
+export function collectOldGeometry(data: DocsandeyeData, projectRoot: string): StaticAsset[] {
+  if (!data.oldGeometry) return [];
+  const root = path.resolve(projectRoot);
+  const byUrl = new Map<string, StaticAsset>();
+  for (const key of Object.keys(data.oldGeometry.jobs).sort()) {
+    const job = data.oldGeometry.jobs[key]!;
+    if (!SHOWN_OLD_STATUSES.has(job.status)) continue;
+    const url = `${OLD_RENDER_URL_PREFIX}${basename(job.output)}`;
+    if (!byUrl.has(url)) byUrl.set(url, { url, source: path.resolve(root, job.output) });
+  }
+  return [...byUrl.values()];
+}
+
+/** Static assets plus media outputs and old geometry, de-duplicated by URL (first wins). */
 function collectAllAssets(data: DocsandeyeData, projectRoot: string): StaticAsset[] {
   const byUrl = new Map<string, StaticAsset>();
-  for (const asset of [...collectStaticAssets(data, projectRoot), ...collectMediaOutputs(data, projectRoot)]) {
+  for (const asset of [...collectStaticAssets(data, projectRoot), ...collectMediaOutputs(data, projectRoot), ...collectOldGeometry(data, projectRoot)]) {
     if (!byUrl.has(asset.url)) byUrl.set(asset.url, asset);
   }
   return [...byUrl.values()];

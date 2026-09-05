@@ -27,3 +27,4 @@ node_modules/
 dist/
 build/media/
 *.webm
+build/render/old/
