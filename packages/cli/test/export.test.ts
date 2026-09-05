@@ -79,9 +79,10 @@ describe('AC7: CLI export command', () => {
   it('exports with default --out build/export', async () => {
     const result = await runCli(['export', '--project', tempProjectDir]);
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('exported 4 buildup files, 1 okh manifest');
+    expect(result.stdout).toContain('exported 5 buildup files, 1 okh manifest');
 
-    // Verify files were created
+    // Verify files were created (now includes buildconf.yaml)
+    expect(fs.existsSync(path.join(tempProjectDir, 'build/export/buildup/buildconf.yaml'))).toBe(true);
     expect(fs.existsSync(path.join(tempProjectDir, 'build/export/buildup/index.md'))).toBe(true);
     expect(fs.existsSync(path.join(tempProjectDir, 'build/export/buildup/step-01-print-parts.md'))).toBe(true);
     expect(fs.existsSync(path.join(tempProjectDir, 'build/export/buildup/step-03-lid.md'))).toBe(true);
@@ -92,8 +93,8 @@ describe('AC7: CLI export command', () => {
   it('prints exact summary line', async () => {
     const result = await runCli(['export', '--project', tempProjectDir]);
     expect(result.code).toBe(0);
-    // The message should be exactly "exported N buildup files, 1 okh manifest"
-    expect(result.stdout.trim()).toContain('exported 4 buildup files, 1 okh manifest');
+    // The message should be exactly "exported N buildup files, 1 okh manifest, M assets copied"
+    expect(result.stdout.trim()).toContain('exported 5 buildup files, 1 okh manifest, 0 assets copied');
   });
 
   it('second run is byte-identical', async () => {
@@ -234,6 +235,98 @@ Print every part listed below before you start assembly.`;
     } finally {
       rmrf(badFixtureDir);
     }
+  });
+});
+
+// AC5: Asset copying (CLI-level, not plan)
+describe('AC5: Asset copying with export-local fixture', () => {
+  let exportLocalDir: string;
+  let exportLocalCopy: string;
+
+  beforeEach(async () => {
+    // Create a temp copy of export-local fixture
+    exportLocalDir = path.join(fixturesDir, 'export-local');
+    exportLocalCopy = tempDir();
+    copyDir(exportLocalDir, exportLocalCopy);
+  });
+
+  afterEach(() => {
+    rmrf(exportLocalCopy);
+  });
+
+  it('CLI copies clip-a.mp4 byte-identical', async () => {
+    const result = await runCli(['export', '--project', exportLocalCopy]);
+    expect(result.code).toBe(0);
+
+    const sourceFile = path.join(exportLocalCopy, 'assets/clip-a.mp4');
+    const targetFile = path.join(exportLocalCopy, 'build/export/buildup/assets/clip-a.mp4');
+
+    // Both should exist and be identical
+    expect(fs.existsSync(sourceFile)).toBe(true);
+    expect(fs.existsSync(targetFile)).toBe(true);
+
+    const sourceContent = fs.readFileSync(sourceFile, 'utf8');
+    const targetContent = fs.readFileSync(targetFile, 'utf8');
+    expect(targetContent).toBe(sourceContent);
+  });
+
+  it('CLI does not create clip-b.mp4 when source is missing', async () => {
+    const result = await runCli(['export', '--project', exportLocalCopy]);
+    expect(result.code).toBe(0);
+
+    const targetFile = path.join(exportLocalCopy, 'build/export/buildup/assets/clip-b.mp4');
+    expect(fs.existsSync(targetFile)).toBe(false);
+  });
+
+  it('CLI prints warning for missing clip-b.mp4', async () => {
+    const result = await runCli(['export', '--project', exportLocalCopy]);
+    expect(result.code).toBe(0);
+    expect(result.stderr).toContain('warning: media file not found: assets/clip-b.mp4');
+  });
+
+  it('CLI summary shows 3 buildup files, 1 asset copied for export-local', async () => {
+    const result = await runCli(['export', '--project', exportLocalCopy]);
+    expect(result.code).toBe(0);
+
+    // export-local has: buildconf.yaml, index.md, step-01.md (3 buildup files)
+    // and 1 asset copied (clip-a)
+    expect(result.stdout).toContain('exported 3 buildup files, 1 okh manifest, 1 assets copied');
+  });
+
+  it('exit code is 0 even with missing assets', async () => {
+    const result = await runCli(['export', '--project', exportLocalCopy]);
+    // Should NOT fail even though clip-b is missing
+    expect(result.code).toBe(0);
+  });
+});
+
+// AC5 continued: URL-prefix (aep-like) fixture tests
+describe('AC5: URL-prefix fixture (aep-like)', () => {
+  let tempProjectDir: string;
+
+  beforeEach(() => {
+    tempProjectDir = tempDir();
+    copyDir(aepLikeFixture, tempProjectDir);
+  });
+
+  afterEach(() => {
+    rmrf(tempProjectDir);
+  });
+
+  it('aep-like fixture has 0 assets copied', async () => {
+    const result = await runCli(['export', '--project', tempProjectDir]);
+    expect(result.code).toBe(0);
+
+    // aep-like uses url-prefix provider, so no assets are copied
+    expect(result.stdout).toContain('exported 5 buildup files, 1 okh manifest, 0 assets copied');
+  });
+
+  it('aep-like has no warnings', async () => {
+    const result = await runCli(['export', '--project', tempProjectDir]);
+    expect(result.code).toBe(0);
+
+    // Should have no warnings
+    expect(result.stderr).toBe('');
   });
 });
 

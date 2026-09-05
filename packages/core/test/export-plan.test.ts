@@ -136,18 +136,20 @@ describe('AC3: BuildUp step files', () => {
   it('step-05 has two media entries', () => {
     const content = plan.buildup.find((f) => f.path.includes('step-05'))?.content ?? '';
     expect(content).toContain('## Media');
-    expect(content).toContain('vid-005-electrode-seating: video');
-    expect(content).toContain('vid-003-cap-fitting: video');
+    expect(content).toContain('[vid-005-electrode-seating](https://media.example/');
+    expect(content).toContain('[vid-003-cap-fitting](https://media.example/');
   });
 
   it('step-01 media lists hero component', () => {
     const content = plan.buildup.find((f) => f.path.includes('step-01'))?.content ?? '';
-    expect(content).toContain('vid-003-cap-fitting: video, recorded 2026-08-12 with Vial Cap');
+    expect(content).toContain('[vid-003-cap-fitting](https://media.example/');
+    expect(content).toContain('video, recorded 2026-08-12 with Vial Cap');
   });
 
   it('step-05 media with multiple heroes', () => {
     const content = plan.buildup.find((f) => f.path.includes('step-05'))?.content ?? '';
-    expect(content).toContain('vid-005-electrode-seating: video, recorded 2026-07-19 with Electrode Top Stop, MMO anode');
+    expect(content).toContain('[vid-005-electrode-seating](https://media.example/');
+    expect(content).toContain('video, recorded 2026-07-19 with Electrode Top Stop, MMO anode');
   });
 
   it('files end with exactly one newline', () => {
@@ -695,8 +697,8 @@ describe('AC3: whole-file hand derivations', () => {
       '\n' +
       '## Media\n' +
       '\n' +
-      '- vid-005-electrode-seating: video, recorded 2026-07-19 with Electrode Top Stop, MMO anode (titanium mesh)\n' +
-      '- vid-003-cap-fitting: video, recorded 2026-08-12 with Vial Cap (2×6.1 mm + 5×3.2 mm ports)\n';
+      '- [vid-005-electrode-seating](https://media.example/assets/video/vid-005-electrode-seating.mp4): video, recorded 2026-07-19 with Electrode Top Stop, MMO anode (titanium mesh)\n' +
+      '- [vid-003-cap-fitting](https://media.example/assets/video/vid-003-cap-fitting.mp4): video, recorded 2026-08-12 with Vial Cap (2×6.1 mm + 5×3.2 mm ports)\n';
     expect(emitted('step-05-electrolysis')).toBe(expected);
   });
 
@@ -713,7 +715,223 @@ describe('AC3: whole-file hand derivations', () => {
       '\n' +
       '## Media\n' +
       '\n' +
-      '- vid-003-cap-fitting: video, recorded 2026-08-12 with Vial Cap (2×6.1 mm + 5×3.2 mm ports)\n';
+      '- [vid-003-cap-fitting](https://media.example/assets/video/vid-003-cap-fitting.mp4): video, recorded 2026-08-12 with Vial Cap (2×6.1 mm + 5×3.2 mm ports)\n';
     expect(emitted('step-01-print-parts')).toBe(expected);
+  });
+});
+
+// AC1: buildconf.yaml generation and format
+describe('AC1: buildconf.yaml generation', () => {
+  it('aep-like fixture generates correct buildconf.yaml', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+
+    // Should be the first entry in buildup
+    expect(plan.buildup[0].path).toContain('buildconf.yaml');
+
+    const expected = readFileSync(join(expectedDir, 'buildup', 'buildconf.yaml'), 'utf8');
+    expect(plan.buildup[0].content).toBe(expected);
+  });
+
+  it('buildconf.yaml has correct Title from project.title', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+    const content = plan.buildup[0].content;
+
+    expect(content).toContain('Title: AEP0.2 build guide');
+  });
+
+  it('buildconf.yaml includes Authors, Affiliation, License', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+    const content = plan.buildup[0].content;
+
+    expect(content).toContain('Authors:');
+    expect(content).toContain('  - AMYBO');
+    expect(content).toContain('Affiliation: AMYBO');
+    expect(content).toContain('License: CERN-OHL-S-2.0');
+  });
+
+  it('buildconf.yaml with project: undefined is exactly Title + newline', () => {
+    const model = loadProject(join(fixturesDir, 'minimal'));
+    const plan = buildExportPlan(model);
+    const content = plan.buildup[0].content;
+
+    // When project is undefined, uses the first guide's title
+    expect(content).toMatch(/^Title: .*\n$/);
+    // Should have exactly one line (Title and newline)
+    expect(content.split('\n').filter(l => l).length).toBe(1);
+  });
+
+  it('buildconf.yaml key ordering: Title, Authors, Affiliation, License', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+    const content = plan.buildup[0].content;
+
+    // Get top-level keys (not indented)
+    const lines = content.split('\n').filter(l => l && !l.startsWith('  '));
+    expect(lines[0]).toMatch(/^Title:/);
+    expect(lines[1]).toMatch(/^Authors:/);
+    // After Authors list, we get Affiliation and License
+    const affilIndex = lines.findIndex(l => l.match(/^Affiliation:/));
+    const licenseIndex = lines.findIndex(l => l.match(/^License:/));
+    expect(affilIndex).toBeGreaterThan(1);
+    expect(licenseIndex).toBeGreaterThan(affilIndex);
+  });
+});
+
+// AC2: Index step links end with {step}
+describe('AC2: Index step links format', () => {
+  it('all step links in index end with ){step}', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+
+    const indexFile = plan.buildup.find((f) => f.path.includes('index.md'));
+    const content = indexFile!.content;
+
+    // Extract all step link lines
+    const stepLines = content.split('\n').filter(l => l.includes('.md){step}'));
+    expect(stepLines).toHaveLength(3); // aep-like has 3 steps
+
+    // Each line should end with ){step}
+    for (const line of stepLines) {
+      expect(line).toMatch(/\)\{step\}$/);
+    }
+  });
+
+  it('index.md full hand derivation with step links', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+
+    const indexFile = plan.buildup.find((f) => f.path.includes('index.md'));
+    expect(indexFile!.content).toContain('[Print the parts](step-01-print-parts.md){step}');
+    expect(indexFile!.content).toContain('[Close the lid](step-03-lid.md){step}');
+    expect(indexFile!.content).toContain('[Electrolysis setup](step-05-electrolysis.md){step}');
+  });
+});
+
+// AC3: Media links use resolveMediaUrl with [id](href) format
+describe('AC3: Media links format with hrefs', () => {
+  it('aep-like media lines have full URLs', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+
+    const step05 = plan.buildup.find((f) => f.path.includes('step-05'))?.content ?? '';
+    expect(step05).toContain('[vid-005-electrode-seating](https://media.example/');
+    expect(step05).toContain('[vid-003-cap-fitting](https://media.example/');
+  });
+
+  it('export-local media lines have relative paths', async () => {
+    const exportLocalFixture = join(fixturesDir, 'export-local');
+    const model = loadProject(exportLocalFixture);
+    const plan = buildExportPlan(model);
+
+    const step01 = plan.buildup.find((f) => f.path.includes('step-01'))?.content ?? '';
+    expect(step01).toContain('[clip-a](assets/clip-a.mp4)');
+    expect(step01).toContain('[clip-b](assets/clip-b.mp4)');
+  });
+
+  it('media line format includes type and shot metadata', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+
+    const step05 = plan.buildup.find((f) => f.path.includes('step-05'))?.content ?? '';
+    expect(step05).toContain(': video, recorded 2026-07-19 with');
+  });
+});
+
+// AC4: Assets array correctness
+describe('AC4: Assets array', () => {
+  it('aep-like has empty assets array', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+
+    expect(plan.assets).toEqual([]);
+  });
+
+  it('export-local has two sorted asset entries', async () => {
+    const exportLocalFixture = join(fixturesDir, 'export-local');
+    const model = loadProject(exportLocalFixture);
+    const plan = buildExportPlan(model);
+
+    expect(plan.assets).toHaveLength(2);
+    expect(plan.assets[0].from).toBe('assets/clip-a.mp4');
+    expect(plan.assets[0].to).toBe('build/export/buildup/assets/clip-a.mp4');
+    expect(plan.assets[1].from).toBe('assets/clip-b.mp4');
+    expect(plan.assets[1].to).toBe('build/export/buildup/assets/clip-b.mp4');
+  });
+
+  it('assets are sorted by from path', async () => {
+    const exportLocalFixture = join(fixturesDir, 'export-local');
+    const model = loadProject(exportLocalFixture);
+    const plan = buildExportPlan(model);
+
+    const froms = plan.assets.map(a => a.from);
+    const sortedFroms = [...froms].sort();
+    expect(froms).toEqual(sortedFroms);
+  });
+});
+
+// AC5: Buildup count includes buildconf.yaml (5 for aep-like)
+describe('AC5: Buildup file count', () => {
+  it('aep-like has exactly 5 buildup files (buildconf, index, 3 steps)', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+
+    expect(plan.buildup).toHaveLength(5);
+  });
+
+  it('first buildup file is buildconf.yaml', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+
+    expect(plan.buildup[0].path).toContain('buildconf.yaml');
+  });
+
+  it('buildconf.yaml appears before index.md', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan = buildExportPlan(model);
+
+    const buildconfIndex = plan.buildup.findIndex(f => f.path.includes('buildconf.yaml'));
+    const indexIndex = plan.buildup.findIndex(f => f.path.includes('index.md'));
+    expect(buildconfIndex).toBeLessThan(indexIndex);
+  });
+});
+
+// AC6: Purity of export-plan (no fs/path imports)
+describe('AC6: Export plan purity', () => {
+  it('export-plan.ts has no fs/path/os/crypto imports', () => {
+    const source = readFileSync(join(import.meta.dirname, '../src/export-plan.ts'), 'utf8');
+
+    expect(source).not.toMatch(/import.*from ['"]node:fs/);
+    expect(source).not.toMatch(/import.*from ['"]node:path/);
+    expect(source).not.toMatch(/import.*from ['"]node:os/);
+    expect(source).not.toMatch(/import.*from ['"]node:crypto/);
+  });
+
+  it('buildExportPlan called twice is deep-equal', () => {
+    const model = loadProject(aepLikeFixture);
+    const plan1 = buildExportPlan(model);
+    const plan2 = buildExportPlan(model);
+
+    expect(JSON.parse(JSON.stringify(plan1))).toEqual(JSON.parse(JSON.stringify(plan2)));
+  });
+});
+
+// AC8: CLI.md documentation mentions the three additions
+describe('AC8: Documentation', () => {
+  it('cli.md exists and has export section', () => {
+    const cliMarkdown = readFileSync(join(import.meta.dirname, '../../../site/src/content/docs/cli.md'), 'utf8');
+    expect(cliMarkdown).toContain('## export');
+  });
+
+  it('cli.md contains references to buildconf, step links, and asset copying', () => {
+    const cliMarkdown = readFileSync(join(import.meta.dirname, '../../../site/src/content/docs/cli.md'), 'utf8');
+
+    // Check that the entire document mentions these features somewhere
+    // (they may be in the export section or described elsewhere)
+    expect(cliMarkdown).toContain('buildconf');
+    expect(cliMarkdown).toContain('step');
+    expect(cliMarkdown).toContain('asset');
   });
 });
