@@ -101,4 +101,44 @@ describe('AC10: Version-bump guard', () => {
     expect(result.violations).toBeDefined();
     expect(result.unchecked).toBeDefined();
   });
+
+  describe('versionAfterSource escape hatch', () => {
+    it('suppresses the violation when sourceCommit !== versionCommit but versionAfterSource is true', () => {
+      const model = loadProject(join(fixturesDir, 'minimal'));
+      const facts = {
+        widget: { sourceCommit: 'abc123', versionCommit: 'def456', versionAfterSource: true },
+      };
+      const result = checkVersionBumps(model, facts);
+      expect(result.violations).toHaveLength(0);
+      expect(result.unchecked).toHaveLength(0);
+    });
+
+    it('still reports a violation when versionAfterSource is false', () => {
+      const model = loadProject(join(fixturesDir, 'minimal'));
+      const facts = {
+        widget: { sourceCommit: 'abc123', versionCommit: 'def456', versionAfterSource: false },
+      };
+      const result = checkVersionBumps(model, facts);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].component).toBe('widget');
+    });
+
+    it('still reports a violation when versionAfterSource is omitted (backwards compatible default)', () => {
+      const model = loadProject(join(fixturesDir, 'minimal'));
+      const facts = {
+        widget: { sourceCommit: 'abc123', versionCommit: 'def456' },
+      };
+      const result = checkVersionBumps(model, facts);
+      expect(result.violations).toHaveLength(1);
+    });
+
+    it('has no effect when sourceCommit already equals versionCommit', () => {
+      const model = loadProject(join(fixturesDir, 'minimal'));
+      const facts = {
+        widget: { sourceCommit: 'abc123', versionCommit: 'abc123', versionAfterSource: true },
+      };
+      const result = checkVersionBumps(model, facts);
+      expect(result.violations).toHaveLength(0);
+    });
+  });
 });
