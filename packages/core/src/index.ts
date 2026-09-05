@@ -90,5 +90,8 @@ export type { RenderJob, RenderJobOptions, RenderPlan } from './render-plan.js';
 export { MEDIA_OUTPUT_DIR, MEDIA_PLAN_VERSION, MEDIA_RENDITIONS, buildMediaPlan } from './media-plan.js';
 export type { MediaJob, MediaJobOutputs, MediaPlan } from './media-plan.js';
 
+export { DIFF_PLAN_VERSION, OLD_RENDER_OUTPUT_DIR, buildDiffPlan, diffCandidates } from './diff-plan.js';
+export type { DiffJob, DiffPlan } from './diff-plan.js';
+
 export { checkVersionBumps } from './guard.js';
 export type { VersionBumpFacts, VersionBumpResult, Violation } from './guard.js';
