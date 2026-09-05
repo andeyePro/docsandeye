@@ -1,9 +1,10 @@
 /**
  * Build-time data loading: the project model (via core), the staleness
  * report, the render manifest written by the render pipeline, the media
- * manifest written by the encode pipeline, and the carbon report written by
- * the CLI. Everything the pages need is computed
- * once here and served to the Astro build through `virtual:docsandeye/model`.
+ * manifest written by the encode pipeline, the old-geometry manifest written
+ * by `docsandeye diff`, and the carbon report written by the CLI. Everything
+ * the pages need is computed once here and served to the Astro build through
+ * `virtual:docsandeye/model`.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -53,6 +54,25 @@ export interface MediaManifest {
   jobs: Record<string, MediaManifestJob>;
 }
 
+export type OldGeometryStatus = 'restored' | 'cached' | 'skipped' | 'failed';
+
+/** One entry of `build/render/old/manifest.json` (`docsandeye diff`'s output), keyed `<component>@<version>`. */
+export interface OldGeometryJob {
+  status: OldGeometryStatus | string;
+  /** Commit the geometry was restored from. */
+  commit?: string;
+  /** The derived file that was restored. */
+  source?: string;
+  /** Project-relative `.glb` path, `build/render/old/<component>@<version>.glb`. */
+  output: string;
+  reason?: string;
+}
+
+export interface OldGeometryManifest {
+  version: number;
+  jobs: Record<string, OldGeometryJob>;
+}
+
 export interface CarbonPage {
   bytes: number;
   gco2e: number;
@@ -74,6 +94,8 @@ export interface DocsandeyeData {
   renderManifest: RenderManifest | null;
   /** `null` when the project has no `build/media/manifest.json` (videos then degrade to the authored original). */
   mediaManifest: MediaManifest | null;
+  /** `null` when the project has no `build/render/old/manifest.json` (no old geometry to show). */
+  oldGeometry: OldGeometryManifest | null;
   /** `null` when the project has no `build/carbon.json`. */
   carbon: CarbonReport | null;
   /** ISO date `YYYY-MM-DD` used as the "updated within 30 days" reference. */
@@ -83,7 +105,36 @@ export interface DocsandeyeData {
 
 export const RENDER_MANIFEST_PATH = 'build/render/manifest.json';
 export const MEDIA_MANIFEST_PATH = 'build/media/manifest.json';
+export const OLD_GEOMETRY_MANIFEST_PATH = 'build/render/old/manifest.json';
 export const CARBON_PATH = 'build/carbon.json';
+/** Where the copy step puts restored old geometry (`/_docsandeye/render/old/<file>`). */
+export const OLD_RENDER_URL_PREFIX = '/_docsandeye/render/old/';
+
+/** Old-geometry job statuses whose output is on disk and may be shown. */
+export const SHOWN_OLD_STATUSES: ReadonlySet<string> = new Set<OldGeometryStatus>(['restored', 'cached']);
+/** Render-manifest statuses whose output exists, for the current-model lookup. */
+export const CURRENT_VIEWER_STATUSES: ReadonlySet<string> = new Set(['rendered', 'cached', 'hand-exported']);
+
+/** The `<component>@<version>` old-geometry job when it is `restored|cached`, else undefined. */
+export function oldGeometryFor(manifest: OldGeometryManifest | null, component: string, version: string): OldGeometryJob | undefined {
+  const job = manifest?.jobs[`${component}@${version}`];
+  return job && SHOWN_OLD_STATUSES.has(job.status) ? job : undefined;
+}
+
+/**
+ * The current model's viewer job: the first render-manifest key (in key order)
+ * that starts with `<component>@<version>--viewer--` and whose status is
+ * `rendered|cached|hand-exported` — whichever step declared the viewer.
+ */
+export function currentViewerJob(manifest: RenderManifest | null, component: string, version: string): { key: string; job: RenderManifestJob } | undefined {
+  if (!manifest) return undefined;
+  const prefix = `${component}@${version}--viewer--`;
+  for (const key of Object.keys(manifest.jobs).sort()) {
+    const job = manifest.jobs[key]!;
+    if (key.startsWith(prefix) && CURRENT_VIEWER_STATUSES.has(job.status) && job.outputs.length > 0) return { key, job };
+  }
+  return undefined;
+}
 
 /** Job statuses whose outputs are on disk and may be offered to the page. */
 export const OFFERED_STATUSES: ReadonlySet<string> = new Set<MediaJobStatus>(['encoded', 'cached']);
@@ -128,6 +179,7 @@ export function loadDocsandeyeData(projectRoot: string, env: DocsandeyeEnv = pro
     staleness: computeStaleness(model),
     renderManifest: readRenderManifest(root),
     mediaManifest: readMediaManifest(root),
+    oldGeometry: readOldGeometry(root),
     carbon: readCarbon(root),
     buildDate: resolveBuildDate(env.DOCSANDEYE_BUILD_DATE),
     maintainer: isMaintainer(env.DOCSANDEYE_MAINTAINER),
@@ -212,6 +264,24 @@ function readMediaManifest(root: string): MediaManifest | null {
     jobs[key] = entry;
   }
   return { version: 1, jobs };
+}
+
+/** Absent → `null` (no diff panel geometry); present but malformed → throw, like the other manifests. */
+function readOldGeometry(root: string): OldGeometryManifest | null {
+  const file = path.join(root, OLD_GEOMETRY_MANIFEST_PATH);
+  if (!fs.existsSync(file)) return null;
+  const raw = readJson(file);
+  if (!isRecord(raw) || !isRecord(raw.jobs)) {
+    throw new Error(`starlight-docsandeye: ${file} must be an object with a "jobs" object`);
+  }
+  const jobs: Record<string, OldGeometryJob> = {};
+  for (const [key, job] of Object.entries(raw.jobs)) {
+    if (!isRecord(job) || typeof job.status !== 'string' || typeof job.output !== 'string') {
+      throw new Error(`starlight-docsandeye: ${file}: job "${key}" must have string "status" and "output"`);
+    }
+    jobs[key] = { ...job, status: job.status, output: job.output };
+  }
+  return { version: typeof raw.version === 'number' ? raw.version : 1, jobs };
 }
 
 function readCarbon(root: string): CarbonReport | null {

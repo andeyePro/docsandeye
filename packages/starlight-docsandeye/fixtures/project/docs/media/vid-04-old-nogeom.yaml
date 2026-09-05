@@ -1,0 +1,11 @@
+# A second STALE record on step-02 whose hero component (vial-cap) has no job in
+# build/render/old/manifest.json, so its details render without <docsi-diff>.
+# A photo, not a video: the video suite asserts step-02 carries exactly one
+# stale-video details (vid-03-old), and that expectation is not this task's to change.
+id: vid-04-old-nogeom
+type: photo
+file: assets/photo/vid-04-old-nogeom.jpg
+shot_date: 2026-03-01
+shot_by: "Example Maker"
+hero: [vial-cap@1.0.0]
+licence: CC-BY-SA-4.0
