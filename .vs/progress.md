@@ -58,3 +58,5 @@ Executor (opus) 25652fd; chair verified build + vitest on main after merge. Foll
 Executor (opus) dd34d43; chair verified build + vitest 489 on main after merge. Follow-ups filed (viewer STL, core resolveMediaUrl encoding, download styling).
 ## iter 10b — docs quality pass — merged — 2026-09-05T06:38:05Z
 Sonnet review (7 findings) → Opus executor 0dbaba2 + 48527f8 (resumed after the window-2 halt); chair verified build 17 pages, full vitest, check 0/0 on main after merge. Dry run of getting-started from a clean clone passes through render/encode/diff/check/build.
+## task_016 — small plugin follow-ups — merged — 2026-09-05T06:48:33Z
+Executor (opus) fc59af1; chair verified build 17 pages, vitest 506, check 0/0 on main after merge.
