@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * `docsandeye` entry point: argv parsing with `node:util` `parseArgs`,
- * dispatch to init / render / check, exit codes 0/1/2/64/65/66.
+ * dispatch to init / render / encode / diff / check, exit codes 0/1/2/64/65/66.
  */
 import { parseArgs } from 'node:util';
 import { KEBAB_ID_RE } from '@docsandeye/core';
 import { runCheck } from './check.js';
 import { EXIT, processIo, type Io } from './common.js';
+import { runDiff } from './diff.js';
 import { runEncode } from './encode.js';
 import { runInit } from './init.js';
 import { findProjectRoot, packageVersion } from './paths.js';
@@ -19,6 +20,7 @@ Commands:
   init <dir>   scaffold a Starlight site wired to the starlight-docsandeye plugin
   render       write build/render-plan.json and run the Python render pipeline
   encode       write build/media-plan.json and run the Python video encode pipeline
+  diff         restore each stale component's old geometry from git and convert it to GLB
   check        validate content, guard version bumps, measure page byte budgets
 
 Options:
@@ -57,6 +59,19 @@ Options:
   --project <root>  project root (default: nearest directory with docsandeye.config.yaml)
   --force           re-encode every job, ignoring the cache
   --allow-missing   skip jobs whose encoder is not installed instead of failing
+  -h, --help        show this help`;
+
+export const DIFF_USAGE = `Usage: docsandeye diff [--project <root>] [--force]
+
+Write <root>/build/diff-plan.json, then for every STALE media record restore
+the changed component's derived .glb/.stl as committed at the recorded version
+(git history), convert .stl to GLB with python3 -m docsandeye_render glb, and
+write <root>/build/render/old/manifest.json. Outside a git repository every
+job is skipped. Exit 1 only when a job failed.
+
+Options:
+  --project <root>  project root (default: nearest directory with docsandeye.config.yaml)
+  --force           restore every job again, ignoring cached outputs
   -h, --help        show this help`;
 
 export const CHECK_USAGE = `Usage: docsandeye check [--project <root>] [--dist <dir>] [--no-strict]
@@ -174,6 +189,17 @@ export async function main(argv: string[], io: Io = processIo): Promise<number> 
       const root = resolveRoot(parsed.values.project as string | undefined, io);
       if (root === undefined) return EXIT.NOINPUT;
       return runEncode({ root, force: parsed.values.force as boolean, allowMissing: parsed.values['allow-missing'] as boolean }, io);
+    }
+    case 'diff': {
+      const parsed = parseSub('diff', DIFF_USAGE, rest, {
+        project: { type: 'string' },
+        force: { type: 'boolean', default: false },
+      }, io);
+      if (typeof parsed === 'number') return parsed;
+      if (parsed.positionals.length > 0) return unexpected('diff', parsed.positionals, DIFF_USAGE, io);
+      const root = resolveRoot(parsed.values.project as string | undefined, io);
+      if (root === undefined) return EXIT.NOINPUT;
+      return runDiff({ root, force: parsed.values.force as boolean }, io);
     }
     case 'check': {
       const parsed = parseSub('check', CHECK_USAGE, rest, {
