@@ -101,6 +101,33 @@ docsi-step {
   font-size: var(--sl-text-sm);
 }
 
+/* A derived file that is neither an image nor a viewable model (`.stl`,
+   `.step`, `.3mf`) is offered as a labelled download. Inside a figure the
+   figure supplies the box; as a step viewer the link stands alone in
+   `.docsi-media`, so it gets the same card as `docsi-model` below. Colours are
+   the existing accent/background tokens, which Starlight defines for both
+   themes — no new token. */
+.docsi-download {
+  display: block;
+  padding: 0.75rem;
+  background: var(--docsi-bg);
+  color: var(--docsi-accent-high);
+  font-family: var(--docsi-font-body);
+  font-size: var(--sl-text-sm);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.docsi-download:hover,
+.docsi-download:focus-visible {
+  text-decoration: underline;
+}
+
+.docsi-media > .docsi-download {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+}
+
 /* ---- video --------------------------------------------------------------- */
 /* `clip` rounds the corners without making the figure a scroll container, so the
    banner's sticky positioning still works against the page. */
