@@ -1,0 +1,99 @@
+---
+/**
+ * A step video as a `<docsi-video>` facade around a plain `<video preload="none">`.
+ *
+ * Encoded (the media manifest offers at least one rendition): poster from the
+ * manifest, the lowest rendition's AV1 + H.264 pair, captions when encoded,
+ * `data-renditions="720,1080"` for the client-side pick. Degraded (no manifest
+ * or nothing offered): the authored poster and original file, `data-renditions="source"`.
+ * A non-FRESH clip carries a hidden "Recorded with…" banner the element unhides.
+ *
+ * `mode="flow"` wraps the element in a figure with the CHANGED_IN_FRAME note and caption;
+ * `mode="older"` (the STALE flow) emits the hidden `.docsi-older` box with the
+ * `<noscript>` download link after it, so the link stays reachable without JavaScript.
+ */
+import { resolveMediaUrl, type HostingConfig, type Media, type ProjectModel, type StalenessEntry } from '@docsandeye/core';
+import { offeredRenditions, type MediaManifest } from '../data.ts';
+import { AV1_SOURCE_TYPE, H264_SOURCE_TYPE, bannerText, type BannerRecord } from '../elements/docsi-video.ts';
+import { MEDIA_URL_PREFIX, basename, changedInFrameNote, componentName, mediaUrl, withBase } from '../view.ts';
+
+interface Props {
+	media: Media;
+	entry: StalenessEntry;
+	model: ProjectModel;
+	hosting: HostingConfig;
+	base: string;
+	mediaManifest: MediaManifest | null;
+	mode?: 'flow' | 'older';
+}
+
+const { media, entry, model, hosting, base, mediaManifest, mode = 'flow' } = Astro.props;
+
+const job = mediaManifest?.jobs[media.id];
+const offered = job ? offeredRenditions(job) : [];
+const lowest = offered[0];
+const encoded = job !== undefined && lowest !== undefined;
+
+/** URL of a manifest output path: `/_docsandeye/media/<basename>` when hosting locally, else via the provider (path as written). */
+const outputUrl = (rel: string): string =>
+	hosting.provider === 'local' ? withBase(`${MEDIA_URL_PREFIX}${basename(rel)}`, base) : resolveMediaUrl(hosting, rel);
+
+const sourceType = (file: string): string => {
+	const ext = file.toLowerCase().replace(/^.*\./, '');
+	return ext === 'webm' ? 'video/webm' : ext === 'mov' ? 'video/quicktime' : ext === 'ogv' || ext === 'ogg' ? 'video/ogg' : H264_SOURCE_TYPE;
+};
+
+const captionsLang = (file: string): string => /\.([a-z]{2,3}(?:-[A-Za-z]{2,4})?)\.vtt$/.exec(basename(file))?.[1] ?? 'en';
+
+const sources: Array<{ src: string; type: string; height?: number }> = encoded
+	? [
+			{ src: outputUrl(job.outputs[`av1_${lowest}`]!), type: AV1_SOURCE_TYPE, height: lowest },
+			{ src: outputUrl(job.outputs[`h264_${lowest}`]!), type: H264_SOURCE_TYPE, height: lowest },
+		]
+	: [{ src: mediaUrl(media, 'file', hosting, base)!, type: sourceType(media.file) }];
+
+const poster = encoded && job.outputs.poster ? outputUrl(job.outputs.poster) : mediaUrl(media, 'poster', hosting, base);
+const captions = encoded && job.outputs.captions ? { src: outputUrl(job.outputs.captions), lang: captionsLang(job.outputs.captions) } : undefined;
+const download = sources[sources.length - 1]!.src;
+const renditions = encoded ? offered.join(',') : 'source';
+
+const record: BannerRecord = {
+	stale_heroes: entry.stale_heroes.map((p) => ({ ...p, name: componentName(model, p.component) })),
+	changed_in_frame: entry.changed_in_frame.map((p) => ({ ...p, name: componentName(model, p.component) })),
+};
+const banner = bannerText(entry.status, record);
+const note = entry.status === 'CHANGED_IN_FRAME' ? changedInFrameNote(media, entry, model) : undefined;
+---
+
+{
+	mode === 'older' ? (
+		<>
+			<div class="docsi-older" hidden>
+				<docsi-video data-media={media.id} data-status={entry.status} data-renditions={renditions}>
+					{banner && <p class="docsi-banner" hidden>{banner}</p>}
+					<video preload="none" poster={poster} controls playsinline>
+						{sources.map((s) => <source src={s.src} type={s.type} data-height={s.height} />)}
+						{captions && <track kind="captions" srclang={captions.lang} src={captions.src} default />}
+					</video>
+				</docsi-video>
+			</div>
+			<noscript><a href={download}>Download the video</a></noscript>
+		</>
+	) : (
+		<figure class="docsi-video-figure">
+			<docsi-video data-media={media.id} data-status={entry.status} data-renditions={renditions}>
+				{banner && <p class="docsi-banner" hidden>{banner}</p>}
+				<video preload="none" poster={poster} controls playsinline>
+					{sources.map((s) => <source src={s.src} type={s.type} data-height={s.height} />)}
+					{captions && <track kind="captions" srclang={captions.lang} src={captions.src} default />}
+				</video>
+				<noscript><a href={download}>Download the video</a></noscript>
+			</docsi-video>
+			{note && <p class="docsi-note">{note}</p>}
+			<figcaption>
+				Video — shot {media.shot_date}
+				{media.shot_by ? ` by ${media.shot_by}` : ''}
+			</figcaption>
+		</figure>
+	)
+}

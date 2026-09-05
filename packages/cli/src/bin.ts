@@ -59,15 +59,17 @@ Options:
   --allow-missing   skip jobs whose encoder is not installed instead of failing
   -h, --help        show this help`;
 
-export const CHECK_USAGE = `Usage: docsandeye check [--project <root>] [--dist <dir>] [--strict]
+export const CHECK_USAGE = `Usage: docsandeye check [--project <root>] [--dist <dir>] [--no-strict]
 
 Validate content, run the version-bump guard against git history and, with
 --dist, measure each step page's initial-load bytes and CO2e estimate.
+A page over its byte budget is an error (exit 1) unless --no-strict is given.
 
 Options:
   --project <root>  project root (default: nearest directory with docsandeye.config.yaml)
   --dist <dir>      built site to measure; writes <root>/build/carbon.json
-  --strict          treat warnings as errors
+  --no-strict       report over-budget pages as warnings instead of errors
+  --strict          accepted for compatibility (the default since v0.2)
   -h, --help        show this help`;
 
 export const NO_PROJECT_MESSAGE = 'no docsandeye.config.yaml found (run docsandeye init)';
@@ -177,13 +179,17 @@ export async function main(argv: string[], io: Io = processIo): Promise<number> 
       const parsed = parseSub('check', CHECK_USAGE, rest, {
         project: { type: 'string' },
         dist: { type: 'string' },
+        // `--strict` is the default and a no-op; `--no-strict` is its own option
+        // because parseArgs has no built-in negation.
         strict: { type: 'boolean', default: false },
+        'no-strict': { type: 'boolean', default: false },
       }, io);
       if (typeof parsed === 'number') return parsed;
       if (parsed.positionals.length > 0) return unexpected('check', parsed.positionals, CHECK_USAGE, io);
       const root = resolveRoot(parsed.values.project as string | undefined, io);
       if (root === undefined) return EXIT.NOINPUT;
-      return runCheck({ root, dist: parsed.values.dist as string | undefined, strict: parsed.values.strict as boolean }, io);
+      const strict = parsed.values['no-strict'] !== true;
+      return runCheck({ root, dist: parsed.values.dist as string | undefined, strict }, io);
     }
     default:
       io.err(`docsandeye: unknown command "${command}"`);

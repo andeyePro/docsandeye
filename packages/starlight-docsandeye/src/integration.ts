@@ -2,14 +2,16 @@
  * The Astro integration behind the Starlight plugin: one prerendered route
  * per guide index and per step, the maintainer-only `/reshoot` route, the
  * virtual data module, a dev-server handler for `/_docsandeye/*`, and the
- * static copy step after the build.
+ * static copy step after the build (render outputs, authored media and the
+ * encode pipeline's media outputs).
  */
 import fs from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AstroIntegration } from 'astro';
-import { collectStaticAssets, copyStaticAssets } from './assets.ts';
+import { collectStaticAssets, copyStaticAssets, type StaticAsset } from './assets.ts';
 import type { DocsandeyeData } from './data.ts';
-import { guidePattern } from './view.ts';
+import { MEDIA_URL_PREFIX, basename, guidePattern } from './view.ts';
 import { createDocsandeyeVitePlugin } from './virtual.ts';
 
 export interface DocsandeyeIntegrationOptions {
@@ -39,8 +41,37 @@ const MIME: Record<string, string> = {
   '.vtt': 'text/vtt',
 };
 
+/**
+ * Encoded media outputs (`build/media/manifest.json`) to copy under
+ * `/_docsandeye/media/` for local hosting: every output path of every job that
+ * exists on disk. A hosting provider serves them itself, so nothing is copied then.
+ */
+export function collectMediaOutputs(data: DocsandeyeData, projectRoot: string): StaticAsset[] {
+  if (data.config.hosting.provider !== 'local' || !data.mediaManifest) return [];
+  const root = path.resolve(projectRoot);
+  const byUrl = new Map<string, StaticAsset>();
+  for (const job of Object.values(data.mediaManifest.jobs)) {
+    for (const rel of Object.values(job.outputs)) {
+      const source = path.resolve(root, rel);
+      if (!fs.existsSync(source)) continue;
+      const url = `${MEDIA_URL_PREFIX}${basename(rel)}`;
+      if (!byUrl.has(url)) byUrl.set(url, { url, source });
+    }
+  }
+  return [...byUrl.values()];
+}
+
+/** Static assets plus media outputs, de-duplicated by URL (first wins). */
+function collectAllAssets(data: DocsandeyeData, projectRoot: string): StaticAsset[] {
+  const byUrl = new Map<string, StaticAsset>();
+  for (const asset of [...collectStaticAssets(data, projectRoot), ...collectMediaOutputs(data, projectRoot)]) {
+    if (!byUrl.has(asset.url)) byUrl.set(asset.url, asset);
+  }
+  return [...byUrl.values()];
+}
+
 export function createDocsandeyeIntegration({ data, projectRoot }: DocsandeyeIntegrationOptions): AstroIntegration {
-  const assets = collectStaticAssets(data, projectRoot);
+  const assets = collectAllAssets(data, projectRoot);
   const assetByUrl = new Map(assets.map((a) => [a.url, a.source]));
 
   return {

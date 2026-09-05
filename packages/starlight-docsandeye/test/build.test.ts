@@ -216,18 +216,25 @@ describe('AC4 + AC6: step-02-cap markup, document order and staleness demotion',
     expect(li?.text).toContain('Port layout rework.');
   });
 
-  it('CHANGED_IN_FRAME vid-02-seat: poster <img> in normal flow, data-docsi-video="reserved", followed by a docsi-note mentioning Vial Cap', () => {
+  it('CHANGED_IN_FRAME vid-02-seat: <docsi-video> facade (encoded contract) in normal flow, followed by a docsi-note mentioning Vial Cap', () => {
+    // v0.2: the v0.1 placeholder <img data-docsi-video="reserved"> is gone;
+    // the step now carries the real <docsi-video> facade (see video.test.ts
+    // AC2 for the full encoded-contract assertions). This test only re-checks
+    // the parts of the v0.1 assertion that still apply: normal flow (not
+    // demoted into a <details>) and the docsi-note that follows it.
     const doc = parse(html);
-    const figure = doc.querySelector('figure[data-media="vid-02-seat"]');
+    const video = doc.querySelector('docsi-video[data-media="vid-02-seat"]');
+    expect(video).toBeTruthy();
+    expect(video!.getAttribute('data-status')).toBe('CHANGED_IN_FRAME');
+    expect(video!.closest('details')).toBeFalsy();
+    expect(doc.querySelector('[data-docsi-video]')).toBeFalsy();
+    const figure = video!.closest('figure.docsi-video-figure');
     expect(figure).toBeTruthy();
-    expect(figure!.parentNode?.tagName).not.toBe('DETAILS');
-    const img = figure!.querySelector('img');
-    expect(img?.getAttribute('data-docsi-video')).toBe('reserved');
     const note = figure!.querySelector('p.docsi-note');
     expect(note).toBeTruthy();
     expect(note!.text).toContain('Vial Cap');
-    // The note follows the <img> in document order.
-    expect(figure!.outerHTML.indexOf('<p class="docsi-note"')).toBeGreaterThan(figure!.outerHTML.indexOf('<img'));
+    // The note follows the <docsi-video> element in document order.
+    expect(figure!.outerHTML.indexOf('<p class="docsi-note"')).toBeGreaterThan(figure!.outerHTML.indexOf('<docsi-video'));
   });
 
   it('docsi-text: <h1> equals the step title', () => {
@@ -318,14 +325,14 @@ describe('AC6: FRESH media is plain, with no details and no note', () => {
 
 // ---------------------------------------------------------------------------
 // AC5 (build portion): exactly one module registering script per step page,
-// under 25KB, containing all three customElements.define(...), plus a
-// separate chunk containing "model-viewer".
+// under 30KB (v0.2: docsi-video joins the other three), containing all four
+// customElements.define(...), plus a separate chunk containing "model-viewer".
 // ---------------------------------------------------------------------------
 
 describe('AC5: custom elements upgrade, not replace', () => {
   const stepPages = ['AEP/step-01-raft/index.html', 'AEP/step-02-cap/index.html', 'MEP/step-03-mep-only/index.html'];
 
-  /** Of a page's `<script type="module" src="…">` tags, the one whose file registers all three custom elements — "the registering script" (AC5). Other module scripts (e.g. Astro/Starlight's own runtime) are not this package's concern. */
+  /** Of a page's `<script type="module" src="…">` tags, the one whose file registers all four custom elements — "the registering script" (AC1 in v0.2's spec). Other module scripts (e.g. Astro/Starlight's own runtime) are not this package's concern. */
   function findRegisteringScript(doc: ReturnType<typeof readHtml>): { src: string; filePath: string; content: string } {
     const candidates = doc.querySelectorAll('script[type="module"]').filter((s) => !!s.getAttribute('src'));
     const registering = candidates
@@ -340,18 +347,19 @@ describe('AC5: custom elements upgrade, not replace', () => {
         (c) =>
           c.normalised.includes('customElements.define("docsi-step"') &&
           c.normalised.includes('customElements.define("docsi-model"') &&
-          c.normalised.includes('customElements.define("docsi-lightbox"'),
+          c.normalised.includes('customElements.define("docsi-lightbox"') &&
+          c.normalised.includes('customElements.define("docsi-video"'),
       );
-    expect(registering.length, 'expected exactly one module script registering all three custom elements').toBe(1);
+    expect(registering.length, 'expected exactly one module script registering all four custom elements').toBe(1);
     return registering[0]!;
   }
 
   for (const page of stepPages) {
-    it(`${page}: exactly one <script type="module" src="…"> registers all three custom elements, under 25KB`, () => {
+    it(`${page}: exactly one <script type="module" src="…"> registers all four custom elements (incl. docsi-video), under 30KB`, () => {
       const doc = readHtml(DIST, page);
       const { filePath } = findRegisteringScript(doc);
       const size = fs.statSync(filePath).size;
-      expect(size).toBeLessThan(25 * 1024);
+      expect(size).toBeLessThan(30 * 1024);
     });
   }
 
@@ -405,24 +413,28 @@ describe('AC7 sidebar badges', () => {
 // ---------------------------------------------------------------------------
 
 describe('AC8 reshoot dashboard', () => {
-  it('table rows: vial-cap is first, with class="docsi-stale"; top-stop and anode are also present', () => {
+  it('table rows: top-stop now precedes vial-cap (v0.2: vid-03-old gives top-stop a stale hero too, tying it with vial-cap on staleHeroCount=1; ties break by component id ascending, "top-stop" < "vial-cap"); anode is also present', () => {
     const doc = readHtml(DIST_MAINTAINER, 'reshoot/index.html');
     const rows = doc.querySelectorAll('table.docsi-reshoot tbody tr');
     expect(rows.length).toBe(3);
 
     const first = rows[0]!;
-    expect(first.getAttribute('data-component')).toBe('vial-cap');
+    expect(first.getAttribute('data-component')).toBe('top-stop');
     expect(first.classList.contains('docsi-stale')).toBe(true);
-    expect(first.text).toContain('Vial Cap');
-    expect(first.querySelector('code')?.text.trim()).toBe('vial-cap');
+    expect(first.text).toContain('Top Stop');
+    expect(first.querySelector('code')?.text.trim()).toBe('top-stop');
+    expect(first.querySelectorAll('td')[1]?.text).toContain('1.3.0');
+
+    const second = rows[1]!;
+    expect(second.getAttribute('data-component')).toBe('vial-cap');
+    expect(second.classList.contains('docsi-stale')).toBe(true);
+    expect(second.text).toContain('Vial Cap');
+    expect(second.querySelector('code')?.text.trim()).toBe('vial-cap');
 
     const byComponent = new Map(rows.map((r) => [r.getAttribute('data-component'), r]));
     expect(byComponent.has('top-stop')).toBe(true);
+    expect(byComponent.has('vial-cap')).toBe(true);
     expect(byComponent.has('anode')).toBe(true);
-
-    const topStop = byComponent.get('top-stop')!;
-    expect(topStop.text).toContain('Top Stop');
-    expect(topStop.querySelectorAll('td')[1]?.text).toContain('1.3.0');
 
     const anode = byComponent.get('anode')!;
     expect(anode.text).toContain('MMO anode');

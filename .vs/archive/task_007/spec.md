@@ -1,88 +1,78 @@
-# task_007 — v0.2 video encoding: `docsandeye_render encode` and `docsandeye encode`
+# task_008 — v0.2 video in the plugin: `<docsi-video>` facade, the stale-video flow, hard carbon gate
 
 ## Task summary
 
-Add the video encoding stage of v0.2. Given the project's media manifests (type `video`), the Python pipeline encodes each source clip twice (AV1 with SVT-AV1 in WebM/Opus, then H.264 in MP4/AAC) at two renditions (720p and 1080p), produces a WebP poster (converted from the authored poster, or generated from the clip when the authored file is missing), copies the WebVTT captions, and records everything in `build/media/manifest.json`; the CLI gains `docsandeye encode` to drive it. ffmpeg is the only encoder, behind an encoder seam parallel to the render pipeline's driver seam, so the whole stage is fixture-tested with a fake `ffmpeg`/`ffprobe` (ffmpeg is absent in the build container; real-toolchain verification happens on a Mac). Encoded outputs are never committed (CONTRIBUTING forbids rendered video); the stage writes them under `build/media/` and the plugin (task_008) copies them into `dist/` or a hosting provider serves them.
+Make video first-class in `starlight-docsandeye`. A step's video media renders as a `<docsi-video>` custom element wrapping a plain `<video preload="none" poster controls playsinline>` with AV1 `<source>` first and H.264 second, choosing 720p or 1080p client-side with no library, and carrying a persistent "Recorded with <component> v<shot_with>, current is v<current>" banner whenever staleness data says the clip is not FRESH. A STALE video is demoted: renders and text first, then a `<details class="docsi-stale docsi-stale-video">` whose summary reads `A video exists for this step, but <name> has changed since it was filmed (v<shot_with> → v<current>)`, containing the changelog entries and a `Watch the older video` button that reveals the `<docsi-video>` (never autoplays, never loads bytes before the button). CHANGED_IN_FRAME keeps the video in normal flow with the one-line note. Encoded files come from task_007's `build/media/manifest.json`; when that file is absent the element degrades to the authored original. The CLI's byte-budget check becomes a hard failure in v0.2 for over-budget pages only (`--no-strict` restores the warning).
 
-Decisions already made (Martin, 2026-09-04): AV1 first with H.264 fallback; 720p and 1080p only, no HLS/DASH; posters as WebP or AVIF, never JPEG; `preload="none"` facade; carbon measured, not asserted; Whisper is out of scope for v0.x (captions are authored). Codec parameters come from the research briefing: SVT-AV1 preset 6, CRF 28, `yuv420p10le`, Opus 96 kbps; x264 preset slow, CRF 20, `yuv420p`, AAC 128 kbps; `+faststart`.
+Decisions already made: video stays (explanatory power wins), lowest byte-weight that still explains; `preload="none"` facade; AV1-first, H.264 fallback; no HLS/DASH; client-side rendition pick via `navigator.connection.saveData`, `effectiveType`, `prefers-reduced-data`, `devicePixelRatio`/viewport; persistent banner during playback; CHANGED_IN_FRAME is gentler; the guide is complete with video disabled.
 
-## Ownership (exhaustive list of files this task may create or edit)
+## Ownership (exhaustive)
 
-Create: `packages/core/src/media-plan.ts`; `render/docsandeye_render/media_plan.py`, `render/docsandeye_render/encode.py`, `render/docsandeye_render/drivers/ffmpeg.py`; `render/fixtures/media/**` (plan, sources as tiny placeholder files, an authored `.jpg` poster placeholder, a `.vtt`, `fake-bin/ffmpeg`, `fake-bin/ffprobe`); `packages/cli/src/encode.ts`.
-Edit (additively): `packages/core/src/index.ts` (export the new module); `render/docsandeye_render/drivers/base.py` (add the `EncoderDriver` protocol beside `Driver`; do not change `Driver`); `render/docsandeye_render/__main__.py` (add the `encode` subcommand and the `ffmpeg:` doctor line); `packages/cli/src/bin.ts` (add the `encode` case and usage line); `packages/cli/src/render.ts` (export the existing Python-spawning helper so `encode.ts` reuses it — no behaviour change); root `.gitignore` (append exactly two lines: `build/media/` and `*.webm`).
-Tester-owned: `render/tests/test_encode*.py`, `packages/core/test/media-plan.test.ts`, `packages/cli/test/encode.test.ts`. Nothing else.
+Create/edit in `packages/starlight-docsandeye/`: `src/elements/docsi-video.ts`, `src/elements/index.ts` (register it), `src/components/VideoBlock.astro`, `src/components/MediaPane.astro`, `src/components/StalenessDetails.astro`, `src/data.ts` (media manifest loading + the `MediaManifest` type), `src/integration.ts` (copy step for media outputs), `src/virtual.ts` (export `mediaManifest`), `src/styles/docsandeye.css` (video, banner, tokens); fixtures: `fixtures/project/**` (add `vid-03-old`, `vid-01-raft`, `build/media/manifest.json`, placeholder encoded files under 1 KB and real 1×1 `.webp` posters), `fixtures/project-hosted/**`, `fixtures/site-hosted/**`, `fixtures/project-nomanifest/**` and `fixtures/site-nomanifest/**` (new; the nomanifest project is a copy of `fixtures/project` without `build/media/`). In `packages/cli/`: `src/check.ts` and `src/bin.ts` (strict default, `--no-strict` option). Tester-owned: `packages/starlight-docsandeye/test/**` and `packages/cli/test/**` — this task's Tester MAY edit the earlier tasks' tests there where this spec says so (AC1, AC8). Nothing else.
 
-## Media plan (normative; core emits `build/media-plan.json`, Python consumes)
+## Media manifest type (normative, `src/data.ts`)
 
-```json
-{"version": 1, "project_root": ".", "jobs": [
-  {"key": "vid-005-electrode-seating", "media": "vid-005-electrode-seating",
-   "source": "assets/video/vid-005-electrode-seating.mp4",
-   "poster_source": "assets/video/vid-005-electrode-seating.jpg",
-   "captions": "assets/video/vid-005-electrode-seating.en.vtt",
-   "duration_s": 47, "renditions": [720, 1080],
-   "outputs": {"av1_720": "build/media/vid-005-electrode-seating-720.webm", "h264_720": "build/media/vid-005-electrode-seating-720.mp4",
-               "av1_1080": "build/media/vid-005-electrode-seating-1080.webm", "h264_1080": "build/media/vid-005-electrode-seating-1080.mp4",
-               "poster": "build/media/vid-005-electrode-seating.webp", "captions": "build/media/vid-005-electrode-seating.en.vtt"}}]}
+```ts
+export interface MediaManifest { version: 1; jobs: Record<string, { status: 'encoded'|'cached'|'skipped'|'failed'; driver: string;
+  outputs: Record<string, string>; skipped_renditions?: number[]; poster_mode?: string; encoded_at?: string; reason?: string;
+  source_stat?: { size: number; mtime_ns: number }; source_probe?: { width: number; height: number; duration_s: number } }> }
 ```
 
-`poster_source` is always present (core's schema requires a video's `poster`). `captions` and `outputs.captions` are present only when the manifest has captions. `renditions` is always `[720, 1080]`; the pipeline decides skips. Jobs are sorted by `key`.
+`loadDocsandeyeData` reads `<projectRoot>/build/media/manifest.json` into `mediaManifest`: `null` when the file is absent (silently, like `readCarbon`); a malformed present file throws like `readRenderManifest` does (no silent degradation on corrupt data). A rendition h is OFFERED for a video iff its job has status `encoded|cached` and both `outputs['av1_'+h]` and `outputs['h264_'+h]` exist (key presence is the source of truth; `skipped_renditions` is informational).
 
-## Pipeline rules (normative)
+## Markup contract (normative)
 
-- Probe first: `ffprobe -v error -print_format json -show_streams -show_format <abs source>`; parse the first video stream's `width`/`height` and `format.duration`.
-- Renditions taller than the source height are skipped: their `outputs` keys are OMITTED from the manifest entry (never present with null) and listed in `skipped_renditions`.
-- AV1 per kept rendition h: `ffmpeg -y -i <abs source> -vf scale=-2:<h> -c:v libsvtav1 -preset 6 -crf 28 -pix_fmt yuv420p10le -c:a libopus -b:a 96k -movflags +faststart <abs out .webm>`.
-- H.264 per kept rendition h: `ffmpeg -y -i <abs source> -vf scale=-2:<h> -c:v libx264 -preset slow -crf 20 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart <abs out .mp4>`.
-- Order per job: probe, then for h in [720, 1080] the AV1 call then the H.264 call, then the poster step, then captions.
-- Poster step: if `<project_root>/<poster_source>` exists and its extension is `.webp` or `.avif` → copy bytes to `outputs.poster` (no ffmpeg call; the output keeps the `.webp` name from the plan even for `.avif` input — record `poster_mode: copy`); exists with any other extension → `ffmpeg -y -i <abs poster_source> -c:v libwebp -quality 80 <abs out .webp>` (`poster_mode: convert`); missing → `ffmpeg -y -ss 1 -i <abs source> -frames:v 1 -vf scale=-2:720 -c:v libwebp -quality 80 <abs out .webp>` (`poster_mode: generate`).
-- Captions: copy `<project_root>/<captions>` byte-for-byte to `outputs.captions` (no ffmpeg call).
-- Cache: `source_stat = {"size": <int bytes>, "mtime_ns": <int>}` of the source file is recorded; a job is `cached` when its key is in the manifest with status `encoded|cached`, `source_stat` is unchanged, and every recorded output path exists; `--force` re-encodes everything.
-- Failures: a non-zero ffmpeg exit marks the job `failed` with the stderr text as `reason`; the run continues. `DriverUnavailable` (no ffmpeg on PATH) aborts the run unless `--allow-missing`, exactly as the render command does.
+Encoded (manifest job present, at least one rendition offered):
 
-## Media manifest output (`build/media/manifest.json`, normative)
-
-```json
-{"version": 1, "jobs": {"vid-005-electrode-seating": {"status": "encoded|cached|skipped|failed", "driver": "ffmpeg",
-  "outputs": {"av1_720": "…", "h264_720": "…", "poster": "…", "captions": "…"}, "skipped_renditions": [1080],
-  "poster_mode": "copy|convert|generate", "source_stat": {"size": 12345, "mtime_ns": 1725450000000000000},
-  "source_probe": {"width": 1280, "height": 720, "duration_s": 47.0}, "encoded_at": "…", "reason": "only for skipped/failed"}}}
+```html
+<docsi-video data-media="vid-02-seat" data-status="CHANGED_IN_FRAME" data-renditions="720,1080">
+  <p class="docsi-banner" hidden>Recorded with Vial Cap v1.0.0, current is v2.0.0</p>   <!-- present iff status != FRESH -->
+  <video preload="none" poster="/_docsandeye/media/vid-02-seat.webp" controls playsinline>
+    <source src="/_docsandeye/media/vid-02-seat-720.webm" type="video/webm; codecs=av01.0.05M.08" data-height="720">
+    <source src="/_docsandeye/media/vid-02-seat-720.mp4" type="video/mp4" data-height="720">
+    <track kind="captions" srclang="en" src="/_docsandeye/media/vid-02-seat.en.vtt" default>   <!-- iff outputs.captions -->
+  </video>
+  <noscript><a href="/_docsandeye/media/vid-02-seat-720.mp4">Download the video</a></noscript>
+</docsi-video>
 ```
 
-Sorted keys, 2-space indent, trailing newline.
+Server-side the lowest offered rendition's pair is emitted; the element swaps both `<source>` elements to the 1080 pair when `data-renditions` includes 1080 and `pickRendition` says so. Banner text: STALE → the first entry of `stale_heroes`; CHANGED_IN_FRAME → the first entry of `changed_in_frame`; component `name` from the model, versions `shot_with`/`current`.
 
-## Fixtures (`render/fixtures/media/`, Generator-owned)
+Degraded (no manifest, or the job has no offered rendition): same wrapper with `data-renditions="source"`, the `<video>` has `poster` = the authored poster copied to `/_docsandeye/media/<basename>` and exactly one `<source src="/_docsandeye/media/<basename of media.file>" type="video/mp4">` (the authored original, already copied by the v0.1 static step), no `<track>`, the same banner rule, and the `<noscript>` link pointing at that same file. The v0.1 attribute `data-docsi-video="reserved"` is removed everywhere.
 
-`media-plan.json` with two jobs: job A `vid-a` — source `src/vid-a.mp4` (a 100-byte placeholder), `poster_source` `src/vid-a.jpg` (placeholder present), captions `src/vid-a.en.vtt` (a valid 3-cue WebVTT), probe answers 1920×1080; job B `vid-b-720` — source `src/vid-b-720.mp4` (placeholder), `poster_source` `src/vid-b-720.jpg` (file deliberately absent), no captions, probe answers 1280×720. `fake-bin/ffprobe` prints `{"streams":[{"codec_type":"video","width":1920,"height":1080}],"format":{"duration":"47.000000"}}`, or the 1280×720 variant when the last argument contains `720`. `fake-bin/ffmpeg`: `-version` → prints `ffmpeg version 7.1.1` to stdout, exit 0; otherwise appends one JSON line `{"argv": [...all args after the program name...], "cwd": "<cwd>"}` to `$DOCSI_FAKE_FFMPEG_LOG`, creates the file named by the LAST argument (always the output path in every ffmpeg invocation above) with content `fake-ffmpeg-output`, exits 0; with `$DOCSI_FAKE_FFMPEG_FAIL` set it prints `fake failure` to stderr and exits 1. Both committed mode 100755 and `chmod 0o755` in test setUp.
+STALE flow: `<details class="docsi-stale docsi-stale-video">` → `<summary>` (exact string) → `<ul>` of changelog entries → `<button type="button" class="docsi-watch-older">Watch the older video</button>` → `<div class="docsi-older" hidden>` containing the `<docsi-video>`; the `<noscript>` download link is placed after the `<div>`, outside it, so it stays reachable without JavaScript.
 
-## Acceptance criteria
+Hosting: `config.hosting.provider === 'url-prefix'` → every `src`/`poster`/`track` is `resolveMediaUrl(hosting, <output path as written in the manifest>)` (e.g. `https://media.example/build/media/vid-02-seat-720.webm`) and the copy step skips media outputs; `local` → `/_docsandeye/media/<basename>` and the copy step copies every manifest output path that exists on disk.
 
-1. **Core media plan.** `buildMediaPlan(model)` (exported from `@docsandeye/core`) returns the schema above for every `type: video` manifest, sorted by key, with `poster_source` from the manifest's `poster`, `captions` only when present; photos produce no job; a test recomputes one job by hand from the `aep-like` fixture.
-2. **Plan loading (Python).** `media_plan.load(path)` validates version 1 and raises `PlanError` (the existing class) with `index`/`field` for a missing `source` or `poster_source`, an unknown `outputs` key, a rendition not in `{720, 1080}`, and `captions` present without `outputs.captions` (or vice versa).
-3. **Encoder seam.** `drivers/base.py` gains `EncoderDriver` (a `typing.Protocol`, `@runtime_checkable`) with `name: str`, `available() -> bool`, `version() -> str | None`, `probe(source: Path) -> Probe`, `encode(job, project_root: Path, out_dir: Path) -> EncodeResult`; `FfmpegDriver` satisfies it (`isinstance(FfmpegDriver(), EncoderDriver)` is True) and is NOT a `Driver`; `encode.run(plan, out_dir, driver=…, force=False, allow_missing=False)` accepts an injected fake.
-4. **Exact call list.** With the fixture `fake-bin` first on `PATH` and `DOCSI_FAKE_FFMPEG_LOG` set, running the fixture plan logs, in order, for job A: ffprobe(A), AV1 720, H.264 720, AV1 1080, H.264 1080, poster convert (`ffmpeg -y -i <abs vid-a.jpg> -c:v libwebp -quality 80 <abs out .webp>`) — six process invocations, each argv exactly as the normative lines with absolute paths — and copies the `.vtt` byte-for-byte; for job B: ffprobe(B), AV1 720, H.264 720, poster generate (`ffmpeg -y -ss 1 -i <abs vid-b-720.mp4> -frames:v 1 -vf scale=-2:720 -c:v libwebp -quality 80 <abs out .webp>`) — four invocations; B's manifest entry has `skipped_renditions: [1080]`, no `av1_1080`/`h264_1080` keys, no `captions` key, `poster_mode: generate`; A's has `poster_mode: convert` and all six output keys.
-5. **Poster copy branch.** A test that points job A's `poster_source` at a `.webp` placeholder (temp copy of the fixture) gets `poster_mode: copy`, no ffmpeg poster call, and identical bytes in `outputs.poster`.
-6. **Missing tool.** With no `ffmpeg` on PATH and `allow_missing=False`: the first job raises `DriverUnavailable`, the manifest is written with the jobs processed so far (that job `failed`, `reason: "ffmpeg not found"`), the CLI prints `<key>: ffmpeg not found` then `ffmpeg not found: install ffmpeg 7+ with libsvtav1, libx264, libopus, libwebp` to stderr, no summary, exit 2; with `--allow-missing`, jobs are `skipped` with that reason and the run continues (exit per AC8). `ffprobe` missing is handled identically with `ffprobe not found`.
-7. **Cache.** A second run over the same plan encodes nothing (all `cached`, no ffmpeg calls); changing the source's size or mtime, or deleting any recorded output, re-encodes that job only; `--force` re-encodes everything.
-8. **Exit codes and summary.** `python3 -m docsandeye_render encode --plan <file> --out <dir> [--force] [--allow-missing] [--project-root <dir>]` prints `encoded N, cached N, skipped N, failed N` to stdout and exits 2 on abort, 1 if any job is `failed`, else 0 (the render command's matrix); `doctor` prints `ffmpeg: found 7.1.1` with the fake or `ffmpeg: not found`, after the existing lines.
-9. **Determinism.** `manifest.json` differs between two consecutive runs only in `encoded_at` values.
-10. **CLI `encode`.** `docsandeye encode [--project <root>] [--force] [--allow-missing]` writes `<root>/build/media-plan.json` = `canonicalJson(buildMediaPlan(model)) + "\n"`, spawns `python3` with argv `['-m','docsandeye_render','encode','--plan','build/media-plan.json','--out','build/media','--project-root','.']` plus `--force`/`--allow-missing` in that order when given, `cwd = <root>`, and the same `PYTHONPATH` rule as `render` (the shared helper); propagates the child's exit code; with a found-but-invalid project (a `loadProject` problem) prints the problems and exits 1 without writing the plan or spawning; with no project found exits 66 like `render`; with no `python3` on PATH exits 2 with `python3 not found: install Python 3.11+`. `docsandeye --help` lists `encode`.
-11. **No committed video.** Root `.gitignore` gains the two lines `build/media/` and `*.webm`; every file under `render/fixtures/media/` is under 1 KB except the `.vtt` (under 2 KB).
-12. **Tests.** `python3 -m unittest discover -s render/tests -t render` passes with no real ffmpeg (at most two `skipUnless(shutil.which("ffmpeg"))` tests); `npx vitest run packages/core packages/cli` passes; the pre-existing render suites are unchanged and green.
+Client rules (`docsi-video.ts`, pure exports): `pickRendition({ saveData, effectiveType, reducedData, dpr, width, available }: {…; available: number[] }): number` returns the lowest available when `saveData`, or `effectiveType` in `slow-2g|2g|3g`, or `reducedData`; otherwise 1080 iff 1080 is available and `dpr * width >= 1280`, else the lowest available; `bannerText(status, record)` returns the string above or `null` for FRESH. The element unhides the banner on upgrade and keeps it visible throughout playback (sticky, never removed).
+
+## Acceptance criteria (vitest; `astro build` of each fixture site once per test file)
+
+1. **Element registration.** The registering script defines `docsi-step`, `docsi-model`, `docsi-lightbox` and `docsi-video` and is under 30 KB; no static import of any video library. The Tester updates the v0.1 assertion in `packages/starlight-docsandeye/test/build.test.ts` (currently three elements, 25 KB) to four elements, 30 KB.
+2. **Facade markup.** `AEP/step-02-cap/index.html` contains the encoded contract for `vid-02-seat` (CHANGED_IN_FRAME): `preload="none"`, `poster` ending `vid-02-seat.webp`, AV1 `<source>` before H.264, both `data-height="720"`, `<track>` present (the fixture manifest gives it captions), the `<noscript>` link, `data-renditions="720,1080"`, and `<p class="docsi-banner" hidden>Recorded with Vial Cap v1.0.0, current is v2.0.0</p>`; the existing `<p class="docsi-note">` remains.
+3. **STALE flow.** The fixture gains `vid-03-old` on `step-02-cap` (hero `top-stop@1.0.0`; top-stop is 1.3.0 → STALE; the changelog has one entry in (1.0.0, 1.3.0]): its `<details class="docsi-stale docsi-stale-video">` has the exact summary `A video exists for this step, but Top Stop has changed since it was filmed (v1.0.0 → v1.3.0)`, one changelog `<li>`, the `Watch the older video` button, the `<docsi-video>` inside `<div class="docsi-older" hidden>` with banner `Recorded with Top Stop v1.0.0, current is v1.3.0`, and the `<noscript>` link after the div; the renders and the text pane precede the details in document order.
+4. **FRESH.** `vid-01-raft` on `step-01-raft` (hero `anode@1.0.0`, anode current 1.0.0) renders `<docsi-video data-status="FRESH">` in normal flow with no `docsi-banner` element and no details.
+5. **Copy step and hosting.** Every output path in the fixture `build/media/manifest.json` appears under `dist/_docsandeye/media/`; `fixtures/site-hosted` (project config `hosting: {provider: url-prefix, base: https://media.example/}`) emits `src`/`poster`/`track` starting `https://media.example/build/media/` and its `dist/_docsandeye/media/` contains no `.webm`/`.mp4`/`.vtt` files.
+6. **Client helpers.** Unit tests import `pickRendition` and `bannerText` from `src/elements/docsi-video.ts`: saveData → 720; effectiveType `3g` → 720; reducedData → 720; dpr 2 × width 700 with `[720, 1080]` → 1080; dpr 1 × width 1000 → 720; `[720]` only → 720; bannerText STALE names the first stale hero, CHANGED_IN_FRAME the first changed in_frame component, FRESH → null.
+7. **No bytes before play.** No step page contains `preload="auto"`, `preload="metadata"`, `autoplay`, or `<link rel="preload" as="video">`. (The CLI budget walker already ignores `<source src>`; the existing `packages/cli/test/budget.test.ts` case stays as the regression guard — no new budget code is expected.)
+8. **Strict by default, budget lines only.** `docsandeye check --dist` promotes only over-budget lines (`budget: <page> <kb> KB > <limit> KB`) to errors by default; informational warnings (`guard: not a git repository…`, `guard: …: no git history…`, `budget: … missing asset …`) stay warnings; `--no-strict` (an explicit boolean option in `bin.ts`'s `parseArgs`) restores the v0.1 behaviour; `--strict` is accepted as a no-op. The Tester updates `packages/cli/test/cli.test.ts` accordingly: the default-mode `--dist` tests whose fixture page is over budget now assert exit 1 and `errors: 1, warnings: 0` (the `toBeLessThanOrEqual(1)` hedges become exact), a `--no-strict` case asserts the old exit 0 / `warnings: 1`, and the "exits 0 when no errors" non-git temp-project case stays green unchanged.
+9. **Degraded mode.** A fixture variant with no `build/media/manifest.json` (`fixtures/project-nomanifest` + `fixtures/site-nomanifest`) builds and renders `vid-02-seat` in the degraded contract: `data-renditions="source"`, one `<source>` pointing at `/_docsandeye/media/vid-02-seat.mp4`, `poster` at `/_docsandeye/media/vid-02-seat.jpg` (or whatever the authored poster's basename is), no `<track>`, the banner still present; no `data-docsi-video` attribute anywhere in `dist/`.
+10. **Tokens and styles.** `--docsi-banner-bg` / `--docsi-banner-fg` are added to `docsandeye.css` with defaults (accent-low background, text colour); `.docsi-banner` is `position: sticky; top: 0` inside the `<docsi-video>` box; `packages/themes/**` is not edited.
+11. **Package hygiene.** Root `npm run build` and `npx vitest run` green; no new runtime dependency in any `package.json`.
 
 ## Out of scope
 
-- The `<docsi-video>` element, stale-video UX, banners (task_008). Hosting providers beyond the existing seam. Whisper. Resolution ladders beyond 720/1080, HLS/DASH. Audio normalisation. Any behaviour change to the existing render pipeline or the `render` CLI command.
-- Do not edit `README.md`, `TODO.md`, `CHANGELOG.md`, `.vs/tasks.json`, `.vs/progress.md`, or any file outside the Ownership list.
+- Encoding (task_007); geometry diff (v0.3); Wikimedia Commons or R2 upload tooling; analytics; autoplay; picture-in-picture; i18n of the fixed strings.
+- Do not edit `README.md`, `TODO.md`, `CHANGELOG.md`, `.vs/tasks.json`, `.vs/progress.md`, `packages/themes/**`, `site/**`, `examples/**`, `packages/core/**`, `render/**`.
 
 ## Test location
 
-`render/tests/test_encode*.py` (unittest), `packages/core/test/media-plan.test.ts`, `packages/cli/test/encode.test.ts` (vitest). Generator scratch tests under `.vs/cycle-1/scratch-tests/`.
+`packages/starlight-docsandeye/test/` and `packages/cli/test/` (vitest). Generator scratch tests under `.vs/cycle-1/scratch-tests/`.
 
 ## Proposed budget
 
-3 cycles.
+4 cycles.
 
 ## Model plan
 
-- Generator: **opus**, ceiling fable (Martin, 2026-09-05: Fable only where it brings a clear benefit over Opus — this task is wiring over settled seams, so Opus). Spec Critic: sonnet. Tester: haiku, ceiling sonnet.
+- Generator: **fable** (Martin, 2026-09-05: Fable where it brings a clear benefit — this task spans the plugin's data layer, Astro components, a new custom element with client logic, fixtures for three site variants and a CLI behaviour change, the same cross-layer shape that justified Fable for task_003). Spec Critic: sonnet. Tester: sonnet (build-in-the-loop suite).

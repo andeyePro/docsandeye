@@ -1,18 +1,25 @@
 ---
 import type { ProjectModel, StalenessReport, Step } from '@docsandeye/core';
-import type { RenderManifest } from '../data.ts';
+import * as docsi from 'virtual:docsandeye/model';
+import type { MediaManifest, RenderManifest } from '../data.ts';
 import { componentName, renderJobFor, renderUrl } from '../view.ts';
 import MediaItem from './MediaItem.astro';
 import StalenessDetails from './StalenessDetails.astro';
+import VideoBlock from './VideoBlock.astro';
 
 interface Props {
 	step: Step;
 	model: ProjectModel;
 	staleness: StalenessReport;
 	renderManifest: RenderManifest | null;
+	/** Defaults to the virtual module's export (the route need not thread it through). */
+	mediaManifest?: MediaManifest | null;
 }
 
 const { step, model, staleness, renderManifest } = Astro.props;
+// `virtual-model.d.ts` predates `mediaManifest`; read the export structurally.
+const mediaManifest: MediaManifest | null =
+	Astro.props.mediaManifest ?? (docsi as { mediaManifest?: MediaManifest | null }).mediaManifest ?? null;
 const base = import.meta.env.BASE_URL;
 const hosting = model.config.hosting;
 
@@ -38,6 +45,7 @@ const mediaItems = (step.media ?? []).flatMap((id) => {
 	const entry = staleness[id];
 	return media && entry ? [{ media, entry }] : [];
 });
+// STALE media is demoted below the renders and in-flow media; the text pane follows in the grid.
 const inFlow = mediaItems.filter((m) => m.entry.status !== 'STALE');
 const stale = mediaItems.filter((m) => m.entry.status === 'STALE');
 ---
@@ -71,5 +79,17 @@ const stale = mediaItems.filter((m) => m.entry.status === 'STALE');
 			</p>
 		))
 }
-{inFlow.map(({ media, entry }) => <MediaItem media={media} entry={entry} model={model} hosting={hosting} base={base} />)}
-{stale.map(({ media, entry }) => <StalenessDetails media={media} entry={entry} model={model} hosting={hosting} base={base} />)}
+{
+	inFlow.map(({ media, entry }) =>
+		media.type === 'video' ? (
+			<VideoBlock media={media} entry={entry} model={model} hosting={hosting} base={base} mediaManifest={mediaManifest} mode="flow" />
+		) : (
+			<MediaItem media={media} entry={entry} model={model} hosting={hosting} base={base} />
+		)
+	)
+}
+{
+	stale.map(({ media, entry }) => (
+		<StalenessDetails media={media} entry={entry} model={model} hosting={hosting} base={base} mediaManifest={mediaManifest} />
+	))
+}

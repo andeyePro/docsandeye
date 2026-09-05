@@ -448,23 +448,25 @@ describe('AC7: check byte budget', () => {
   });
 
   it('resolves root-absolute hrefs', async () => {
+    // v0.2: check --dist is strict by default and this fixture's step-01-a
+    // page is over budget, so this now always exits 1 (see AC8 / strict.test.ts).
     const result = await runCli(['check', '--project', tmpProject, '--dist', distFixture]);
-    expect(result.code).toBeLessThanOrEqual(1);
+    expect(result.code).toBe(1);
   });
 
   it('resolves page-relative hrefs', async () => {
     const result = await runCli(['check', '--project', tmpProject, '--dist', distFixture]);
-    expect(result.code).toBeLessThanOrEqual(1);
+    expect(result.code).toBe(1);
   });
 
   it('counts largest srcset candidate', async () => {
     const result = await runCli(['check', '--project', tmpProject, '--dist', distFixture]);
-    expect(result.code).toBeLessThanOrEqual(1);
+    expect(result.code).toBe(1);
   });
 
   it('counts video poster but not video src', async () => {
     const result = await runCli(['check', '--project', tmpProject, '--dist', distFixture]);
-    expect(result.code).toBeLessThanOrEqual(1);
+    expect(result.code).toBe(1);
   });
 
   it('skips external URLs', async () => {
@@ -474,7 +476,7 @@ describe('AC7: check byte budget', () => {
 
   it('skips data: and protocol-relative URLs', async () => {
     const result = await runCli(['check', '--project', tmpProject, '--dist', distFixture]);
-    expect(result.code).toBeLessThanOrEqual(1);
+    expect(result.code).toBe(1);
   });
 
   it('writes carbon.json with correct shape', async () => {
@@ -584,12 +586,16 @@ describe('AC9: check exit codes and summary', () => {
     expect(result.code).toBe(1);
   });
 
-  it('--strict treats warnings as errors', async () => {
+  it('--strict is a no-op (v0.2: strict — promoting only over-budget lines — is already the default; full AC8 coverage in strict.test.ts)', async () => {
     const result = await runCli(['check', '--project', tmpProject, '--dist', distFixture, '--strict']);
 
     const lines = result.stdout.split('\n').filter((l) => l.trim());
     const lastLine = lines[lines.length - 1];
-    expect(lastLine).toMatch(/^errors: \d+, warnings: 0$/);
+    // Only the budget-over-limit line is promoted; the guard's "not a git
+    // repository" line and the budget walker's "missing asset" line are
+    // informational and stay warnings — see strict.test.ts for the full
+    // line-by-line derivation.
+    expect(lastLine).toBe('errors: 1, warnings: 2');
   });
 });
 
