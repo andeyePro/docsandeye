@@ -275,8 +275,8 @@ function buildConfigSchema(registry: HostingRegistry) {
           path: ['hosting', 'provider'],
           message: `unknown hosting provider "${c.hosting.provider}" (registered: ${registry.names().join(', ')})`,
         });
-      } else if (c.hosting.provider === 'url-prefix' && !c.hosting.base) {
-        ctx.addIssue({ code: 'custom', path: ['hosting', 'base'], message: 'required for the url-prefix provider' });
+      } else if (registry.get(c.hosting.provider)?.requiresBase === true && !c.hosting.base) {
+        ctx.addIssue({ code: 'custom', path: ['hosting', 'base'], message: `required for the ${c.hosting.provider} provider` });
       }
     })
     .transform((c) => ({

@@ -1,6 +1,6 @@
 ---
 title: Getting started
-description: Scaffold a Docs&I project, author content, render drawings, check it and build the site.
+description: Scaffold a Docs&I project, author content, render drawings, encode video, check it and build the site.
 ---
 
 Docs&I is pre-alpha and not on npm yet. Work from a clone of the repository.
@@ -10,6 +10,7 @@ Docs&I is pre-alpha and not on npm yet. Work from a clone of the repository.
 - Node 22 or later and npm.
 - Python 3.11 or later. The render pipeline uses the standard library only.
 - OpenSCAD 2024 or later to render `.scad` masters, and CadQuery to render STEP masters. Both are optional. The pipeline reports what is missing and can skip.
+- ffmpeg 7 or later with `libsvtav1`, `libx264`, `libopus` and `libwebp` to encode video. Optional: a project with no video, or one that has not been encoded yet, still builds.
 
 ## Install the tools
 
@@ -53,7 +54,19 @@ The CLI writes `build/render-plan.json` from the steps' `renders` and `viewer` e
 
 Renders are produced locally and committed. Nothing is rendered in CI.
 
-## 4. Check
+## 4. Encode
+
+```sh
+npx docsandeye encode
+```
+
+The CLI writes `build/media-plan.json` from the `type: video` manifests and hands it to the same Python pipeline. Each clip becomes an AV1 WebM and an H.264 MP4 at 720 and 1080, a WebP poster and a copy of the captions, in `build/media/` with `build/media/manifest.json` beside them. Jobs are cached on the source file, so re-running encodes nothing new.
+
+Skip this step and the site still builds: a video with no manifest entry falls back to its authored poster and the original file. Run it and the step page serves the encoded renditions instead. See [Media](/authoring/media/) for what the reader gets.
+
+Encoded video is produced locally and committed, like renders. Nothing is encoded in CI.
+
+## 5. Check
 
 ```sh
 npx docsandeye check
@@ -61,7 +74,7 @@ npx docsandeye check
 
 `check` validates every file, then runs the version-bump guard: a component whose CAD source files changed in git without a `design_version` bump is an error. Exit code 0 means clean.
 
-## 5. Build
+## 6. Build
 
 ```sh
 npm install
@@ -69,7 +82,7 @@ npm run build
 npx docsandeye check --dist dist
 ```
 
-`npm run build` runs `astro build`. The plugin adds one page per guide and per step, copies renders and media into `dist/_docsandeye/`, and prints a summary. The second `check` measures the initial-load bytes of every step page against `byte_budget_kb`, estimates CO2e and writes `build/carbon.json`. Commit that file; the next build prints the figure on each step page.
+`npm run build` runs `astro build`. The plugin adds one page per guide and per step, copies renders, media and encoded video into `dist/_docsandeye/`, and prints a summary. The second `check` measures the initial-load bytes of every step page against `byte_budget_kb`, estimates CO2e and writes `build/carbon.json`. A page over budget is an error; see [Carbon](/carbon/). Commit that file; the next build prints the figure on each step page.
 
 ## Maintainer builds
 

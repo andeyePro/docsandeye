@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
+  BUILTIN_HOSTING_PROVIDERS,
+  r2Provider,
   resolveMediaUrl,
   createHostingRegistry,
   registerHostingProvider,
@@ -120,5 +122,29 @@ describe('AC11: Hosting seam', () => {
     const hosting = { provider: 'url-prefix', base: 'https://cdn.example.com' };
     const result = resolveMediaUrl(hosting, 'video/test.mp4');
     expect(result).toBe('https://cdn.example.com/video/test.mp4');
+  });
+});
+
+describe('Hosting registry: built-ins and requiresBase', () => {
+  afterEach(() => {
+    resetHostingRegistry();
+  });
+
+  it('the default registry lists exactly the built-in providers', () => {
+    expect(defaultHostingRegistry.names()).toEqual(BUILTIN_HOSTING_PROVIDERS.map((p) => p.name).sort());
+  });
+
+  it('local needs no base; url-prefix and r2 do', () => {
+    expect(localProvider.requiresBase).not.toBe(true);
+    expect(urlPrefixProvider.requiresBase).toBe(true);
+    expect(r2Provider.requiresBase).toBe(true);
+  });
+
+  it('a registered provider does not require a base unless it asks for one', () => {
+    const registry = createHostingRegistry();
+    const plain = registerHostingProvider('plain', { resolve: (f: string) => f }, registry);
+    const needs = registerHostingProvider('needs-base', { requiresBase: true, resolve: (f: string) => f }, registry);
+    expect(plain.requiresBase).toBe(false);
+    expect(needs.requiresBase).toBe(true);
   });
 });

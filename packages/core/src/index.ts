@@ -12,6 +12,7 @@ export {
   createHostingRegistry,
   defaultHostingRegistry,
   localProvider,
+  r2Provider,
   registerHostingProvider,
   resetHostingRegistry,
   resolveMediaUrl,
