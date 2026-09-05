@@ -187,9 +187,13 @@ describe('AC4 + AC6: step-02-cap markup, document order and staleness demotion',
     expect(html).toMatch(/<docsi-step[^>]*data-step="step-02-cap"/);
   });
 
+  // URLs are percent-encoded segment by segment (`renderUrl` → `withBase`), so
+  // the `@` of a render job key appears as `%40` in the markup; the copied file
+  // keeps its unencoded on-disk name (asserted further down, and in
+  // `render-urls.test.ts`).
   it('media pane: render <img> for cap-iso appears with the exact src/alt', () => {
     expect(html).toContain(
-      '<img src="/_docsandeye/render/vial-cap@2.0.0--cap-iso--0fd0f88538ea.png" alt="cap-iso">',
+      '<img src="/_docsandeye/render/vial-cap%402.0.0--cap-iso--0fd0f88538ea.png" alt="cap-iso">',
     );
   });
 
@@ -198,16 +202,16 @@ describe('AC4 + AC6: step-02-cap markup, document order and staleness demotion',
     const model = doc.querySelector('docsi-model');
     expect(model).toBeTruthy();
     expect(model!.getAttribute('data-src')).toBe(
-      '/_docsandeye/render/vial-cap@2.0.0--viewer--d2ced720dce2.glb',
+      '/_docsandeye/render/vial-cap%402.0.0--viewer--d2ced720dce2.glb',
     );
     const link = model!.querySelector('a');
     expect(link).toBeTruthy();
-    expect(link!.getAttribute('href')).toBe('/_docsandeye/render/vial-cap@2.0.0--viewer--d2ced720dce2.glb');
+    expect(link!.getAttribute('href')).toBe('/_docsandeye/render/vial-cap%402.0.0--viewer--d2ced720dce2.glb');
     expect(link!.text.trim()).toBe('Download 3D model');
   });
 
   it('media pane document order: render, then viewer, then in-flow vid-02-seat, then stale photo-02-cap details', () => {
-    const renderIdx = html.indexOf('vial-cap@2.0.0--cap-iso--0fd0f88538ea.png');
+    const renderIdx = html.indexOf('vial-cap%402.0.0--cap-iso--0fd0f88538ea.png');
     const modelIdx = html.indexOf('<docsi-model');
     const videoIdx = html.indexOf('data-media="vid-02-seat"');
     const staleIdx = html.indexOf('data-media="photo-02-cap"');

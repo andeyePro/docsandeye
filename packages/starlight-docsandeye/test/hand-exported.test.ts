@@ -49,8 +49,10 @@ const DIST = path.join(SITE_SCRATCH_DIR, 'dist');
 
 /** From `fixtures/project/docs/components/blank-cap.yaml`. */
 const DERIVED_FILE = 'Components/BlankCap/BlankCap v1.stl';
-/** `renderUrl`'s form: the derived file's basename under the render prefix. */
-const DERIVED_URL = '/_docsandeye/render/BlankCap v1.stl';
+/** `renderUrl`'s form: the derived file's basename under the render prefix, percent-encoded. */
+const DERIVED_URL = '/_docsandeye/render/BlankCap%20v1.stl';
+/** The basename as it is on disk, which the copy step never encodes. */
+const DERIVED_BASENAME = 'BlankCap v1.stl';
 
 function copyFixtureTree(src: string, dest: string): void {
   const SKIP = new Set(['node_modules', 'dist', 'dist-maintainer', '.astro']);
@@ -219,15 +221,20 @@ describe('built pages: every hand-exported reference renders', () => {
   });
 
   for (const page of ['AEP/step-01-raft/index.html', 'MEP/step-01-raft/index.html']) {
+    // blank-cap's only derived file is an STL, which is not an image: the figure
+    // is a download link, not an `<img>` (see `render-urls.test.ts`). What this
+    // file pins is that all three references still RESOLVE — a figure exists for
+    // each, pointing at the derived file.
     it(`${page}: both blank-cap renders are figures pointing at the derived file`, () => {
       const doc = readHtml(page);
       for (const renderId of ['blank-front', 'blank-iso']) {
         const figure = doc.querySelector(`figure.docsi-render[data-render="${renderId}"]`);
         expect(figure, `expected a figure for render ${renderId}`).toBeTruthy();
-        const img = figure!.querySelector('img');
-        expect(img?.getAttribute('src')).toBe(DERIVED_URL);
-        expect(img?.getAttribute('alt')).toBe(renderId);
-        expect(figure!.querySelector('figcaption')?.text).toContain('Blank Cap');
+        expect(figure!.querySelector('img'), 'an STL must not be put in an <img>').toBeFalsy();
+        const link = figure!.querySelector('a.docsi-download');
+        expect(link?.getAttribute('href')).toBe(DERIVED_URL);
+        expect(link?.text.replace(/\s+/g, ' ').trim()).toBe(`Download ${DERIVED_BASENAME}`);
+        expect(figure!.querySelector('figcaption')?.text.trim()).toBe(renderId);
       }
       expect(doc.querySelector('.docsi-render-missing')).toBeFalsy();
     });
@@ -244,17 +251,17 @@ describe('built pages: every hand-exported reference renders', () => {
     expect(doc.querySelector('.docsi-render-missing')).toBeFalsy();
   });
 
-  it('the derived file is copied into dist/_docsandeye/render/', () => {
-    expect(fs.existsSync(path.join(DIST, '_docsandeye/render/BlankCap v1.stl'))).toBe(true);
+  it('the derived file is copied into dist/_docsandeye/render/ under its unencoded name', () => {
+    expect(fs.existsSync(path.join(DIST, '_docsandeye/render', DERIVED_BASENAME))).toBe(true);
   });
 
   it('the vial-cap render and viewer on step-02-cap are unaffected', () => {
     const doc = readHtml('AEP/step-02-cap/index.html');
     expect(doc.querySelector('figure.docsi-render[data-render="cap-iso"] img')?.getAttribute('src')).toBe(
-      '/_docsandeye/render/vial-cap@2.0.0--cap-iso--0fd0f88538ea.png',
+      '/_docsandeye/render/vial-cap%402.0.0--cap-iso--0fd0f88538ea.png',
     );
     expect(doc.querySelector('docsi-model')?.getAttribute('data-src')).toBe(
-      '/_docsandeye/render/vial-cap@2.0.0--viewer--d2ced720dce2.glb',
+      '/_docsandeye/render/vial-cap%402.0.0--viewer--d2ced720dce2.glb',
     );
   });
 });

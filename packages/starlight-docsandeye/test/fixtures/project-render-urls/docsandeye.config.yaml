@@ -1,0 +1,7 @@
+# Fixture for URL encoding and non-image derived files: one guide, one step,
+# three renders — a hand-exported STL-only component whose derived file has a
+# space and a "#" in its name, a hand-exported component that also ships a GLB,
+# and an ordinary rendered PNG (whose job key contains an "@").
+theme: starlight
+guides:
+  - {id: enc, title: "Encoding", base: /ENC}

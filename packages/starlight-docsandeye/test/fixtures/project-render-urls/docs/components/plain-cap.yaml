@@ -1,0 +1,7 @@
+id: plain-cap
+name: Plain Cap
+kind: printed
+design_version: 2.0.0
+master_format: scad
+source_files: ["Components/PlainCap/PlainCap.scad"]
+licence: CC-BY-SA-4.0

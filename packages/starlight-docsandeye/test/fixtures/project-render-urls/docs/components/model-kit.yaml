@@ -1,0 +1,9 @@
+id: model-kit
+name: Model Kit
+kind: assembly
+design_version: 3.0.0
+master_format: f3z
+source_files: ["Components/Model Kit/Model Kit.f3z"]
+# The STL sorts first (and is what the manifest job writes first), but a GLB
+# exists beside it, so the page can offer a real 3D viewer.
+derived_files: ["Components/Model Kit/Model Kit v3.stl", "Components/Model Kit/Model Kit v3.glb"]
