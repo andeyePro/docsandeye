@@ -16,3 +16,5 @@ safety: "Do not energise the LED channel with the cap off."
 Seat the electrode top stop, then connect the anode.
 
 Check the gap with the callipers.
+
+Seat the MMO anode (titanium mesh) and check the depth with the Vernier callipers.

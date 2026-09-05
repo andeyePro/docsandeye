@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * `docsandeye` entry point: argv parsing with `node:util` `parseArgs`,
- * dispatch to init / render / encode / diff / check, exit codes 0/1/2/64/65/66.
+ * dispatch to init / render / encode / diff / check / export, exit codes 0/1/2/64/65/66.
  */
 import { parseArgs } from 'node:util';
 import { KEBAB_ID_RE } from '@docsandeye/core';
@@ -9,6 +9,7 @@ import { runCheck } from './check.js';
 import { EXIT, processIo, type Io } from './common.js';
 import { runDiff } from './diff.js';
 import { runEncode } from './encode.js';
+import { DEFAULT_EXPORT_OUT, runExport } from './export.js';
 import { runInit } from './init.js';
 import { findProjectRoot, packageVersion } from './paths.js';
 import { runRender } from './render.js';
@@ -22,6 +23,7 @@ Commands:
   encode       write build/media-plan.json and run the Python video encode pipeline
   diff         restore each stale component's old geometry from git and convert it to GLB
   check        validate content, guard version bumps, measure page byte budgets
+  export       write BuildUp Markdown and an Open Know-How manifest under build/export
 
 Options:
   -h, --help     show this help
@@ -85,6 +87,17 @@ Options:
   --dist <dir>      built site to measure; writes <root>/build/carbon.json
   --no-strict       report over-budget pages as warnings instead of errors
   --strict          accepted for compatibility (the default since v0.2)
+  -h, --help        show this help`;
+
+export const EXPORT_USAGE = `Usage: docsandeye export [--project <root>] [--out <dir>]
+
+Write BuildUp-flavoured Markdown (one file per step plus an index) and an Open
+Know-How manifest (okh.yml) computed from the project model. No network, no
+render pipeline: the model is the only input.
+
+Options:
+  --project <root>  project root (default: nearest directory with docsandeye.config.yaml)
+  --out <dir>       output directory, relative to the project root (default: build/export)
   -h, --help        show this help`;
 
 export const NO_PROJECT_MESSAGE = 'no docsandeye.config.yaml found (run docsandeye init)';
@@ -216,6 +229,17 @@ export async function main(argv: string[], io: Io = processIo): Promise<number> 
       if (root === undefined) return EXIT.NOINPUT;
       const strict = parsed.values['no-strict'] !== true;
       return runCheck({ root, dist: parsed.values.dist as string | undefined, strict }, io);
+    }
+    case 'export': {
+      const parsed = parseSub('export', EXPORT_USAGE, rest, {
+        project: { type: 'string' },
+        out: { type: 'string', default: DEFAULT_EXPORT_OUT },
+      }, io);
+      if (typeof parsed === 'number') return parsed;
+      if (parsed.positionals.length > 0) return unexpected('export', parsed.positionals, EXPORT_USAGE, io);
+      const root = resolveRoot(parsed.values.project as string | undefined, io);
+      if (root === undefined) return EXIT.NOINPUT;
+      return runExport({ root, out: parsed.values.out as string }, io);
     }
     default:
       io.err(`docsandeye: unknown command "${command}"`);

@@ -249,6 +249,25 @@ export const GuideSchema = z.object({
   base: z.string().regex(/^\//, 'must start with "/"'),
 });
 
+/**
+ * Optional project-level metadata, used by `docsandeye export` to fill an Open
+ * Know-How manifest. Unlike the other config schemas this one is STRICT: an
+ * unknown key here is a typo in a field an exporter would silently drop, so it
+ * is reported as a `schema` problem at `project.<key>` rather than stripped.
+ * Every field is optional; whatever is absent is omitted from the manifest.
+ */
+export const ProjectMetaSchema = z.strictObject({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  version: z.string().optional(),
+  /** SPDX-style identifier for the project as a whole; components carry their own `licence`. */
+  licence: z.string().optional(),
+  licensor: z.string().optional(),
+  repo: z.url().optional(),
+  function: z.string().optional(),
+  documentation_home: z.url().optional(),
+});
+
 const HostingSchema = z.looseObject({
   provider: nonEmptyString,
   base: z.string().optional(),
@@ -258,6 +277,7 @@ function buildConfigSchema(registry: HostingRegistry) {
   return z
     .object({
       theme: z.string().default('starlight'),
+      project: ProjectMetaSchema.optional(),
       guides: z.array(GuideSchema).min(1, 'must declare at least one guide'),
       denylist: z.array(z.string()).default([]),
       hosting: HostingSchema.default({ provider: 'local' }),
@@ -289,6 +309,7 @@ function buildConfigSchema(registry: HostingRegistry) {
 export const ConfigSchema = buildConfigSchema(defaultHostingRegistry);
 export type Config = z.output<typeof ConfigSchema>;
 export type Guide = z.output<typeof GuideSchema>;
+export type ProjectMeta = z.output<typeof ProjectMetaSchema>;
 
 /** Defaults first, then user entries, de-duplicated preserving first occurrence. */
 export function mergeDenylist(userEntries: readonly string[]): string[] {
@@ -366,14 +387,20 @@ function stemOf(filename: string): string {
 }
 
 function zodProblems(error: z.ZodError, file: string): Problem[] {
-  return sortProblems(
-    error.issues.map((issue) => ({
-      code: 'schema' as const,
-      file,
-      path: issue.path.map(String).join('.'),
-      message: issue.message,
-    })),
-  );
+  const problems: Problem[] = [];
+  for (const issue of error.issues) {
+    const at = issue.path.map(String);
+    // An `unrecognized_keys` issue names the offending keys in a payload rather
+    // than in its path; report one problem per key, at `<object path>.<key>`.
+    if (issue.code === 'unrecognized_keys') {
+      for (const key of issue.keys) {
+        problems.push({ code: 'schema', file, path: [...at, key].join('.'), message: `unrecognized key "${key}"` });
+      }
+      continue;
+    }
+    problems.push({ code: 'schema', file, path: at.join('.'), message: issue.message });
+  }
+  return sortProblems(problems);
 }
 
 function validate<S extends z.ZodType>(schema: S, data: unknown, file: string): z.output<S> {

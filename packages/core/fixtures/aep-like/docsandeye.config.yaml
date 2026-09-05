@@ -7,3 +7,13 @@ hosting:
   provider: url-prefix
   base: https://media.example/
 byte_budget_kb: 200
+project:
+  # deliberately NOT the first guide's title, so title precedence is observable
+  title: "AEP0.2 build guide"
+  description: "An open aseptic electro-bioreactor add-on for the Pioreactor."
+  version: "0.2.0"
+  licence: "CERN-OHL-S-2.0"
+  licensor: "AMYBO"
+  repo: "https://github.com/amy-bo/electroPioreactor"
+  function: "Grows hydrogen-oxidising bacteria under in-culture electrolysis."
+  documentation_home: "https://docs.electroPioreactor.org/AEP"

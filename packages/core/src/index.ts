@@ -34,6 +34,7 @@ export {
   MediaSchema,
   PART_CATEGORIES,
   PIN_RE,
+  ProjectMetaSchema,
   RELEASE_SEMVER_RE,
   RENDER_FORMATS,
   RENDER_VIEWS,
@@ -65,6 +66,7 @@ export type {
   ParseConfigOptions,
   PartCategory,
   Pin,
+  ProjectMeta,
   RenderFormat,
   RenderView,
   Step,
@@ -92,6 +94,16 @@ export type { MediaJob, MediaJobOutputs, MediaPlan } from './media-plan.js';
 
 export { DIFF_PLAN_VERSION, OLD_RENDER_OUTPUT_DIR, buildDiffPlan, diffCandidates } from './diff-plan.js';
 export type { DiffJob, DiffPlan } from './diff-plan.js';
+
+export {
+  EXPORT_OUTPUT_DIR,
+  EXPORT_PLAN_VERSION,
+  buildExportPlan,
+  buildUpLink,
+  emitYaml,
+  substituteBuildUpLinks,
+} from './export-plan.js';
+export type { BuildUpRef, BuildUpSubstitution, ExportFile, ExportPlan, YamlMapping, YamlScalar, YamlValue } from './export-plan.js';
 
 export { checkVersionBumps } from './guard.js';
 export type { VersionBumpFacts, VersionBumpResult, Violation } from './guard.js';
