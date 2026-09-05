@@ -674,3 +674,46 @@ describe('AC9: Public surface', () => {
     expect(typeof project?.licence).toBe('string');
   });
 });
+
+// Evaluator addition (AC3 anti-circularity): whole-file hand derivations composed
+// from the raw fixture YAML/Markdown, never from export-expected/**.
+describe('AC3: whole-file hand derivations', () => {
+  const model = loadProject(aepLikeFixture);
+  const plan = buildExportPlan(model);
+  const emitted = (id: string) =>
+    plan.buildup.find((f) => f.path === `${EXPORT_OUTPUT_DIR}/buildup/${id}.md`)!.content;
+
+  it('step-05-electrolysis.md, inline parts and tools plus two media lines', () => {
+    const expected =
+      '# Electrolysis setup\n' +
+      '\n' +
+      'Seat the electrode top stop, then connect the anode.\n' +
+      '\n' +
+      'Check the gap with the callipers.\n' +
+      '\n' +
+      'Seat the [MMO anode (titanium mesh)]{qty: 1, cat: part} and check the depth with the [Vernier callipers]{qty: 1, cat: tool}.\n' +
+      '\n' +
+      '## Media\n' +
+      '\n' +
+      '- vid-005-electrode-seating: video, recorded 2026-07-19 with Electrode Top Stop, MMO anode (titanium mesh)\n' +
+      '- vid-003-cap-fitting: video, recorded 2026-08-12 with Vial Cap (2×6.1 mm + 5×3.2 mm ports)\n';
+    expect(emitted('step-05-electrolysis')).toBe(expected);
+  });
+
+  it('step-01-print-parts.md, two fallback parts listed tight in declared order', () => {
+    const expected =
+      '# Print the parts\n' +
+      '\n' +
+      'Print every part listed below before you start assembly.\n' +
+      '\n' +
+      '## Parts\n' +
+      '\n' +
+      '- [Vial Cap (2×6.1 mm + 5×3.2 mm ports)]{qty: 2, cat: printed}\n' +
+      '- [Electrode Top Stop]{qty: 1, cat: printed}\n' +
+      '\n' +
+      '## Media\n' +
+      '\n' +
+      '- vid-003-cap-fitting: video, recorded 2026-08-12 with Vial Cap (2×6.1 mm + 5×3.2 mm ports)\n';
+    expect(emitted('step-01-print-parts')).toBe(expected);
+  });
+});
