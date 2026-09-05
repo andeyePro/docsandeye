@@ -119,5 +119,16 @@
     "branch": "vsss/task_011-geometry-diff",
     "spec": ".claude/worktrees/task_011/.vs/spec.md",
     "last_modified": "2026-09-05T03:56:35Z"
+  },
+  {
+    "id": "task_017",
+    "description": "Exporters: docsandeye export writes BuildUp Markdown (step files + index with BOM) and an Open Know-How okh.yml from a new optional project: config block; deterministic YAML emitter",
+    "implementation_status": "in_progress",
+    "test_status": "pending",
+    "assigned_to": "spec_critic",
+    "mode": "rigorous",
+    "branch": "vsss/task_017-export",
+    "spec": ".claude/worktrees/task_017/.vs/spec.md",
+    "last_modified": "2026-09-05T07:01:16Z"
   }
 ]
