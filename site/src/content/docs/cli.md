@@ -1,13 +1,13 @@
 ---
 title: CLI
-description: "The docsandeye command line: init, render, encode and check, with options and exit codes."
+description: "The docsandeye command line: init, render, encode, diff and check, with options and exit codes."
 ---
 
 ```sh
 npx docsandeye --help
 ```
 
-Four commands: `init`, `render`, `encode` and `check`. `--help` on any of them prints its usage; `--version` prints the package version.
+Five commands: `init`, `render`, `encode`, `diff` and `check`. `--help` on any of them prints its usage; `--version` prints the package version.
 
 ## init
 
@@ -58,6 +58,42 @@ Writes `build/media-plan.json` from the project's `type: video` manifests and ru
 Encoding needs ffmpeg 7 or later with `libsvtav1`, `libx264`, `libopus` and `libwebp`. Without it the command exits 2, or records every job as `skipped` and exits 0 under `--allow-missing`. The last line of output is the summary: `encoded 1, cached 0, skipped 0, failed 0`.
 
 `python3 -m docsandeye_render doctor` lists the render and encode tools it can find.
+
+## diff
+
+```sh
+npx docsandeye diff --project examples/synthetic-guide
+```
+
+Restores old geometry from git so a stale photo or video can be shown beside the model as it is now. It writes `build/diff-plan.json`, then works through the plan and writes `build/render/old/manifest.json`.
+
+The plan has one job per distinct `<component>@<version>` pair across the stale hero pins of every `STALE` media record. `CHANGED_IN_FRAME` pins are not planned. Each job carries the component's `derived_files` as candidates, every `.glb` first and then every `.stl`; other extensions are dropped. A component with no usable derived file still gets a job, so it can be reported.
+
+For each job the command finds the commit that last carried the recorded version. The recipe is `git log -1 -G'^design_version: 1.0.0$' -- docs/components/lamp-base.yaml`: the last commit whose diff of the component file added or removed that line. That commit is usually the bump away from the old version, so the parent is preferred: if the parent still contains `design_version: 1.0.0` the geometry is taken from the parent, otherwise from the commit itself if it contains the line. If neither does, the job is skipped. A root commit has no parent to show, which counts as not containing it.
+
+The first candidate that exists at that commit is read with `git show`. A `.glb` is written straight to `build/render/old/<component>@<version>.glb`. A `.stl` is written beside it and converted with `python3 -m docsandeye_render glb`, which reads a binary STL and writes the GLB. Old geometry always comes from git history. Nothing is re-rendered, and there is no separate archive.
+
+| Option | Meaning |
+| --- | --- |
+| `--project` | Project root. Default as for `render`. |
+| `--force` | Restore every job again, ignoring cached outputs. |
+
+`build/render/old/manifest.json` records one entry per job key: its `status`, the `commit` the geometry came from, the `source` file restored, the `output` path and, where there is one, a `reason`. The status is `restored`, `cached`, `skipped` or `failed`. A job is `cached` when its output file is already on disk and the previous manifest recorded the same commit for that key with status `restored` or `cached`. `--force` restores it again anyway.
+
+A job is skipped, not failed, for any of these reasons:
+
+| Reason | Meaning |
+| --- | --- |
+| `not a git repository` | Every job, when the project root is outside a git work tree. |
+| `no derived .glb or .stl` | The component declares no derived file a restore can use. |
+| `no commit with design_version 1.0.0` | No commit in the history carries that version in the component file. |
+| `no derived file committed at 0a1b2c3` | None of the candidates exists at that commit. |
+
+A job fails when `git show` cannot read a file it has already found, or when the STL to GLB conversion exits non-zero. A missing `python3` is one of those cases: the job is recorded as `failed` with reason `python3 exited 2` and the command exits 1. Unlike `render` and `encode`, `diff` never exits 2.
+
+Exit code 0 unless a job failed, so a project outside git, or one whose old versions were never committed, exits 0 with every job skipped. The last line of output is the summary: `restored 1, cached 0, skipped 0, failed 0`. In the example project the lamp base has no derived geometry, so its single job is skipped.
+
+The plugin copies the output of every `restored` or `cached` job into `dist/_docsandeye/render/old/` and shows it inside the stale panel. See [Old and new geometry](/staleness/#old-and-new-geometry).
 
 ## check
 

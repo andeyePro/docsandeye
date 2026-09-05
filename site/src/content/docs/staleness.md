@@ -1,6 +1,6 @@
 ---
 title: Staleness
-description: How a changed component marks a photo or video stale, what the page and the video player show, and the reshoot dashboard.
+description: How a changed component marks a photo or video stale, what the page and the video player show, the old and new geometry pane, and the reshoot dashboard.
 ---
 
 Every media manifest pins the components it shows at a version. At build time the staleness engine compares each pin against the component's current `design_version`.
@@ -24,6 +24,18 @@ A `CHANGED_IN_FRAME` video plays in place. Under it sits the note naming what ch
 A `STALE` video is demoted. The step page shows the folded panel, its summary reading "A video exists for this step, but Lamp arm has changed since it was filmed (v1.0.0 → v1.1.0)", then the changelog entries between the two versions, then a `Watch the older video` button. The player itself is hidden until the button is pressed. Pressing it reveals the player and removes the button; nothing plays until the reader presses play. With JavaScript off the button does nothing, and a plain download link below the panel keeps the clip reachable.
 
 Any video that is not `FRESH` also carries a version banner: "Recorded with Lamp arm v1.0.0, current is v1.1.0". It names the first changed hero for a `STALE` clip and the first changed in-frame component for a `CHANGED_IN_FRAME` one. The banner appears when the player upgrades and stays visible for the whole of playback.
+
+## Old and new geometry
+
+Run [`docsandeye diff`](/cli/#diff) and a stale panel can also show the geometry. For every changed hero whose old model the command restored, the panel opens with the model as it was beside the model as it is now, in a `<docsi-diff>` element. It sits above the changelog entries and above the media, for a stale photo and a stale video alike.
+
+Each model is a figure with its own caption: "Recorded with v1.0.0" on the left, "Current v1.1.0" on the right. The current model is the component's viewer GLB from the render manifest. Where the project has no viewer render for the current version, only the old model shows.
+
+Inside each figure is a `<docsi-model>` whose content is a plain link, "Download the old 3D model" and "Download the current 3D model". Those links are the fallback without JavaScript: the build writes them, and they work on their own. With JavaScript the viewer upgrades in place, and `<docsi-diff>` adds a layout class so a pair of figures sits side by side and a lone figure fills the width. Below 60rem the pair stacks.
+
+A hero with no restored old model gets no pane. A step page shows this only where `docsandeye diff` found geometry to show.
+
+The overlay is not implemented yet. Red for removed, green for added and grey for unchanged is the v0.3 goal and is not built. Nor are the two cameras linked: the old and the new model are shown side by side and each is navigated on its own.
 
 ## Example
 
