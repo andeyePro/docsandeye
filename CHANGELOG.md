@@ -4,6 +4,7 @@ Done-work log for Docs&I (`docsandeye`), newest first. Open work is in TODO.md.
 
 ## 2026-09-05
 
+- [x] **task_007 video encoding** — `d0df130` core `buildMediaPlan`; `6417952` Python `encode` stage (ffmpeg behind an `EncoderDriver` seam, AV1 then H.264 at 720p and 1080p, WebP poster copy/convert/generate, captions copy, source-stat cache, `build/media/manifest.json`, `doctor` line); `cb8bc88` `docsandeye encode` (generator, Opus); testers `f150d41` (Haiku) then `adedd03` (Sonnet, escalated for exact argv coverage): 151 Python tests, 238 vitest in core and cli. Real ffmpeg still to be verified on a Mac. Spec archived at `.vs/archive/task_007/spec.md`.
 - [x] **Follow-ups batch** — `b119d3f` plugin exports `stepFrontmatterExtension` (optional step fields for ordinary docs pages); `f6b9d84` core loader ignores `README.md` in `docs/steps/`; `e9fd2a3` `checkVersionBumps` gains the `versionAfterSource` escape hatch; `d7b2cbe` unit tests for the theme cycle's pure functions. Full suite 311 vitest tests green.
 
 ## 2026-09-04

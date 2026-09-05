@@ -1,0 +1,3 @@
+total: 151 passed: 150 failed: 0 (Python, `python3 -m unittest discover -s render/tests -t render`; 1 pre-existing skip, `OpenSCADDriver.version()` — openscad not installed, not in tester's files)
+key failures: none — test_encode.py rewritten (AC2-AC9, AC11, AC12) and test_encode_cli.py added (AC6 CLI stderr, AC8 exit codes/summary/doctor) driving the fixture fake-bin, asserting exact ordered ffmpeg/ffprobe argv, manifest shape, cache busting (mtime/size/deleted-output/--force), determinism, poster copy/convert/generate, and exact CLI stderr/stdout text
+Regressions: none — TypeScript counts stand as previously logged (238 passed, 12 files; vitest files untouched this pass); pre-existing Python suites (144 tests) still green inside the same 151-test run

@@ -36,3 +36,7 @@ Worktree followups (opus started, sonnet finished after the 429 halt): b119d3f, 
 Spec Critic pass after 3 iterations (5 blocking → 1 → 0); spec on vsss/task_007-encode. Approved to proceed under Martin's standing instructions (2026-09-04 "just get this done"; 2026-09-05 "continue"); posted as an FYI item. Generator: opus (wiring over settled seams — per Martin's Fable-only-where-it-clearly-helps rule).
 ## task_008 — plugin video — 2026-09-05T01:43:52Z
 Spec Critic pass after 3 iterations (4 blocking → 1 → 0); spec on vsss/task_008-video-ux. Queued behind task_007's Generator because both edit packages/cli/src/bin.ts (single-writer rule); Generator will be fable (cross-layer) once 007 is pre-merged.
+## task_007 — cycle 1 — Tester quality escalation — 2026-09-05T02:05:57Z
+Haiku tester committed f150d41 (18 python tests): zero assertions on ffmpeg argv, poster modes, abort/allow-missing, determinism or doctor — the spec's exact-value ACs unmapped. Evaluator classification: test quality → Tester escalated haiku→sonnet to regenerate the Python suite (vitest files kept).
+## task_007 — cycle 1 — PASS — 2026-09-05T02:19:06Z
+Evaluator: sonnet tester suite 150 pass / 1 skip with exact ordered argv lists, poster modes, abort paths, cache and determinism; vitest core+cli 238; fresh runs confirmed; Generator touched no test files; diff within Ownership. Generator tier that passed: opus. Merged --no-ff into main; archived under .vs/archive/task_007/.
