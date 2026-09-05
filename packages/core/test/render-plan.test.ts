@@ -154,3 +154,41 @@ describe('AC9: Render plan', () => {
     }
   });
 });
+
+describe('AC9: hand-exported jobs are de-duplicated by outputs', () => {
+  // aep-like's lid-assembly (master_format f3z) is referenced by two step
+  // renders (lid-closed, lid-open) and a viewer, all three of which would
+  // write the component's derived_files verbatim.
+  it('emits one job per distinct outputs list for a hand-exported component', () => {
+    const model = loadProject(join(fixturesDir, 'aep-like'));
+    const plan = buildRenderPlan(model);
+
+    const lidJobs = plan.jobs.filter(j => j.component === 'lid-assembly');
+    const lidAssembly = model.components.get('lid-assembly')!;
+    expect(lidAssembly.master_format).toBe('f3z');
+    expect(lidAssembly.derived_files.length).toBeGreaterThan(0);
+
+    expect(lidJobs).toHaveLength(1);
+    expect(lidJobs[0].status).toBe('hand-exported');
+    expect(lidJobs[0].outputs).toEqual(lidAssembly.derived_files);
+    // The survivor keeps the spec's key format, and is the one that sorts first
+    // of the three candidates (render ids lid-closed, lid-open, viewer).
+    expect(lidJobs[0].render_id).toBe('lid-closed');
+    expect(lidJobs[0].key).toBe(`lid-assembly@${lidAssembly.design_version}--lid-closed--${lidJobs[0].key.split('--')[2]}`);
+  });
+
+  it('no two jobs in a plan share a first output path', () => {
+    for (const fixture of ['minimal', 'aep-like']) {
+      const plan = buildRenderPlan(loadProject(join(fixturesDir, fixture)));
+      const firstOutputs = plan.jobs.map(j => j.outputs[0]).filter(o => o !== undefined);
+      expect(new Set(firstOutputs).size, fixture).toBe(firstOutputs.length);
+    }
+  });
+
+  it('leaves rendered jobs alone: one job per render id', () => {
+    const model = loadProject(join(fixturesDir, 'aep-like'));
+    const plan = buildRenderPlan(model);
+    const topStop = plan.jobs.filter(j => j.component === 'electrode-top-stop').map(j => j.render_id).sort();
+    expect(topStop).toEqual(['topstop-exploded', 'topstop-front', 'viewer']);
+  });
+});

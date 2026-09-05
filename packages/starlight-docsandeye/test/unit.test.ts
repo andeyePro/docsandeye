@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest';
 import docsandeye, { PLUGIN_NAME } from '../index.ts';
 import { createDocsandeyeVitePlugin, loadDocsandeyeData, VIRTUAL_MODULE_ID } from '../index.ts';
 import { stepFrontmatterSchema } from '../schema.ts';
+import { THEME_HEAD_MARKER, resolveThemeHead } from '../src/theme.ts';
 import { readFrontmatter } from '@docsandeye/core';
 
 const PKG_ROOT = path.resolve(import.meta.dirname, '..');
@@ -159,6 +160,92 @@ describe('AC11 theme wiring: config:setup hook', () => {
     expect(components.Sidebar).toMatch(/Sidebar\.astro$/);
     // The user's own ThemeSelect override must survive the merge untouched.
     expect(components.ThemeSelect).toBe('./my/ThemeSelect.astro');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC11 (first-paint script portion): the plugin injects the themes head script
+// for a theme pack, once, and never for the stock starlight pack.
+// ---------------------------------------------------------------------------
+
+const PIOREACTOR_SITE_DIR = path.join(PKG_ROOT, 'fixtures/site-pioreactor');
+
+interface HookParams {
+  config: Record<string, unknown>;
+  updateConfig: (patch: Record<string, unknown>) => void;
+  addIntegration: () => void;
+  logger: { info: () => void; warn: (message: string) => void };
+  astroConfig: { root: URL };
+}
+
+interface HeadTag {
+  tag: string;
+  attrs?: Record<string, string | boolean | undefined>;
+  content?: string;
+}
+
+/** Run config:setup against a fixture site, returning the merged config patch and any warnings. */
+function runConfigSetup(
+  siteDir: string,
+  projectRoot: string,
+  config: Record<string, unknown> = {},
+): { merged: Record<string, unknown>; warnings: string[] } {
+  const calls: Array<Record<string, unknown>> = [];
+  const warnings: string[] = [];
+  const params: HookParams = {
+    config: { customCss: [], components: {}, ...config },
+    updateConfig: (patch) => {
+      calls.push(patch);
+    },
+    addIntegration: () => {},
+    logger: { info: () => {}, warn: (message: string) => warnings.push(message) },
+    astroConfig: { root: pathToFileURL(`${siteDir}/`) },
+  };
+  const hook = docsandeye({ projectRoot }).hooks?.['config:setup'] as (p: HookParams) => void;
+  hook(params);
+  return { merged: calls.reduce((acc, call) => ({ ...acc, ...call }), {} as Record<string, unknown>), warnings };
+}
+
+describe('AC11 theme wiring: first-paint script', () => {
+  it('adds no head script for the stock starlight pack', () => {
+    const { merged, warnings } = runConfigSetup(SITE_DIR, '../project');
+    expect(merged.head).toEqual([]);
+    expect(warnings).toEqual([]);
+  });
+
+  it('adds the themes first-paint script for a theme pack, marked and inline', () => {
+    const { merged, warnings } = runConfigSetup(PIOREACTOR_SITE_DIR, '../project-pioreactor');
+    const head = merged.head as HeadTag[];
+    expect(warnings).toEqual([]);
+    expect(head).toHaveLength(1);
+    expect(head[0]!.tag).toBe('script');
+    expect(head[0]!.attrs?.[THEME_HEAD_MARKER]).toBeDefined();
+    // The script must restore the stored pack and mode before first paint.
+    expect(head[0]!.content).toContain('docsiPack');
+    expect(head[0]!.content).toContain('localStorage');
+  });
+
+  it("keeps a site's own copy of the script and adds no second one", () => {
+    const own: HeadTag = { tag: 'script', attrs: { [THEME_HEAD_MARKER]: '' }, content: '/* the site added this itself */' };
+    const { merged } = runConfigSetup(PIOREACTOR_SITE_DIR, '../project-pioreactor', { head: [own] });
+    expect(merged.head).toEqual([own]);
+  });
+
+  it('preserves unrelated head entries a site declares', () => {
+    const other: HeadTag = { tag: 'meta', attrs: { name: 'robots', content: 'noindex' } };
+    const { merged } = runConfigSetup(PIOREACTOR_SITE_DIR, '../project-pioreactor', { head: [other] });
+    const head = merged.head as HeadTag[];
+    expect(head).toHaveLength(2);
+    expect(head[0]).toEqual(other);
+    expect(head[1]!.attrs?.[THEME_HEAD_MARKER]).toBeDefined();
+  });
+
+  it('warns instead of failing when the themes package does not resolve', () => {
+    const warnings: string[] = [];
+    // A directory with no node_modules above it that could resolve the package.
+    expect(resolveThemeHead('pioreactor', path.parse(PKG_ROOT).root, (m) => warnings.push(m))).toEqual([]);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('@docsandeye/themes/head.js');
   });
 });
 

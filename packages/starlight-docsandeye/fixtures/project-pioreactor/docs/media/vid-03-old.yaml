@@ -1,0 +1,9 @@
+id: vid-03-old
+type: video
+file: assets/video/vid-03-old.mp4
+poster: assets/video/vid-03-old.jpg
+duration_s: 15
+shot_date: 2026-02-15
+shot_by: "Example Maker"
+hero: [top-stop@1.0.0]
+licence: CC-BY-SA-4.0

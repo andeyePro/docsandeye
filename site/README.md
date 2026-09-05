@@ -42,7 +42,7 @@ Custom domain: `docs.andeye.com`, added in the Pages project's custom domains ta
 ## Content
 
 - `src/content/docs/` holds the documentation pages (Markdown and MDX).
-- `astro.config.mjs` wires the plugin, the theme control (`components.ThemeSelect`), the first-paint script (`head: themeHead()`), the passthrough image service and the sidebar.
+- `astro.config.mjs` wires the plugin, the theme control (`components.ThemeSelect`), the theme pack (the plugin injects the first-paint script itself), the passthrough image service and the sidebar.
 - `src/content.config.ts` extends Starlight's `docs` schema with the step fields as optional, because this collection holds ordinary pages as well as the generated step pages.
 
 Voice: short sentences, no marketing on reference pages, commands shown bare in fenced blocks.
