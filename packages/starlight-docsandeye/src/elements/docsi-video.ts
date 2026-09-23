@@ -130,6 +130,28 @@ export function swapRendition(video: HTMLVideoElement, height: number): boolean 
   return changed;
 }
 
+/**
+ * STALE flow: the `Watch the older video` button of the enclosing
+ * `<details>` reveals the hidden `.docsi-older` box around `host`; nothing
+ * plays. Shared by `<docsi-video>` and `<docsi-youtube>`.
+ */
+export function wireOlderButton(host: HTMLElement): void {
+  const older = host.closest<HTMLElement>('.docsi-older');
+  if (!older) return;
+  const button = older.closest('details')?.querySelector<HTMLButtonElement>('button.docsi-watch-older');
+  if (!button || button.hasAttribute('data-enhanced')) return;
+  button.setAttribute('data-enhanced', '');
+  button.addEventListener(
+    'click',
+    () => {
+      older.hidden = false;
+      button.hidden = true;
+      host.setAttribute('data-revealed', '');
+    },
+    { once: true },
+  );
+}
+
 // The module is also imported server-side (Astro) and in Node unit tests,
 // where there is no HTMLElement to extend.
 const ElementBase = (typeof HTMLElement === 'undefined' ? class {} : HTMLElement) as typeof HTMLElement;
@@ -149,7 +171,7 @@ export class DocsiVideo extends ElementBase {
       video.preload = 'none';
       this.upgradeRendition(video);
     }
-    this.wireOlderButton();
+    wireOlderButton(this);
   }
 
   /** Switch to the 1080 pair when offered and warranted; otherwise keep the server's lowest pair. */
@@ -158,23 +180,5 @@ export class DocsiVideo extends ElementBase {
     if (!available.includes(1080)) return;
     if (pickRendition(currentSignals(available)) !== 1080) return;
     swapRendition(video, 1080);
-  }
-
-  /** STALE flow: the `Watch the older video` button reveals the hidden `.docsi-older` box; nothing plays. */
-  private wireOlderButton(): void {
-    const older = this.closest<HTMLElement>('.docsi-older');
-    if (!older) return;
-    const button = older.closest('details')?.querySelector<HTMLButtonElement>('button.docsi-watch-older');
-    if (!button || button.hasAttribute('data-enhanced')) return;
-    button.setAttribute('data-enhanced', '');
-    button.addEventListener(
-      'click',
-      () => {
-        older.hidden = false;
-        button.hidden = true;
-        this.setAttribute('data-revealed', '');
-      },
-      { once: true },
-    );
   }
 }

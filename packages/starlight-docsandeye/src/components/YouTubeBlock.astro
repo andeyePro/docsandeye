@@ -1,0 +1,96 @@
+---
+/**
+ * A YouTube clip as a `<docsi-youtube>` click-to-load facade. Nothing is
+ * requested from YouTube until the reader presses play: the page carries the
+ * embed URL only in `data-embed` and the watch URL only in the `<noscript>`
+ * link. The play button (hidden until upgraded) shows the authored poster, or
+ * a neutral placeholder with the title and duration.
+ *
+ * `mode` mirrors `VideoBlock`: `flow` wraps the element in a figure;
+ * `older` (the STALE flow) emits the hidden `.docsi-older` box with the
+ * `<noscript>` link after it.
+ */
+import type { HostingConfig, Media, ProjectModel, StalenessEntry } from '@docsandeye/core';
+import { formatDuration, youtubeEmbedUrl, youtubeWatchUrl } from '@docsandeye/core/interactive';
+import { bannerText, type BannerRecord } from '../elements/docsi-video.ts';
+import { changedInFrameNote, componentName, mediaUrl } from '../view.ts';
+
+interface Props {
+	media: Media;
+	entry: StalenessEntry;
+	model: ProjectModel;
+	hosting: HostingConfig;
+	base: string;
+	/** Shown on the placeholder and as the iframe title. */
+	title: string;
+	mode?: 'flow' | 'older';
+}
+
+const { media, entry, model, hosting, base, title, mode = 'flow' } = Astro.props;
+const id = media.youtube!;
+const embed = youtubeEmbedUrl(id, media.start_s, media.end_s);
+const watch = youtubeWatchUrl(id, media.start_s);
+const poster = media.poster ? mediaUrl(media, 'poster', hosting, base) : undefined;
+const length =
+	media.duration_s ?? (media.end_s !== undefined ? media.end_s - (media.start_s ?? 0) : undefined);
+const duration = length !== undefined ? formatDuration(length) : undefined;
+
+const record: BannerRecord = {
+	stale_heroes: entry.stale_heroes.map((p) => ({ ...p, name: componentName(model, p.component) })),
+	changed_in_frame: entry.changed_in_frame.map((p) => ({ ...p, name: componentName(model, p.component) })),
+};
+const banner = bannerText(entry.status, record);
+const note = entry.status === 'CHANGED_IN_FRAME' ? changedInFrameNote(media, entry, model) : undefined;
+const label = `Play video: ${title}${duration ? ` (${duration})` : ''}`;
+---
+
+{
+	mode === 'older' ? (
+		<>
+			<div class="docsi-older" hidden>
+				<docsi-youtube data-media={media.id} data-status={entry.status} data-embed={embed} data-title={title}>
+					{banner && <p class="docsi-banner" hidden>{banner}</p>}
+					<button type="button" class="docsi-youtube-play" aria-label={label} hidden>
+						{poster ? (
+							<img src={poster} alt="" loading="lazy" />
+						) : (
+							<span class="docsi-youtube-placeholder">
+								<span class="docsi-youtube-title">{title}</span>
+								{duration && <span class="docsi-youtube-duration">{duration}</span>}
+							</span>
+						)}
+						<span class="docsi-youtube-icon" aria-hidden="true">▶</span>
+					</button>
+				</docsi-youtube>
+			</div>
+			<noscript>
+				<a href={watch}>Watch the older video on YouTube</a>
+			</noscript>
+		</>
+	) : (
+		<figure class="docsi-video-figure docsi-youtube-figure">
+			<docsi-youtube data-media={media.id} data-status={entry.status} data-embed={embed} data-title={title}>
+				{banner && <p class="docsi-banner" hidden>{banner}</p>}
+				<button type="button" class="docsi-youtube-play" aria-label={label} hidden>
+					{poster ? (
+						<img src={poster} alt="" loading="lazy" />
+					) : (
+						<span class="docsi-youtube-placeholder">
+							<span class="docsi-youtube-title">{title}</span>
+							{duration && <span class="docsi-youtube-duration">{duration}</span>}
+						</span>
+					)}
+					<span class="docsi-youtube-icon" aria-hidden="true">▶</span>
+				</button>
+				<noscript>
+					<a href={watch}>Watch the video on YouTube{duration ? ` (${duration})` : ''}</a>
+				</noscript>
+			</docsi-youtube>
+			{note && <p class="docsi-note">{note}</p>}
+			<figcaption>
+				Video on YouTube — shot {media.shot_date}
+				{media.shot_by ? ` by ${media.shot_by}` : ''}. Loads from YouTube only when you press play.
+			</figcaption>
+		</figure>
+	)
+}

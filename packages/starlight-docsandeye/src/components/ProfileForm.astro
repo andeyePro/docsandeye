@@ -1,0 +1,64 @@
+---
+/**
+ * `<docsi-profile>`: the reader's setup form, server-rendered with the
+ * defaults so it reads (and tabs) without JavaScript; the element fills in
+ * the saved answers and saves changes.
+ */
+import type { ProfileItem } from '@docsandeye/core/interactive';
+
+interface Props {
+	guideId: string;
+	items: readonly ProfileItem[];
+}
+
+const { guideId, items } = Astro.props;
+const fieldId = (id: string) => `docsi-profile-${id}`;
+---
+
+{
+	items.length > 0 && (
+		<docsi-profile data-guide={guideId} id="docsi-profile">
+			<form class="docsi-profile-form" aria-labelledby="docsi-profile-heading">
+				<h2 id="docsi-profile-heading">Your setup</h2>
+				<p class="docsi-profile-intro">
+					Answer once and the guide hides the steps and parts that do not apply to you. Your answers stay in this browser.
+				</p>
+				{items.map((item) =>
+					item.type === 'number' ? (
+						<p class="docsi-profile-field">
+							<label for={fieldId(item.id)}>{item.label}</label>
+							<input
+								type="number"
+								id={fieldId(item.id)}
+								name={item.id}
+								min={item.min}
+								max={item.max}
+								step="1"
+								inputmode="numeric"
+								value={String(item.default)}
+							/>
+						</p>
+					) : item.type === 'boolean' ? (
+						<p class="docsi-profile-field docsi-profile-check">
+							<input type="checkbox" id={fieldId(item.id)} name={item.id} checked={item.default === true} />
+							<label for={fieldId(item.id)}>{item.label}</label>
+						</p>
+					) : (
+						<fieldset class="docsi-profile-field">
+							<legend>{item.label}</legend>
+							{(item.options ?? []).map((option) => (
+								<label>
+									<input type="radio" name={item.id} value={option.value} checked={option.value === item.default} /> {option.label}
+								</label>
+							))}
+						</fieldset>
+					)
+				)}
+				<p class="docsi-profile-saved" role="status" hidden>Saved. The guide now shows what applies to your setup.</p>
+			</form>
+			<noscript>
+				<p class="docsi-note">Without JavaScript the guide shows every step; conditional parts are labelled “Only if”.</p>
+			</noscript>
+		</docsi-profile>
+	)
+}

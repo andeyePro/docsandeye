@@ -34,7 +34,8 @@ export function collectStaticAssets(data: DocsandeyeData, projectRoot: string): 
   }
   if (data.config.hosting.provider === 'local') {
     for (const media of data.model.media.values()) {
-      add(MEDIA_URL_PREFIX, media.file);
+      // A YouTube clip is served by YouTube: no video file to copy, only its poster.
+      if (media.file !== undefined && media.youtube === undefined) add(MEDIA_URL_PREFIX, media.file);
       if (media.poster) add(MEDIA_URL_PREFIX, media.poster);
     }
   }

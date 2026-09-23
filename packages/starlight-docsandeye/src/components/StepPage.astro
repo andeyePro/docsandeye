@@ -1,11 +1,18 @@
 ---
-import type { Guide, ProjectModel, StalenessReport, Step } from '@docsandeye/core';
+import { stepsForGuide, type Guide, type ProjectModel, type StalenessReport, type Step } from '@docsandeye/core';
+import { wrapWhenBlocks } from '@docsandeye/core/interactive';
 import type { CarbonReport, RenderManifest } from '../data.ts';
+import { onlyIf, skipTargets, whenAttr } from '../interactive-view.ts';
 import { renderMarkdown } from '../markdown.ts';
-import { carbonFor } from '../view.ts';
+import { carbonFor, guideHref } from '../view.ts';
 import CarbonFigure from './CarbonFigure.astro';
+import Checks from './Checks.astro';
 import MediaPane from './MediaPane.astro';
 import PartsList from './PartsList.astro';
+import ProfileData from './ProfileData.astro';
+import ProfileForm from './ProfileForm.astro';
+import ProfileSummary from './ProfileSummary.astro';
+import Receipt from './Receipt.astro';
 
 interface Props {
 	guide: Guide;
@@ -20,19 +27,51 @@ interface Props {
 }
 
 const { guide, step, model, staleness, renderManifest, carbon, pathname } = Astro.props;
-const html = await renderMarkdown(step.body);
+const base = import.meta.env.BASE_URL;
+const profile = model.config.profile;
+// `<!-- when … -->` blocks become labelled `<div class="docsi-when">`s; a body
+// whose comments cannot be read renders unwrapped (`docsandeye check` reports it).
+const html = await renderMarkdown(wrapWhenBlocks(step.body, profile).markdown);
 const carbonEntry = carbonFor(carbon, pathname);
+const overview = guideHref(guide, base);
+const stepCondition = onlyIf(step.when, profile);
+const next = step.when ? skipTargets(stepsForGuide(model, guide.id), step.id, guide, base) : [];
 ---
 
 <div class="not-content docsi-step-wrap" id="_top" data-guide={guide.id}>
+	<ProfileData items={profile} />
 	<docsi-step data-step={step.id}>
 		<div class="docsi-media">
 			<MediaPane step={step} model={model} staleness={staleness} renderManifest={renderManifest} />
 		</div>
 		<div class="docsi-text">
 			<h1>{step.title}</h1>
+			{profile.length > 0 && <ProfileSummary guideId={guide.id} href={overview} />}
+			{stepCondition && <p class="docsi-when-label docsi-step-condition">{stepCondition}</p>}
+			{
+				step.when && (
+					<p
+						class="docsi-skip-notice"
+						role="note"
+						data-when={whenAttr(step.when)}
+						data-when-mode="unless"
+						data-next={JSON.stringify(next)}
+						data-guide-href={overview}
+						hidden
+					>
+						This step doesn't apply to your setup ({stepCondition?.replace(/^Only if: /, '')}).{' '}
+						<a class="docsi-skip-link" href={overview}>
+							Back to the guide overview
+						</a>
+						.
+					</p>
+				)
+			}
+			{step.profile && <ProfileForm guideId={guide.id} items={profile} />}
 			<div class="docsi-body sl-markdown-content" set:html={html} />
+			{step.receipt && <Receipt guideId={guide.id} model={model} />}
 			<PartsList step={step} model={model} />
+			<Checks guideId={guide.id} step={step} model={model} />
 			{
 				step.safety && (
 					<aside class="docsi-safety">

@@ -1,0 +1,17 @@
+---
+/**
+ * The profile questions as inline JSON, read by the client elements (defaults,
+ * the summary line, condition evaluation). Emitted once per guide or step page
+ * when the project has a profile.
+ */
+import type { ProfileItem } from '@docsandeye/core/interactive';
+import { scriptJson } from '../interactive-view.ts';
+
+interface Props {
+	items: readonly ProfileItem[];
+}
+
+const { items } = Astro.props;
+---
+
+{items.length > 0 && <script type="application/json" data-docsi-profile is:inline set:html={scriptJson(items)}></script>}

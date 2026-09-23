@@ -1,0 +1,79 @@
+---
+/**
+ * `<docsi-checks>`: yes/no checks at the end of a step. Without JavaScript:
+ * the questions as a list, each with its likely issues in a `<details>`, and
+ * a plain contact link. The element adds the Yes/No radios (server-rendered,
+ * hidden), reveals issues on No with a pre-filled email, and shows
+ * "Step checked" once every visible check is Yes.
+ */
+import type { ProjectModel, Step } from '@docsandeye/core';
+import { onlyIf, plainMailto, whenAttr } from '../interactive-view.ts';
+
+interface Props {
+	guideId: string;
+	step: Step;
+	model: ProjectModel;
+}
+
+const { guideId, step, model } = Astro.props;
+const checks = step.checks ?? [];
+const contact = model.config.contacts.project;
+const help = plainMailto(contact, step.title);
+const name = (id: string) => `docsi-check-${step.id}-${id}`;
+---
+
+{
+	checks.length > 0 && (
+		<docsi-checks data-guide={guideId} data-step={step.id} data-step-title={step.title} data-contact={contact ? JSON.stringify(contact) : undefined}>
+			<section class="docsi-checks">
+				<h2>Check your work</h2>
+				{step.checks_draft && <p class="docsi-checks-draft">Draft checks, under review</p>}
+				<ol class="docsi-checks-list">
+					{checks.map((check) => (
+						<li class="docsi-check" data-check={check.id} data-when={whenAttr(check.when)}>
+							<p class="docsi-check-q" id={`${name(check.id)}-q`}>
+								{check.question}
+							</p>
+							{check.when && <p class="docsi-when-label">{onlyIf(check.when, model.config.profile)}</p>}
+							<div class="docsi-check-answer" role="radiogroup" aria-labelledby={`${name(check.id)}-q`} hidden>
+								<label>
+									<input type="radio" name={name(check.id)} value="yes" /> Yes
+								</label>
+								<label>
+									<input type="radio" name={name(check.id)} value="no" /> No
+								</label>
+							</div>
+							{check.issues.length > 0 && (
+								<details class="docsi-check-issues">
+									<summary>If not: likely issues</summary>
+									<ul>
+										{check.issues.map((issue) => (
+											<li>
+												<strong>{issue.problem}</strong> — {issue.fix}
+											</li>
+										))}
+									</ul>
+								</details>
+							)}
+							{contact?.email && (
+								<p class="docsi-check-contact" hidden>
+									<a href={help}>Something else — contact us</a>
+								</p>
+							)}
+						</li>
+					))}
+				</ol>
+				<p class="docsi-checks-done" role="status" hidden>
+					Step checked
+				</p>
+				{help && contact && (
+					<noscript>
+						<p class="docsi-checks-help">
+							Something else? <a href={help}>Contact {contact.name}</a>.
+						</p>
+					</noscript>
+				)}
+			</section>
+		</docsi-checks>
+	)
+}

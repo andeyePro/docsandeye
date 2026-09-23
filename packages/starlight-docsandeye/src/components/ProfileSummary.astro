@@ -1,0 +1,18 @@
+---
+/**
+ * `<docsi-profile-summary>`: "Your setup: … — change", hidden until the
+ * element fills it in (without JavaScript nothing is tailored to a setup).
+ */
+interface Props {
+	guideId: string;
+	href: string;
+}
+
+const { guideId, href } = Astro.props;
+---
+
+<docsi-profile-summary data-guide={guideId}>
+	<p class="docsi-profile-summary" hidden>
+		Your setup: <span class="docsi-profile-summary-text"></span> — <a href={`${href}#docsi-profile`}>change</a>
+	</p>
+</docsi-profile-summary>

@@ -514,3 +514,194 @@ details.docsi-stale figure {
   line-height: 1;
   cursor: pointer;
 }
+
+/* ---- reader-interactive guides ------------------------------------------ */
+/* A server-rendered `hidden` must win over any display rule below. */
+docsi-profile [hidden],
+docsi-profile-summary [hidden],
+docsi-receipt [hidden],
+docsi-checks [hidden],
+docsi-youtube [hidden],
+.docsi-when[hidden],
+.docsi-skip-notice[hidden],
+[data-when][hidden] {
+  display: none !important;
+}
+
+.docsi-when {
+  margin: 1rem 0;
+  padding: 0.25rem 0 0.25rem 0.9rem;
+  border-left: 3px solid var(--docsi-accent);
+}
+
+.docsi-when-label,
+.docsi-when-inline,
+.docsi-skip-note,
+.docsi-receipt-note {
+  color: var(--docsi-text-muted);
+  font-size: var(--sl-text-sm);
+}
+
+.docsi-when-label {
+  margin: 0 0 0.4rem;
+  font-style: italic;
+}
+
+.docsi-when-inline,
+.docsi-receipt-note {
+  display: block;
+}
+
+.docsi-skip-notice,
+.docsi-profile-summary {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--docsi-accent-low);
+  font-size: var(--sl-text-sm);
+}
+
+[data-docsi-skipped] > a {
+  opacity: 0.6;
+}
+
+.docsi-checked-mark {
+  color: var(--sl-color-green-high);
+  font-size: var(--sl-text-sm);
+}
+
+.docsi-profile-form,
+.docsi-receipt,
+.docsi-checks {
+  margin: 1.5rem 0;
+}
+
+.docsi-profile-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  margin: 0.6rem 0;
+}
+
+fieldset.docsi-profile-field {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.75rem 0.6rem;
+}
+
+.docsi-profile-field input[type='number'] {
+  width: 5rem;
+}
+
+.docsi-receipt-table {
+  width: 100%;
+  margin: 0.75rem 0;
+  border-collapse: collapse;
+  font-size: var(--sl-text-sm);
+}
+
+.docsi-receipt-table caption {
+  text-align: start;
+  font-weight: 600;
+}
+
+.docsi-receipt-table th,
+.docsi-receipt-table td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--sl-color-hairline);
+  text-align: start;
+  vertical-align: top;
+}
+
+.docsi-receipt-table input {
+  width: 4.5rem;
+}
+
+.docsi-missing {
+  padding: 0.5rem 0.9rem;
+  border-left: 4px solid var(--docsi-stale-fg);
+  background: var(--docsi-stale-bg);
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.docsi-checks-list > li {
+  margin: 0.75rem 0;
+}
+
+.docsi-check-q {
+  margin: 0;
+  font-weight: 600;
+}
+
+.docsi-check-answer {
+  display: flex;
+  gap: 1.25rem;
+  margin: 0.3rem 0;
+}
+
+.docsi-checks-draft {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: var(--docsi-badge-stale-bg);
+  font-size: var(--sl-text-xs);
+}
+
+.docsi-checks-done {
+  font-weight: 600;
+  color: var(--sl-color-green-high);
+}
+
+docsi-youtube {
+  display: block;
+  position: relative;
+}
+
+.docsi-youtube-play {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 0;
+  background: var(--sl-color-gray-6, #222);
+  color: var(--sl-color-white);
+  font: inherit;
+  cursor: pointer;
+}
+
+.docsi-youtube-play img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.docsi-youtube-placeholder {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0.9rem;
+  text-align: start;
+}
+
+.docsi-youtube-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.5rem 1.1rem;
+  border-radius: 0.75rem;
+  background: var(--docsi-accent);
+  color: var(--docsi-bg);
+  font-size: 1.5rem;
+}
+
+.docsi-youtube-frame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}

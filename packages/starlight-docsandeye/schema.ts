@@ -4,9 +4,11 @@
  *
  * `stepFrontmatterSchema` is core's step frontmatter shape verbatim: `id`,
  * `order`, `title`, `guide`, `branch`, `parts`, `tools`, `renders` (unique
- * ids), `viewer`, `media`, `safety`. The id-vs-filename check performed by
- * core's `parseStep` needs the filename and so is deliberately NOT part of
- * this schema.
+ * ids), `viewer`, `media`, `safety`, and the reader-interactive `when`,
+ * `receipt`, `profile`, `checks` (unique ids) and `checks_draft`. The
+ * id-vs-filename check performed by core's `parseStep` needs the filename,
+ * and checking a `when` against the profile needs the config, so neither is
+ * part of this schema.
  *
  * `stepFrontmatterExtension` is the same shape with every step field optional.
  * It is the one to hand to `docsSchema({ extend })`, because that schema

@@ -6,6 +6,7 @@ import { componentName, renderJobFor, renderPresentation } from '../view.ts';
 import MediaItem from './MediaItem.astro';
 import StalenessDetails from './StalenessDetails.astro';
 import VideoBlock from './VideoBlock.astro';
+import YouTubeBlock from './YouTubeBlock.astro';
 
 interface Props {
 	step: Step;
@@ -114,7 +115,9 @@ const stale = mediaItems.filter((m) => m.entry.status === 'STALE');
 }
 {
 	inFlow.map(({ media, entry }) =>
-		media.type === 'video' ? (
+		media.youtube !== undefined ? (
+			<YouTubeBlock media={media} entry={entry} model={model} hosting={hosting} base={base} title={step.title} mode="flow" />
+		) : media.type === 'video' ? (
 			<VideoBlock media={media} entry={entry} model={model} hosting={hosting} base={base} mediaManifest={mediaManifest} mode="flow" />
 		) : (
 			<MediaItem media={media} entry={entry} model={model} hosting={hosting} base={base} />
@@ -123,6 +126,6 @@ const stale = mediaItems.filter((m) => m.entry.status === 'STALE');
 }
 {
 	stale.map(({ media, entry }) => (
-		<StalenessDetails media={media} entry={entry} model={model} hosting={hosting} base={base} mediaManifest={mediaManifest} />
+		<StalenessDetails media={media} entry={entry} model={model} hosting={hosting} base={base} mediaManifest={mediaManifest} title={step.title} />
 	))
 }

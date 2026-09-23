@@ -7,6 +7,7 @@ import MobileMenuFooter from '@astrojs/starlight/components/MobileMenuFooter.ast
 import Default from '@astrojs/starlight/components/Sidebar.astro';
 import { stepsForGuide } from '@docsandeye/core';
 import { buildDate, config, maintainer, model, staleness } from 'virtual:docsandeye/model';
+import { checkRefs, whenAttr } from '../interactive-view.ts';
 import { guideHref, stepBadges, stepHref, withBase } from '../view.ts';
 
 interface Marker {
@@ -35,13 +36,29 @@ const otherGuides = config.guides.filter((g) => g.id !== guide?.id);
 						<ol class="docsi-steps">
 							{steps.map((step) => {
 								const badges = stepBadges(step, model, staleness, buildDate);
+								const checks = checkRefs(step);
 								return (
-									<li data-step={step.id}>
+									<li
+										data-step={step.id}
+										data-when={whenAttr(step.when)}
+										data-when-mode={step.when ? 'skip' : undefined}
+										data-checks={checks ? JSON.stringify(checks) : undefined}
+									>
 										<a href={stepHref(guide, step.id, base)} aria-current={marker.stepId === step.id ? 'page' : undefined}>
 											{step.title}
 										</a>
 										{badges.stale && <span class="docsi-badge docsi-badge-stale">stale media</span>}
 										{badges.updated && <span class="docsi-badge docsi-badge-updated">updated</span>}
+										{step.when && (
+											<span class="docsi-skip-note" hidden>
+												(not for your setup)
+											</span>
+										)}
+										{checks && (
+											<span class="docsi-checked-mark" title="All checks answered yes" hidden>
+												✓
+											</span>
+										)}
 									</li>
 								);
 							})}

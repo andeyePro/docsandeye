@@ -50,7 +50,7 @@ const sources: Array<{ src: string; type: string; height?: number }> = encoded
 			{ src: outputUrl(job.outputs[`av1_${lowest}`]!), type: AV1_SOURCE_TYPE, height: lowest },
 			{ src: outputUrl(job.outputs[`h264_${lowest}`]!), type: H264_SOURCE_TYPE, height: lowest },
 		]
-	: [{ src: mediaUrl(media, 'file', hosting, base)!, type: sourceType(media.file) }];
+	: [{ src: mediaUrl(media, 'file', hosting, base)!, type: sourceType(media.file ?? '') }];
 
 const poster = encoded && job.outputs.poster ? outputUrl(job.outputs.poster) : mediaUrl(media, 'poster', hosting, base);
 const captions = encoded && job.outputs.captions ? { src: outputUrl(job.outputs.captions), lang: captionsLang(job.outputs.captions) } : undefined;

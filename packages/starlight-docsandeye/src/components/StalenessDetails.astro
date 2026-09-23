@@ -14,6 +14,7 @@ import { componentName, staleSummary } from '../view.ts';
 import GeometryDiff from './GeometryDiff.astro';
 import MediaItem from './MediaItem.astro';
 import VideoBlock from './VideoBlock.astro';
+import YouTubeBlock from './YouTubeBlock.astro';
 
 interface Props {
 	media: Media;
@@ -22,9 +23,11 @@ interface Props {
 	hosting: HostingConfig;
 	base: string;
 	mediaManifest?: MediaManifest | null;
+	/** The step title, for a YouTube clip's placeholder. */
+	title?: string;
 }
 
-const { media, entry, model, hosting, base, mediaManifest = null } = Astro.props;
+const { media, entry, model, hosting, base, mediaManifest = null, title = media.id } = Astro.props;
 const isVideo = media.type === 'video';
 const summary = staleSummary(media, entry, model);
 const changelog = entry.stale_heroes.flatMap((hero) =>
@@ -55,7 +58,11 @@ const diffs = entry.stale_heroes.filter((hero) => oldGeometryFor(oldGeometry, he
 		isVideo ? (
 			<>
 				<button type="button" class="docsi-watch-older">Watch the older video</button>
-				<VideoBlock media={media} entry={entry} model={model} hosting={hosting} base={base} mediaManifest={mediaManifest} mode="older" />
+				{media.youtube !== undefined ? (
+					<YouTubeBlock media={media} entry={entry} model={model} hosting={hosting} base={base} title={title} mode="older" />
+				) : (
+					<VideoBlock media={media} entry={entry} model={model} hosting={hosting} base={base} mediaManifest={mediaManifest} mode="older" />
+				)}
 			</>
 		) : (
 			<MediaItem media={media} entry={entry} model={model} hosting={hosting} base={base} />
