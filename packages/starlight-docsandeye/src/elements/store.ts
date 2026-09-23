@@ -10,7 +10,16 @@ import { STORAGE_KEYS, parseStoredProfile, type Profile, type ProfileItem } from
 export const PROFILE_EVENT = 'docsandeye:profile';
 export const CHECKS_EVENT = 'docsandeye:checks';
 
+/**
+ * This page's own writes, so the page keeps working for the visit when
+ * `localStorage` throws (blocked site data, some private modes, quota):
+ * without it every element would re-read the defaults and drop the reader's
+ * answer the moment they gave it.
+ */
+const memory = new Map<string, string>();
+
 export function readStorage(key: string): string | null {
+  if (memory.has(key)) return memory.get(key)!;
   try {
     return window.localStorage.getItem(key);
   } catch {
@@ -19,10 +28,11 @@ export function readStorage(key: string): string | null {
 }
 
 export function writeStorage(key: string, value: string): void {
+  memory.set(key, value);
   try {
     window.localStorage.setItem(key, value);
   } catch {
-    /* storage unavailable: the page still works for this visit */
+    /* storage unavailable: the in-memory copy keeps the page working for this visit */
   }
 }
 
