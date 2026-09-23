@@ -5,7 +5,8 @@
  * unit count, rows filtered by condition and supplier, a "received" input per
  * row) and a "Missing parts" panel with a pre-filled email to the supplier,
  * or supplier links when there is no one to email. The maths and the mailto
- * are core's pure functions; this element only builds DOM.
+ * are core's pure functions; this element reads the items from the server's
+ * table rows (`readReceiptItems`) and builds DOM.
  */
 import {
   STORAGE_KEYS,
@@ -37,7 +38,33 @@ function supplierLink(row: { name: string; supplier?: { name: string; url?: stri
   return a;
 }
 
+/** The receipt items the server wrote into the no-JavaScript table rows. */
+export function readReceiptItems(root: ParentNode): ReceiptItem[] {
+  const items: ReceiptItem[] = [];
+  for (const tr of root.querySelectorAll<HTMLElement>('.docsi-receipt-static tr[data-component]')) {
+    const d = tr.dataset;
+    const item: ReceiptItem = {
+      component: d.component!,
+      name: tr.querySelector('.docsi-receipt-name')?.textContent ?? d.component!,
+      per: d.per === 'kit' ? 'kit' : 'unit',
+      qty: Number(d.qty) || 1,
+    };
+    if (d.from !== undefined) item.from = d.from.split(' ').filter(Boolean);
+    if (d.when !== undefined) item.when = dataJson(tr, 'when', {});
+    const note = tr.querySelector('.docsi-receipt-note')?.textContent;
+    if (note) item.note = note;
+    if (d.supplierName !== undefined) {
+      item.supplier = { name: d.supplierName };
+      if (d.supplierUrl !== undefined) item.supplier.url = d.supplierUrl;
+    }
+    items.push(item);
+  }
+  return items;
+}
+
 export class DocsiReceipt extends ElementBase {
+  private items: ReceiptItem[] = [];
+
   private guideId = '';
   private receipt: Receipt | undefined;
 
@@ -48,6 +75,7 @@ export class DocsiReceipt extends ElementBase {
     const live = this.querySelector<HTMLElement>('.docsi-receipt-live');
     const staticView = this.querySelector<HTMLElement>('.docsi-receipt-static');
     if (!live || !this.guideId) return;
+    this.items = readReceiptItems(this);
     this.render(live);
     live.hidden = false;
     if (staticView) staticView.hidden = true;
@@ -68,7 +96,7 @@ export class DocsiReceipt extends ElementBase {
     const items = profileItems();
     const profile = loadProfile(this.guideId, items);
     const config = dataJson<ReceiptConfig>(this, 'config', {});
-    this.receipt = computeReceipt(dataJson<ReceiptItem[]>(this, 'items', []), profile, config);
+    this.receipt = computeReceipt(this.items, profile, config);
     const received = readRecord(STORAGE_KEYS.receipt(this.guideId));
     const labels = dataJson<Record<string, string>>(this, 'supplier-labels', {});
     const r = this.receipt;

@@ -3,9 +3,10 @@
  * `<docsi-receipt>`: "count what you received". Without JavaScript: a table
  * of per-unit (and per-kit) quantities, each conditional row labelled, and
  * the supplier contacts. The element replaces it with the reader's own
- * checklist and the missing-parts email. Everything it needs travels in
- * `data-*` attributes: the items, the receipt config, the contacts (with
- * their emails) and the supplier option labels.
+ * checklist and the missing-parts email. Each table row carries its item's
+ * data (`data-per`, `data-qty`, `data-from`, `data-when`, supplier) so the
+ * list is not sent twice; the element's own `data-*` attributes carry the
+ * receipt config, the contacts (with their emails) and the supplier labels.
  */
 import type { ProjectModel } from '@docsandeye/core';
 import { guideReceiptItems, onlyIf, plainMailto, staticReceiptGroups, supplierLabels, whenAttr } from '../interactive-view.ts';
@@ -21,7 +22,9 @@ const items = guideReceiptItems(model, guideId);
 const labels = supplierLabels(model);
 const { perUnit, perKit } = staticReceiptGroups(items);
 const multiplied = config.receipt?.multiply_by;
-const fromText = (from: readonly string[] | undefined) => (from === undefined ? 'all' : from.map((v) => labels[v] ?? v).join(', ') || 'none');
+const optionCount = Object.keys(labels).length;
+const fromText = (from: readonly string[] | undefined) =>
+	from === undefined || (optionCount > 0 && from.length >= optionCount) ? 'all' : from.map((v) => labels[v] ?? v).join(', ') || 'none';
 const groups = [
 	{ caption: multiplied ? `Per unit (multiply by your number of ${multiplied})` : 'Per unit', rows: perUnit },
 	{ caption: 'Per kit (does not scale with units)', rows: perKit },
@@ -32,7 +35,6 @@ const contacts = Object.entries(config.contacts).filter(([key]) => key !== 'proj
 
 <docsi-receipt
 	data-guide={guideId}
-	data-items={JSON.stringify(items)}
 	data-config={JSON.stringify(config.receipt ?? {})}
 	data-contacts={JSON.stringify(config.contacts)}
 	data-supplier-labels={JSON.stringify(labels)}
@@ -53,9 +55,17 @@ const contacts = Object.entries(config.contacts).filter(([key]) => key !== 'proj
 						</thead>
 						<tbody>
 							{group.rows.map((row) => (
-								<tr data-component={row.component} data-when={whenAttr(row.when)}>
+								<tr
+									data-component={row.component}
+									data-per={row.per}
+									data-qty={row.qty}
+									data-from={row.from?.join(' ')}
+									data-when={whenAttr(row.when)}
+									data-supplier-name={row.supplier?.name}
+									data-supplier-url={row.supplier?.url}
+								>
 									<td>
-										{row.name}
+										<span class="docsi-receipt-name">{row.name}</span>
 										{row.note && <span class="docsi-receipt-note">{row.note}</span>}
 										{row.when && <span class="docsi-when-inline">{onlyIf(row.when, config.profile)}</span>}
 									</td>

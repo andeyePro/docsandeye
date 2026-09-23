@@ -180,7 +180,7 @@ describe('receipt checklist', () => {
     expect(page(STEP3).querySelector('docsi-receipt')).toBeFalsy();
   });
 
-  it('carries items, config, contacts (with emails) and supplier labels in data attributes', () => {
+  it('carries config, contacts (with emails) and supplier labels in data attributes', () => {
     const el = receipt();
     expect(el.getAttribute('data-guide')).toBe('kit');
     expect(json(el, 'data-config')).toEqual({ multiply_by: 'units', supplier_from: 'supplier' });
@@ -190,12 +190,22 @@ describe('receipt checklist', () => {
       project: { name: 'The project', email: 'help@project.invalid', subject: 'Kit guide: help with a step' },
     });
     expect(json(el, 'data-supplier-labels')).toEqual({ 'shop-a': 'Shop A kit', 'shop-b': 'Shop B', diy: 'Sourced myself' });
-    const items = json(el, 'data-items') as Array<{ component: string; per: string; qty: number }>;
-    expect(items.map((i) => [i.component, i.per, i.qty])).toEqual([
-      ['bracket', 'unit', 1],
-      ['spares-bag', 'kit', 1],
-      ['probe', 'unit', 1],
-      ['widget', 'unit', 2],
+  });
+
+  it('each table row carries its item data for the element (per, qty, from, when, supplier)', () => {
+    const rows = receipt().querySelectorAll('.docsi-receipt-static tr[data-component]');
+    const data = rows.map((tr) => [
+      tr.getAttribute('data-component'),
+      tr.getAttribute('data-per'),
+      tr.getAttribute('data-qty'),
+      tr.getAttribute('data-from') ?? null,
+      tr.getAttribute('data-supplier-url') ?? null,
+    ]);
+    expect(data).toEqual([
+      ['bracket', 'unit', '1', 'shop-b', 'https://brackets.example/b'],
+      ['probe', 'unit', '1', null, 'https://probes.example/p'],
+      ['widget', 'unit', '2', 'shop-a shop-b', 'https://widgets.example/widget'],
+      ['spares-bag', 'kit', '1', 'shop-a', null],
     ]);
   });
 
@@ -219,7 +229,7 @@ describe('receipt checklist', () => {
   });
 
   it('components without receipt data are not in the checklist', () => {
-    expect(raw(STEP1)).not.toMatch(/data-items="[^"]*plain/);
+    expect(receipt().querySelector('tr[data-component="plain"]')).toBeFalsy();
   });
 });
 
