@@ -424,6 +424,11 @@ describe('body when comments', () => {
     expect(wrapWhenBlocks(body, ITEMS)).toEqual({ markdown: body, problems: [] });
   });
 
+  it('comments that only start with the letters "when" are untouched', () => {
+    const body = '<!-- when-ready: film this -->\ntext\n<!-- whenever -->\n';
+    expect(wrapWhenBlocks(body, ITEMS)).toEqual({ markdown: body, problems: [] });
+  });
+
   it('other comments are untouched', () => {
     const body = '<!-- TODO: a note -->\ntext\n';
     expect(wrapWhenBlocks(body, ITEMS)).toEqual({ markdown: body, problems: [] });

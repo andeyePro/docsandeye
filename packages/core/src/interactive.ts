@@ -291,7 +291,8 @@ export interface WhenBlockProblem {
 }
 
 const OPEN_RE = /^\s*<!--\s*when\s+(.*?)\s*-->\s*$/;
-const OPEN_LOOSE_RE = /^\s*<!--\s*when\b/;
+// `when` as a whole word followed by space or the comment end: `<!-- when-ready: … -->` is an ordinary comment.
+const OPEN_LOOSE_RE = /^\s*<!--\s*when(?:\s|-->)/;
 const CLOSE_RE = /^\s*<!--\s*\/when\s*-->\s*$/;
 const FENCE_RE = /^\s*(```|~~~)/;
 const TOKEN_RE = /^([a-z0-9]+(?:-[a-z0-9.]+)*)(>=|<=|=|>|<)(.+)$/;
