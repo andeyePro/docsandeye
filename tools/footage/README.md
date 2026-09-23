@@ -17,7 +17,9 @@ Homebrew if they are missing, downloads the whisper model once (about 1.6 GB), t
 and audio file writes a catalogue entry, a 16 kHz audio copy and a word-level transcript to
 `.footage/<folder name>/` in this repository (gitignored). The footage itself is only read. Re-running
 skips finished files, so it can be stopped and restarted. `WHISPER_MODEL=base.en` in front of the
-command trades transcript quality for speed.
+command trades transcript quality for speed, and `FOOTAGE_OUT` set to a folder inside the Mac's Shared user folder writes the
+output there instead, where an editor logged in as another user can open it. On a standard
+(non-admin) account an admin runs `brew install ffmpeg whisper-cpp` once first.
 
 ## 2. Sessions, sections and the edit (anywhere Python 3.9+ runs)
 

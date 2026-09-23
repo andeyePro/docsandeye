@@ -27,7 +27,14 @@ fi
 FOOTAGE="$(cd "$1" && pwd)"
 SHOOT="${2:-$(basename "$FOOTAGE" | tr -c 'A-Za-z0-9._-\n' '-')}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
-OUT="$(cd "$HERE/../.." && pwd)/.footage/$SHOOT"
+# FOOTAGE_OUT puts the output elsewhere, e.g. beside the footage in /Users/Shared so an editor
+# logged in as another user can open the FCPXML; the default is .footage/ in this checkout.
+if [ -n "${FOOTAGE_OUT:-}" ]; then
+  OUT="$FOOTAGE_OUT/$SHOOT"
+else
+  OUT="$(cd "$HERE/../.." && pwd)/.footage/$SHOOT"
+fi
+umask 022
 MODEL_NAME="${WHISPER_MODEL:-large-v3-turbo}"
 MODEL="$HOME/.cache/whisper/ggml-$MODEL_NAME.bin"
 
@@ -44,9 +51,14 @@ if ! command -v brew >/dev/null 2>&1; then
     [ -x "$b" ] && eval "$("$b" shellenv)" && break
   done
 fi
-command -v brew >/dev/null 2>&1 || { log "Homebrew not found: install it from https://brew.sh then re-run"; exit 69; }
-command -v ffmpeg >/dev/null 2>&1 || { log "installing ffmpeg"; brew install ffmpeg; }
-command -v whisper-cli >/dev/null 2>&1 || { log "installing whisper-cpp"; brew install whisper-cpp; }
+# A standard (non-admin) account can run Homebrew's tools but not install them: an admin runs
+#   brew install ffmpeg whisper-cpp
+# once, and this script then finds them.
+if ! command -v ffmpeg >/dev/null 2>&1 || ! command -v whisper-cli >/dev/null 2>&1; then
+  command -v brew >/dev/null 2>&1 || { log "ffmpeg or whisper-cli missing and no Homebrew: an admin runs brew install ffmpeg whisper-cpp"; exit 69; }
+  command -v ffmpeg >/dev/null 2>&1 || { log "installing ffmpeg"; brew install ffmpeg || { log "brew install failed: an admin runs brew install ffmpeg whisper-cpp"; exit 69; }; }
+  command -v whisper-cli >/dev/null 2>&1 || { log "installing whisper-cpp"; brew install whisper-cpp || { log "brew install failed: an admin runs brew install ffmpeg whisper-cpp"; exit 69; }; }
+fi
 
 if [ ! -s "$MODEL" ]; then
   log "downloading whisper model $MODEL_NAME"
@@ -107,4 +119,4 @@ while IFS= read -r f; do
   fi
 done < "$LIST"
 
-log "done. Tell Claude: footage prepped in .footage/$SHOOT"
+log "done: $OUT"
