@@ -74,8 +74,8 @@ export class DocsiReceipt extends ElementBase {
     const r = this.receipt;
 
     live.replaceChildren();
-    const from = r.supplier !== undefined ? ` from ${labels[r.supplier] ?? r.supplier}` : '';
-    live.append(el('p', `Your package${from}, for ${r.units} ${r.units === 1 ? 'unit' : 'units'}. Count each part and correct the number you received.`, 'docsi-receipt-intro'));
+    const from = r.supplier !== undefined ? ` · ${labels[r.supplier] ?? r.supplier}` : '';
+    live.append(el('p', `For ${r.units} ${r.units === 1 ? 'unit' : 'units'}${from}. Count each part and correct the number you received.`, 'docsi-receipt-intro'));
     this.table(live, 'Per unit', r.perUnit, received);
     this.table(live, 'Per kit (does not scale with units)', r.perKit, received);
     if (r.elsewhere.length > 0) {

@@ -53,7 +53,10 @@ export class DocsiProfile extends ElementBase {
     fillForm(form, this.items, loadProfile(this.guideId, this.items));
     const saved = this.querySelector<HTMLElement>('.docsi-profile-saved');
     const onChange = (): void => {
-      saveProfile(this.guideId, readForm(form, this.items), this);
+      const profile = readForm(form, this.items);
+      // Show the normalised answers (a number clamped to its range, an empty field back to its default).
+      fillForm(form, this.items, profile);
+      saveProfile(this.guideId, profile, this);
       if (saved) saved.hidden = false;
     };
     form.addEventListener('change', onChange);
