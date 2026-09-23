@@ -9,7 +9,9 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### v0.1 — data, renders, staleness, no video
 
-- [ ] **First consumer: electroPioreactor AEP0.2** — content on the AEP02 branch of Martin's clone (80780ae: 69 components, 12 steps, shoot list, stubs). Verified 2026-09-05: the plugin builds it into 17 pages and `docsandeye check --dist` passes with 0 errors, 0 warnings. Waiting on Martin: content review, the `el_len` decision, and where the AEP site lives (npm release vs a second site folder in this repo; Docs&I-fromClaude item 19) before the docs.electroPioreactor.org deployment.
+- [ ] **First consumer: electroPioreactor AEP0.2** — the site now lives in the electroPioreactor repository (`site/` on AEP02, Docs&I vendored as npm pack tarballs via `site/scripts/vendor-docsandeye.sh`; decision 19 superseded 2026-09-23). Builds 17 pages, check 0/0 at a 175 KB budget. Waiting on Martin: the AMYBO contact address, the 11 DRAFT receipt quantities, the draft checks, the YouTube links, and the Cloudflare Pages direct-upload deploy and cutover (brain2 Docs&I-fromClaude items 20 to 27).
+
+- [ ] **Footage tools on real footage**: first run of `tools/footage` on the AEP0.2 shoot (Laura's MacBook Pro, standard account `claude`, `/Users/Shared`); confirm Final Cut imports the FCPXML multicam, and fix whatever the real ffprobe tags and whisper JSON differ in.
 
 - [ ] **Deploy**: docs.andeye.com Pages project (root `site`, `npm run build`, `dist`) is Martin's dashboard step; the AEP guide needs its own Pages project on the electroPioreactor repo (docs.electroPioreactor.org, business Cloudflare account).
 
