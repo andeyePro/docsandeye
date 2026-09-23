@@ -1,0 +1,29 @@
+theme: starlight
+guides:
+  - {id: kit, title: "Kit guide", base: /kit}
+profile:
+  - id: units
+    type: number
+    label: "How many units did you receive?"
+    default: 1
+    min: 1
+    max: 20
+  - id: temp-kit
+    type: boolean
+    label: "Do you have the temperature upgrade?"
+    default: false
+  - id: supplier
+    type: choice
+    label: "Where did your parts come from?"
+    options:
+      - {value: shop-a, label: "Shop A kit"}
+      - {value: shop-b, label: "Shop B"}
+      - {value: diy, label: "Sourced myself"}
+    default: shop-a
+receipt:
+  multiply_by: units
+  supplier_from: supplier
+contacts:
+  shop-a: {name: "Shop A", email: "support@shop-a.invalid", subject: "Missing parts: kit order"}
+  shop-b: {name: "Shop B"}
+  project: {name: "The project", email: "help@project.invalid", subject: "Kit guide: help with a step"}

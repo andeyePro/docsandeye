@@ -1,0 +1,8 @@
+id: yt-01-unpack
+type: video
+youtube: AbCdEfGhIj0
+start_s: 12
+end_s: 40
+shot_date: 2026-09-01
+shot_by: "Fixture"
+hero: [widget@1.1.0]

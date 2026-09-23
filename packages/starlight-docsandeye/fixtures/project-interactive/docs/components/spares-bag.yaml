@@ -1,0 +1,10 @@
+id: spares-bag
+name: Spares bag
+kind: kitted
+design_version: 1.0.0
+master_format: none
+receipt:
+  per: kit
+  qty: 1
+  from: [shop-a]
+  note: "Bag B, shared across units"

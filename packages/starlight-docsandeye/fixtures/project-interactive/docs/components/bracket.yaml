@@ -1,0 +1,8 @@
+id: bracket
+name: Bracket
+kind: off-the-shelf
+design_version: 1.0.0
+master_format: none
+supplier: {name: Bracket Co, url: "https://brackets.example/b"}
+receipt:
+  from: [shop-b]
