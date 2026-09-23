@@ -40,10 +40,12 @@ licence: CC-BY-SA-4.0
 | --- | --- | --- |
 | `id` | yes | Kebab-case identifier. Must equal the file name without `.yaml`. |
 | `type` | yes | `photo` or `video`. |
-| `file` | yes | Project-relative path of the photo or the video file. |
-| `poster` | video only | Project-relative path of the poster image. Required for video, not allowed for photo. |
-| `captions` | video only | Path of a WebVTT file. Not allowed for photo. |
-| `duration_s` | video only | Length in seconds, greater than 0. Required for video, not allowed for photo. |
+| `file` | yes, unless `youtube` | Project-relative path of the photo or the video file. |
+| `poster` | video only | Project-relative path of the poster image. Required for video (optional with `youtube`), not allowed for photo. |
+| `captions` | video only | Path of a WebVTT file. Not allowed for photo or with `youtube`. |
+| `duration_s` | video only | Length in seconds, greater than 0. Required for video (optional with `youtube`), not allowed for photo. |
+| `youtube` | no | An 11-character YouTube video id: the clip is embedded behind a click-to-load button instead of hosted. See [YouTube clips](/authoring/interactive/#youtube-clips). |
+| `start_s`, `end_s` | no | With `youtube` only: whole seconds to start and stop at; `end_s` after `start_s`. |
 | `shot_date` | yes | `YYYY-MM-DD`. |
 | `shot_by` | yes | Credit. May be empty. |
 | `hero` | yes | List of pins, at least one. The components the shot is about. |

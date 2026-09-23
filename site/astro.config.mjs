@@ -25,6 +25,7 @@ export default defineConfig({
 						{ slug: 'authoring/components' },
 						{ slug: 'authoring/steps' },
 						{ slug: 'authoring/media' },
+						{ slug: 'authoring/interactive' },
 					],
 				},
 				{

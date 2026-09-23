@@ -60,6 +60,9 @@ Everything except `guides` has a default, so the shortest valid config is a `gui
 | `denylist` | no | `[]` | Globs, relative to this file, that the project loader never reads. Merged with the defaults below. |
 | `hosting` | no | `{ provider: local }` | Where media files are served from (below). |
 | `byte_budget_kb` | no | `150` | Positive integer. The initial-load budget for a step page, in KB. `docsandeye check --dist dist` fails a page over budget. See [Carbon](/carbon/). |
+| `profile` | no | `[]` | Questions the reader answers once (number, boolean, choice). See [Reader-interactive guides](/authoring/interactive/). |
+| `receipt` | no | — | `multiply_by` (a number profile id) and `supplier_from` (a choice profile id) for the receipt checklist. See [Reader-interactive guides](/authoring/interactive/#receipt-checklist). |
+| `contacts` | no | `{}` | Support contacts keyed by `supplier_from` option values, plus `project`: `name`, optional `email` and `subject`. See [Reader-interactive guides](/authoring/interactive/#receipt-checklist). |
 
 ## `project`
 

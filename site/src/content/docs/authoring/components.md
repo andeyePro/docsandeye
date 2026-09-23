@@ -39,6 +39,7 @@ changelog:
 | `supersedes` | no | Pin `id@version` of the component this one replaces. |
 | `licence` | no | SPDX identifier or free text. |
 | `supplier` | no | `name` (required), `url`, `mpn`. For off-the-shelf parts. |
+| `receipt` | no | The part's row in the "count what you received" checklist: `per` (`unit` or `kit`), `qty`, `from`, `when`, `note`. See [Receipt checklist](/authoring/interactive/#receipt-checklist). |
 | `changelog` | no | List of `{version, date, note}`. Versions must be unique. Sorted by version at load. |
 
 ## Rules

@@ -42,6 +42,11 @@ Stand the arm in the socket on top of the base. The flat side faces the cable sl
 | `viewer` | no | One `{component, format}` entry for the in-page 3D viewer. `format` defaults to `glb`. |
 | `media` | no | List of media ids from `docs/media/`. |
 | `safety` | no | One sentence shown in a safety box. |
+| `when` | no | Show the step only for readers whose setup matches. See [Reader-interactive guides](/authoring/interactive/#conditions-when). |
+| `receipt` | no | `true` shows the receipt checklist on this step. |
+| `profile` | no | `true` shows the setup form on this step (the guide page always has it). |
+| `checks` | no | Yes/no questions ending the step, each `id`, `question`, `issues` (`problem`, `fix`) and optional `when`. See [Step checks](/authoring/interactive/#step-checks). |
+| `checks_draft` | no | `true` marks the checks as a draft under review. |
 
 ### Parts and tools
 
@@ -52,6 +57,7 @@ Each entry names a component and a quantity:
 | `component` | required | A component id. |
 | `qty` | `1` | Integer, 1 or more. |
 | `cat` | `part` for parts, `tool` for tools | One of `part`, `printed`, `tool`, `consumable`, `prev`. |
+| `when` | — | Show the entry only for matching setups. See [Conditions](/authoring/interactive/#conditions-when). |
 
 ### Renders
 
@@ -71,6 +77,8 @@ Every render and viewer becomes a job in `build/render-plan.json`. The job key i
 The body is Markdown, rendered with Astro's Markdown pipeline. Headings inside the body are `##` and below; the step title is the page `<h1>`.
 
 Write the text so it stands alone. It is the fallback when a video is stale, and the whole content for a reader with video disabled.
+
+Paragraphs that apply only to some setups go between `<!-- when … -->` and `<!-- /when -->` comments. See [Paragraphs](/authoring/interactive/#paragraphs).
 
 ## What the page shows
 
