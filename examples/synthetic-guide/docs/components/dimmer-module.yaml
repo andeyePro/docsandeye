@@ -1,11 +1,11 @@
-id: led-module
-name: 12 V LED module
+id: dimmer-module
+name: 12 V PWM dimmer module
 kind: off-the-shelf
 design_version: 1.0.0
 master_format: none
 supplier:
   name: Any electronics supplier
-  mpn: LED-12V-3W-WW
+  mpn: PWM-12V-5A
 receipt:
   qty: 1
-  from: [kit]
+  when: {dimmer: true}

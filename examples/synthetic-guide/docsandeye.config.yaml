@@ -10,3 +10,29 @@ denylist: []
 hosting:
   provider: local
 byte_budget_kb: 150
+# Reader questions (see site docs: authoring/interactive). The guide page asks
+# them once; steps, parts, checks and paragraphs can then depend on the answers.
+profile:
+  - id: lamps
+    type: number
+    label: "How many lamps are you building?"
+    default: 1
+    min: 1
+    max: 10
+  - id: dimmer
+    type: boolean
+    label: "Are you fitting the optional dimmer?"
+    default: false
+  - id: source
+    type: choice
+    label: "Where did your parts come from?"
+    options:
+      - {value: kit, label: "The example kit"}
+      - {value: diy, label: "Sourced and printed myself"}
+    default: kit
+receipt:
+  multiply_by: lamps
+  supplier_from: source
+contacts:
+  kit: {name: "Example kit shop", email: "kits@example.invalid", subject: "Missing parts: bench lamp kit"}
+  project: {name: "Docs&I example", email: "help@example.invalid", subject: "Bench lamp guide"}

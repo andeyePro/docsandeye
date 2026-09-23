@@ -6,6 +6,8 @@ guide: lamp
 parts:
   - {component: lamp-arm, qty: 1, cat: printed}
   - {component: m3-screw, qty: 2, cat: part}
+tools:
+  - {component: hex-key, qty: 1}
 renders:
   - {id: arm-front, component: lamp-arm, view: front, format: svg}
 media: [vid-02-fit-the-arm]

@@ -1,0 +1,12 @@
+# A clip hosted on YouTube: no file, poster or encoding needed. The page loads
+# nothing from YouTube until the reader presses play.
+# The id below is a placeholder for the demo; a real guide names its own clip.
+id: vid-05-fit-the-dimmer
+type: video
+youtube: DocsAndI000
+start_s: 5
+end_s: 35
+shot_date: 2026-09-23
+shot_by: "Docs&I example"
+hero: [dimmer-module@1.0.0]
+licence: CC-BY-SA-4.0

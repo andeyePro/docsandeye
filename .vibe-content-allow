@@ -8,3 +8,5 @@ path-warn:render/fixtures/*
 path-warn:packages/*/fixtures/*
 path-warn:packages/*/test/*
 path-warn:render/tests/*
+# RFC 2606 reserved .invalid addresses in the example guide's contacts and the docs (never deliverable)
+^.*[A-Za-z0-9._-]+@example\.invalid.*$

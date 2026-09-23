@@ -6,3 +6,7 @@ master_format: none
 supplier:
   name: Any fastener supplier
   mpn: ISO 7380 M3x12
+receipt:
+  qty: 4
+  from: [kit]
+  note: "Two for the arm, two for the LED module"
