@@ -28,3 +28,6 @@ dist/
 build/media/
 *.webm
 build/render/old/
+
+# footage prepped by tools/footage (transcripts, audio, FCPXML): local only
+.footage/
