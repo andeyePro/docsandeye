@@ -9,6 +9,7 @@ import picomatch from 'picomatch';
 import semver from 'semver';
 import { DocsiError, sortProblems, type Problem } from './errors.js';
 import type { HostingRegistry } from './hosting.js';
+import { validateWhen, wrapWhenBlocks, type ProfileItem, type When } from './interactive.js';
 import {
   CONFIG_FILENAME,
   DEFAULT_DENYLIST,
@@ -30,6 +31,13 @@ export interface ProjectModel {
   media: Map<string, Media>;
   /** Aggregated, sorted by `file` then `path`. */
   problems: Problem[];
+  /**
+   * Problems in step bodies (`<!-- when … -->` comments) that do not stop a
+   * site build — the renderer then shows the text unwrapped — but that
+   * `docsandeye check` reports. Sorted like `problems`; absent on models built
+   * by hand.
+   */
+  bodyProblems?: Problem[];
 }
 
 export const COLLECTION_DIRS = {
@@ -70,7 +78,7 @@ export function loadProject(root: string, options: LoadProjectOptions = {}): Pro
   const config = loadConfig(root, options);
   const problems: Problem[] = [];
 
-  const { items: components } = loadCollection(root, COLLECTION_DIRS.components, YAML_EXTENSIONS, config.denylist, parseComponent, problems);
+  const { items: components, files: componentFiles } = loadCollection(root, COLLECTION_DIRS.components, YAML_EXTENSIONS, config.denylist, parseComponent, problems);
   const { items: steps, files: stepFiles } = loadCollection(root, COLLECTION_DIRS.steps, MARKDOWN_EXTENSIONS, config.denylist, parseStep, problems);
   const { items: media, files: mediaFiles } = loadCollection(root, COLLECTION_DIRS.media, YAML_EXTENSIONS, config.denylist, parseMedia, problems);
 
@@ -96,6 +104,26 @@ export function loadProject(root: string, options: LoadProjectOptions = {}): Pro
         problems.push({ code: 'unknown-media', file, path: `media.${i}`, message: `media "${m}" has no manifest in ${COLLECTION_DIRS.media}` });
       }
     });
+    checkStepWhens(step, config.profile, file, problems);
+  }
+
+  for (const [id, component] of components) {
+    if (!component.receipt) continue;
+    const file = componentFiles.get(id)!;
+    if (component.receipt.when) checkWhen(component.receipt.when, config.profile, file, 'receipt.when', problems);
+    checkReceiptFrom(component.receipt.from, config, file, problems);
+  }
+
+  const bodyProblems: Problem[] = [];
+  for (const [id, step] of steps) {
+    const file = stepFiles.get(id)!;
+    const { problems: found } = wrapWhenBlocks(step.body, config.profile);
+    if (found.length === 0) continue;
+    const offset = bodyLineOffset(root, file, step.body);
+    for (const p of found) {
+      const line = p.line + offset;
+      bodyProblems.push({ code: 'schema', file, path: `body.line.${line}`, message: `line ${line}: ${p.message}` });
+    }
   }
 
   for (const [id, manifest] of media) {
@@ -105,7 +133,8 @@ export function loadProject(root: string, options: LoadProjectOptions = {}): Pro
   }
 
   sortProblems(problems);
-  return { config, components, steps, media, problems };
+  sortProblems(bodyProblems);
+  return { config, components, steps, media, problems, bodyProblems };
 }
 
 // ---------------------------------------------------------------------------
@@ -193,6 +222,43 @@ function loadCollection<T extends { id: string }>(
 function checkComponentRef(components: Map<string, Component>, id: string, file: string, at: string, problems: Problem[]): void {
   if (!components.has(id)) {
     problems.push({ code: 'unknown-component', file, path: at, message: `component "${id}" is not defined in ${COLLECTION_DIRS.components}` });
+  }
+}
+
+function checkWhen(when: When, profile: readonly ProfileItem[], file: string, at: string, problems: Problem[]): void {
+  for (const p of validateWhen(when, profile)) {
+    problems.push({ code: 'schema', file, path: `${at}.${p.path}`, message: p.message });
+  }
+}
+
+function checkStepWhens(step: Step, profile: readonly ProfileItem[], file: string, problems: Problem[]): void {
+  if (step.when) checkWhen(step.when, profile, file, 'when', problems);
+  step.parts.forEach((p, i) => p.when && checkWhen(p.when, profile, file, `parts.${i}.when`, problems));
+  step.tools.forEach((t, i) => t.when && checkWhen(t.when, profile, file, `tools.${i}.when`, problems));
+  step.checks?.forEach((c, i) => c.when && checkWhen(c.when, profile, file, `checks.${i}.when`, problems));
+}
+
+/** `receipt.from` values must be options of the `receipt.supplier_from` choice, when one is configured. */
+function checkReceiptFrom(from: readonly string[] | undefined, config: Config, file: string, problems: Problem[]): void {
+  const supplierId = config.receipt?.supplier_from;
+  if (!from || supplierId === undefined) return;
+  const item = config.profile.find((p) => p.id === supplierId);
+  if (item?.type !== 'choice') return; // the config schema already reported it
+  const values = (item.options ?? []).map((o) => o.value);
+  from.forEach((value, i) => {
+    if (!values.includes(value)) {
+      problems.push({ code: 'schema', file, path: `receipt.from.${i}`, message: `"${value}" is not an option of "${supplierId}" (options: ${values.join(', ')})` });
+    }
+  });
+}
+
+/** Lines before the body in the step's file (the frontmatter and its fences), so body problems name file lines. */
+function bodyLineOffset(root: string, file: string, body: string): number {
+  try {
+    const text = fs.readFileSync(path.join(root, file), 'utf8');
+    return text.split('\n').length - body.split('\n').length;
+  } catch {
+    return 0;
   }
 }
 

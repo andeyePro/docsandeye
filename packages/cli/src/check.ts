@@ -92,6 +92,9 @@ export async function runCheck(opts: CheckOptions, io: Io): Promise<number> {
 
   const { model, problems } = loadProjectSafely(opts.root);
   for (const p of problems) errors.push(formatProblem(p));
+  // Body `when` comment problems do not stop a site build (the text renders
+  // unwrapped), so only `check` reports them.
+  for (const p of model?.bodyProblems ?? []) errors.push(formatProblem(p));
 
   if (model) {
     const guard = await runGuard(opts.root, model);

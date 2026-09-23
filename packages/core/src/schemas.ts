@@ -10,6 +10,7 @@ import { z } from 'zod';
 import YAML from 'yaml';
 import { DocsiError, sortProblems, type Problem } from './errors.js';
 import { defaultHostingRegistry, type HostingRegistry } from './hosting.js';
+import { PROFILE_TYPES, YOUTUBE_ID_RE, type ProfileItem } from './interactive.js';
 
 // ---------------------------------------------------------------------------
 // Primitive shapes
@@ -48,6 +49,13 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'must be an ISO date YYY
 const parameterScalar = z.union([z.string(), z.number(), z.boolean()]);
 const parameterValue = z.union([parameterScalar, z.array(parameterScalar)]);
 
+/**
+ * A `when` condition: `{<profile id>: <value> | [<values>]}`. The shape is
+ * checked here; ids and values are checked against the config's `profile` by
+ * the loader (the schema alone does not know the profile).
+ */
+export const WhenSchema = z.record(z.string(), z.union([parameterScalar, z.array(parameterScalar).min(1, 'must list at least one value')]));
+
 export const COMPONENT_KINDS = ['printed', 'off-the-shelf', 'kitted', 'assembly'] as const;
 export const MASTER_FORMATS = ['scad', 'step', 'f3z', 'none'] as const;
 export const PART_CATEGORIES = ['part', 'printed', 'tool', 'consumable', 'prev'] as const;
@@ -77,6 +85,17 @@ export const SupplierSchema = z.object({
   mpn: z.string().optional(),
 });
 
+export const RECEIPT_PER = ['unit', 'kit'] as const;
+
+/** A component's place in the "count what you received" checklist. */
+export const ComponentReceiptSchema = z.object({
+  per: z.enum(RECEIPT_PER).default('unit'),
+  qty: z.number().int().min(1).default(1),
+  from: z.array(kebabId).optional(),
+  when: WhenSchema.optional(),
+  note: z.string().optional(),
+});
+
 export const ComponentSchema = z
   .object({
     id: kebabId,
@@ -92,6 +111,7 @@ export const ComponentSchema = z
     licence: z.string().optional(),
     supplier: SupplierSchema.optional(),
     changelog: z.array(ChangelogEntrySchema).optional(),
+    receipt: ComponentReceiptSchema.optional(),
   })
   .superRefine((c, ctx) => {
     if (c.master_format === 'none') {
@@ -124,6 +144,7 @@ export const ComponentSchema = z
 export type Component = z.output<typeof ComponentSchema>;
 export type ChangelogEntry = z.output<typeof ChangelogEntrySchema>;
 export type Supplier = z.output<typeof SupplierSchema>;
+export type ComponentReceipt = z.output<typeof ComponentReceiptSchema>;
 export type ParameterValue = z.output<typeof parameterValue>;
 
 /** Compare two release semvers numerically (no `semver` dependency needed for the strict grammar). */
@@ -146,12 +167,27 @@ const PartSchema = z.object({
   component: nonEmptyString,
   qty: z.number().int().min(1).default(1),
   cat: z.enum(PART_CATEGORIES).default('part'),
+  when: WhenSchema.optional(),
 });
 
 const ToolSchema = z.object({
   component: nonEmptyString,
   qty: z.number().int().min(1).default(1),
   cat: z.enum(PART_CATEGORIES).default('tool'),
+  when: WhenSchema.optional(),
+});
+
+const CheckIssueSchema = z.object({
+  problem: nonEmptyString,
+  fix: nonEmptyString,
+});
+
+/** A yes/no check at the end of a step; `issues` are shown when the reader answers No. */
+export const CheckSchema = z.object({
+  id: kebabId,
+  question: nonEmptyString,
+  issues: z.array(CheckIssueSchema).default([]),
+  when: WhenSchema.optional(),
 });
 
 export const RenderSchema = z.object({
@@ -181,6 +217,15 @@ export const StepFrontmatterSchema = z
     viewer: ViewerSchema.optional(),
     media: z.array(z.string()).optional(),
     safety: z.string().optional(),
+    /** Show the step only when the reader's profile matches. */
+    when: WhenSchema.optional(),
+    /** Render the receipt checklist on this step. */
+    receipt: z.boolean().optional(),
+    /** Render the profile form on this step (the guide index always has it). */
+    profile: z.boolean().optional(),
+    checks: z.array(CheckSchema).optional(),
+    /** Mark the checks as a draft under review. */
+    checks_draft: z.boolean().optional(),
   })
   .superRefine((s, ctx) => {
     const seen = new Set<string>();
@@ -190,12 +235,20 @@ export const StepFrontmatterSchema = z
       }
       seen.add(r.id);
     });
+    const checkIds = new Set<string>();
+    s.checks?.forEach((c, i) => {
+      if (checkIds.has(c.id)) {
+        ctx.addIssue({ code: 'custom', path: ['checks', i, 'id'], message: `duplicate check id ${c.id} within step` });
+      }
+      checkIds.add(c.id);
+    });
   });
 
 export type StepFrontmatter = z.output<typeof StepFrontmatterSchema>;
 export type StepPart = z.output<typeof PartSchema>;
 export type StepRender = z.output<typeof RenderSchema>;
 export type StepViewer = z.output<typeof ViewerSchema>;
+export type StepCheck = z.output<typeof CheckSchema>;
 export interface Step extends StepFrontmatter {
   /** Markdown body following the frontmatter fence. */
   body: string;
@@ -208,7 +261,12 @@ export const MediaSchema = z
   .object({
     id: kebabId,
     type: z.enum(MEDIA_TYPES),
-    file: nonEmptyString,
+    /** Required unless the clip is on YouTube. */
+    file: nonEmptyString.optional(),
+    /** An 11-character YouTube video id: the clip is embedded behind a click-to-load facade instead of self-hosted. */
+    youtube: z.string().regex(YOUTUBE_ID_RE, 'must be an 11-character YouTube video id ([A-Za-z0-9_-]{11})').optional(),
+    start_s: z.number().int('must be a non-negative integer').min(0, 'must be a non-negative integer').optional(),
+    end_s: z.number().int('must be a non-negative integer').min(0, 'must be a non-negative integer').optional(),
     poster: z.string().optional(),
     captions: z.string().optional(),
     duration_s: z.number().positive('must be a number > 0').optional(),
@@ -220,9 +278,23 @@ export const MediaSchema = z
     licence: z.string().optional(),
   })
   .superRefine((m, ctx) => {
+    if (m.youtube === undefined) {
+      if (m.file === undefined) ctx.addIssue({ code: 'custom', path: ['file'], message: 'required (unless youtube is set)' });
+      for (const key of ['start_s', 'end_s'] as const) {
+        if (m[key] !== undefined) ctx.addIssue({ code: 'custom', path: [key], message: 'only allowed with youtube' });
+      }
+    } else {
+      if (m.type !== 'video') ctx.addIssue({ code: 'custom', path: ['youtube'], message: 'only allowed for video' });
+      if (m.captions !== undefined) ctx.addIssue({ code: 'custom', path: ['captions'], message: 'not allowed with youtube (YouTube serves its own captions)' });
+      if (m.start_s !== undefined && m.end_s !== undefined && m.end_s <= m.start_s) {
+        ctx.addIssue({ code: 'custom', path: ['end_s'], message: 'must be greater than start_s' });
+      }
+    }
     if (m.type === 'video') {
-      if (m.poster === undefined) ctx.addIssue({ code: 'custom', path: ['poster'], message: 'required for video' });
-      if (m.duration_s === undefined) ctx.addIssue({ code: 'custom', path: ['duration_s'], message: 'required for video' });
+      if (m.youtube === undefined) {
+        if (m.poster === undefined) ctx.addIssue({ code: 'custom', path: ['poster'], message: 'required for video' });
+        if (m.duration_s === undefined) ctx.addIssue({ code: 'custom', path: ['duration_s'], message: 'required for video' });
+      }
     } else {
       for (const key of ['poster', 'captions', 'duration_s'] as const) {
         if (m[key] !== undefined) ctx.addIssue({ code: 'custom', path: [key], message: 'not allowed for photo' });
@@ -268,6 +340,89 @@ export const ProjectMetaSchema = z.strictObject({
   documentation_home: z.url().optional(),
 });
 
+const ProfileOptionSchema = z.object({
+  value: kebabId,
+  label: nonEmptyString,
+});
+
+/**
+ * One reader question. `default` is filled in when absent (number: `min`;
+ * boolean: false; choice: the first option), and `min`/`max` default to 1
+ * and 100 for numbers, so the output always carries a usable default.
+ */
+export const ProfileItemSchema = z
+  .object({
+    id: kebabId,
+    type: z.enum(PROFILE_TYPES),
+    label: nonEmptyString,
+    default: z.union([z.number(), z.boolean(), z.string()]).optional(),
+    min: z.number().int().optional(),
+    max: z.number().int().optional(),
+    options: z.array(ProfileOptionSchema).optional(),
+  })
+  .superRefine((p, ctx) => {
+    if (p.type === 'choice') {
+      if (!p.options || p.options.length === 0) {
+        ctx.addIssue({ code: 'custom', path: ['options'], message: 'required and non-empty for a choice' });
+      } else {
+        const seen = new Set<string>();
+        p.options.forEach((o, i) => {
+          if (seen.has(o.value)) ctx.addIssue({ code: 'custom', path: ['options', i, 'value'], message: `duplicate option value ${o.value}` });
+          seen.add(o.value);
+        });
+      }
+    } else if (p.options !== undefined) {
+      ctx.addIssue({ code: 'custom', path: ['options'], message: `not allowed for ${p.type}` });
+    }
+    if (p.type !== 'number') {
+      for (const key of ['min', 'max'] as const) {
+        if (p[key] !== undefined) ctx.addIssue({ code: 'custom', path: [key], message: `only allowed for number (this item is ${p.type})` });
+      }
+    }
+    const min = p.min ?? 1;
+    const max = p.max ?? 100;
+    if (p.type === 'number' && min > max) ctx.addIssue({ code: 'custom', path: ['max'], message: `must be >= min (${min})` });
+    if (p.default === undefined) return;
+    if (p.type === 'number') {
+      if (typeof p.default !== 'number' || !Number.isInteger(p.default) || p.default < min || p.default > max) {
+        ctx.addIssue({ code: 'custom', path: ['default'], message: `must be an integer from ${min} to ${max}` });
+      }
+    } else if (p.type === 'boolean') {
+      if (typeof p.default !== 'boolean') ctx.addIssue({ code: 'custom', path: ['default'], message: 'must be true or false' });
+    } else if (typeof p.default !== 'string' || !(p.options ?? []).some((o) => o.value === p.default)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['default'],
+        message: `must be one of the option values (${(p.options ?? []).map((o) => o.value).join(', ')})`,
+      });
+    }
+  })
+  .transform((p): ProfileItem => {
+    const out: ProfileItem = { id: p.id, type: p.type, label: p.label, default: false };
+    if (p.type === 'number') {
+      out.min = p.min ?? 1;
+      out.max = p.max ?? 100;
+      out.default = p.default ?? out.min;
+    } else if (p.type === 'boolean') {
+      out.default = p.default ?? false;
+    } else {
+      out.options = p.options ?? [];
+      out.default = p.default ?? out.options[0]?.value ?? '';
+    }
+    return out;
+  });
+
+export const ReceiptConfigSchema = z.object({
+  multiply_by: kebabId.optional(),
+  supplier_from: kebabId.optional(),
+});
+
+export const ContactSchema = z.object({
+  name: nonEmptyString,
+  email: z.string().regex(/@/, 'must be an email address (contain @)').optional(),
+  subject: z.string().optional(),
+});
+
 const HostingSchema = z.looseObject({
   provider: nonEmptyString,
   base: z.string().optional(),
@@ -282,6 +437,11 @@ function buildConfigSchema(registry: HostingRegistry) {
       denylist: z.array(z.string()).default([]),
       hosting: HostingSchema.default({ provider: 'local' }),
       byte_budget_kb: z.number().int().positive().default(150),
+      /** Reader questions, in display order. */
+      profile: z.array(ProfileItemSchema).default([]),
+      receipt: ReceiptConfigSchema.optional(),
+      /** Keyed by a choice value of `receipt.supplier_from`, plus the reserved key `project`. */
+      contacts: z.record(z.string(), ContactSchema).default({}),
     })
     .superRefine((c, ctx) => {
       const seen = new Set<string>();
@@ -289,6 +449,7 @@ function buildConfigSchema(registry: HostingRegistry) {
         if (seen.has(g.id)) ctx.addIssue({ code: 'custom', path: ['guides', i, 'id'], message: `duplicate guide id ${g.id}` });
         seen.add(g.id);
       });
+      checkProfileConfig(c, ctx);
       if (!registry.has(c.hosting.provider)) {
         ctx.addIssue({
           code: 'custom',
@@ -305,11 +466,52 @@ function buildConfigSchema(registry: HostingRegistry) {
     }));
 }
 
+interface ProfileConfigView {
+  profile: ProfileItem[];
+  receipt?: { multiply_by?: string; supplier_from?: string } | undefined;
+  contacts: Record<string, unknown>;
+}
+
+/** Cross-field rules of `profile`, `receipt` and `contacts`. */
+function checkProfileConfig(c: ProfileConfigView, ctx: z.core.$RefinementCtx): void {
+  const byId = new Map<string, ProfileItem>();
+  c.profile.forEach((item, i) => {
+    if (byId.has(item.id)) ctx.addIssue({ code: 'custom', path: ['profile', i, 'id'], message: `duplicate profile id ${item.id}` });
+    else byId.set(item.id, item);
+  });
+  const refs = [
+    ['multiply_by', 'number'],
+    ['supplier_from', 'choice'],
+  ] as const;
+  for (const [key, type] of refs) {
+    const id = c.receipt?.[key];
+    if (id === undefined) continue;
+    const item = byId.get(id);
+    if (!item) ctx.addIssue({ code: 'custom', path: ['receipt', key], message: `"${id}" is not a profile id` });
+    else if (item.type !== type) ctx.addIssue({ code: 'custom', path: ['receipt', key], message: `must name a ${type}-type profile item ("${id}" is ${item.type})` });
+  }
+  const supplierItem = c.receipt?.supplier_from !== undefined ? byId.get(c.receipt.supplier_from) : undefined;
+  if (c.receipt !== undefined && supplierItem?.type === 'choice') {
+    const values = new Set((supplierItem.options ?? []).map((o) => o.value));
+    for (const key of Object.keys(c.contacts)) {
+      if (key !== 'project' && !values.has(key)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['contacts', key],
+          message: `must be "project" or an option value of "${supplierItem.id}" (${[...values].join(', ')})`,
+        });
+      }
+    }
+  }
+}
+
 /** Schema against the default registry (exported for typing; `parseConfig` builds a fresh one per call). */
 export const ConfigSchema = buildConfigSchema(defaultHostingRegistry);
 export type Config = z.output<typeof ConfigSchema>;
 export type Guide = z.output<typeof GuideSchema>;
 export type ProjectMeta = z.output<typeof ProjectMetaSchema>;
+export type ContactConfig = z.output<typeof ContactSchema>;
+export type ReceiptConfigOutput = z.output<typeof ReceiptConfigSchema>;
 
 /** Defaults first, then user entries, de-duplicated preserving first occurrence. */
 export function mergeDenylist(userEntries: readonly string[]): string[] {

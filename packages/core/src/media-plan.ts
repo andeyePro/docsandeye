@@ -1,6 +1,7 @@
 /**
  * Media plan (`build/media-plan.json`) consumed by the Python encode pipeline.
- * One job per `type: video` manifest; photos need no encoding.
+ * One job per self-hosted `type: video` manifest; photos and YouTube clips
+ * need no encoding.
  *
  * The plan names every path the pipeline will touch — source, authored poster,
  * captions and the encoded outputs — so the Python side never has to know how
@@ -46,7 +47,7 @@ export function buildMediaPlan(model: ProjectModel): MediaPlan {
   const jobs: MediaJob[] = [];
   for (const id of [...model.media.keys()].sort(compare)) {
     const media = model.media.get(id)!;
-    if (media.type !== 'video') continue;
+    if (media.type !== 'video' || media.youtube !== undefined) continue;
     jobs.push(mediaJob(media));
   }
   return { version: MEDIA_PLAN_VERSION, project_root: '.', jobs };
@@ -54,11 +55,11 @@ export function buildMediaPlan(model: ProjectModel): MediaPlan {
 
 function mediaJob(media: Media): MediaJob {
   const key = media.id;
-  // `poster` and `duration_s` are required for videos by MediaSchema.
+  // `file`, `poster` and `duration_s` are required for self-hosted videos by MediaSchema.
   const job: MediaJob = {
     key,
     media: media.id,
-    source: media.file,
+    source: media.file!,
     poster_source: media.poster!,
     duration_s: media.duration_s!,
     renditions: [...MEDIA_RENDITIONS],

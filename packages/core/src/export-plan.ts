@@ -7,6 +7,7 @@
  * network. The CLI (`docsandeye export`) is what puts the bytes on disk.
  */
 import { resolveMediaUrl } from './hosting.js';
+import { youtubeWatchUrl } from './interactive.js';
 import { stepsForGuide, type ProjectModel } from './load.js';
 import { parsePin, type Component, type Media, type Step } from './schemas.js';
 
@@ -250,10 +251,12 @@ function collectUsage(model: ProjectModel, steps: readonly Step[]): Usage[] {
  * of the manifest's `file`. For `local` that is the repo-relative path
  * unchanged, which is exactly where the CLI copies the file inside `buildup/`,
  * so the link is relative to the step file; for `url-prefix` or `r2` it is the
- * absolute URL the media is published at.
+ * absolute URL the media is published at. A YouTube clip links its watch
+ * page, at `start_s` when set.
  */
 function mediaHref(model: ProjectModel, manifest: Media): string {
-  return resolveMediaUrl(model.config.hosting, manifest.file);
+  if (manifest.youtube !== undefined) return youtubeWatchUrl(manifest.youtube, manifest.start_s);
+  return resolveMediaUrl(model.config.hosting, manifest.file ?? '');
 }
 
 function mediaLine(id: string, manifest: Media, model: ProjectModel): string {
@@ -362,7 +365,7 @@ function collectAssets(model: ProjectModel, steps: readonly Step[]): ExportAsset
   for (const step of steps) {
     for (const id of step.media ?? []) {
       const manifest = model.media.get(id);
-      if (manifest) files.add(manifest.file);
+      if (manifest?.file !== undefined && manifest.youtube === undefined) files.add(manifest.file);
     }
   }
   return [...files]

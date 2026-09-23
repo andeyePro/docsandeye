@@ -11,6 +11,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./interactive": {
+      "types": "./dist/interactive.d.ts",
+      "import": "./dist/interactive.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
