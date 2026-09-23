@@ -372,6 +372,21 @@ describe('body when comments', () => {
     expect(markdown).toContain('Outro');
   });
 
+  it('Markdown directly under <!-- /when --> (no blank line) is still Markdown: a blank line follows </div>', () => {
+    const body = 'Intro\n<!-- when temp-kit=true -->\n**In**\n<!-- /when -->\n**After**\n';
+    const { markdown, problems } = wrapWhenBlocks(body, ITEMS);
+    expect(problems).toEqual([]);
+    expect(markdown).toMatch(/<\/div>\n\n\*\*After\*\*/);
+  });
+
+  it('keeps the indentation of comments inside a list item', () => {
+    const body = '1. one\n2. two\n\n   <!-- when temp-kit=true -->\n   **nested**\n   <!-- /when -->\n\n3. three\n';
+    const { markdown } = wrapWhenBlocks(body, ITEMS);
+    expect(markdown).toContain('\n   <div class="docsi-when"');
+    expect(markdown).toContain('\n   <p class="docsi-when-label">');
+    expect(markdown).toContain('\n   </div>\n');
+  });
+
   it('labels choice and comparator conditions in words', () => {
     const { markdown } = wrapWhenBlocks('<!-- when supplier=shop-a,shop-b units>=2 -->\nX\n<!-- /when -->', ITEMS);
     expect(markdown).toContain('Only if: supplier: Shop A kit or Shop B and units ≥ 2');

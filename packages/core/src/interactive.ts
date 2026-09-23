@@ -422,8 +422,14 @@ export function wrapWhenBlocks(body: string, items: readonly ProfileItem[]): { m
   for (const block of blocks) {
     if (!block.when) continue;
     const json = escapeHtml(JSON.stringify(block.when));
-    out[block.open] = `<div class="docsi-when" data-when="${json}">\n<p class="docsi-when-label">${escapeHtml(whenLabel(block.when, items))}</p>\n`;
-    out[block.close] = '\n</div>';
+    // Keep the comment's indentation (a block inside a list item stays in
+    // it), and end with a blank line after `</div>`: a raw HTML block runs
+    // until a blank line, so Markdown directly under `<!-- /when -->` would
+    // otherwise render as literal text.
+    const indent = /^[ \t]*/.exec(lines[block.open] ?? '')?.[0] ?? '';
+    const closeIndent = /^[ \t]*/.exec(lines[block.close] ?? '')?.[0] ?? '';
+    out[block.open] = `${indent}<div class="docsi-when" data-when="${json}">\n${indent}<p class="docsi-when-label">${escapeHtml(whenLabel(block.when, items))}</p>\n`;
+    out[block.close] = `\n${closeIndent}</div>\n`;
   }
   return { markdown: out.join('\n'), problems };
 }
