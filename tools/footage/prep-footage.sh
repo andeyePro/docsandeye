@@ -73,7 +73,7 @@ fi
 LIST="$OUT/files.txt"
 find "$FOOTAGE" -type f \( -iname '*.mp4' -o -iname '*.mov' -o -iname '*.m4v' -o -iname '*.mts' \
   -o -iname '*.mxf' -o -iname '*.wav' -o -iname '*.m4a' -o -iname '*.mp3' \) \
-  ! -name '._*' | LC_ALL=C sort > "$LIST"
+  ! -name '._*' 2>>"$LOG" | LC_ALL=C sort > "$LIST" || true   # a folder we cannot read is logged, not fatal
 COUNT="$(wc -l < "$LIST" | tr -d ' ')"
 log "$COUNT media files"
 
