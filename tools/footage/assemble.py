@@ -170,12 +170,14 @@ def pair_offset(a: list[tuple[float, str]], b: list[tuple[float, str]]) -> tuple
                 votes[round((ta - tb) / BIN_S)] += 1
     if not votes:
         return None
-    best, n = votes.most_common(1)[0]
-    n += votes.get(best - 1, 0) + votes.get(best + 1, 0)
+    # Word timings differ between files by a few tenths of a second (each file is segmented on its
+    # own), so the true offset is a cluster of bins, not one: score a window of +-0.5 s.
+    best = max(votes, key=lambda k: sum(votes.get(j, 0) for j in range(k - 5, k + 6)))
+    window = {k: votes.get(k, 0) for k in range(best - 5, best + 6)}
+    n = sum(window.values())
     if n < MIN_VOTES or n < PEAK_SHARE * sum(votes.values()):
         return None
-    # Weighted mean over the winning bin and its neighbours.
-    num = sum(k * votes.get(k, 0) for k in (best - 1, best, best + 1))
+    num = sum(k * v for k, v in window.items())
     return (num / n) * BIN_S, n
 
 
