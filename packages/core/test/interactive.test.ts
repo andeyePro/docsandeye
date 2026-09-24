@@ -12,9 +12,19 @@ import {
   buildMediaPlan,
   buildReceipt,
   checkMailto,
+  checkedKeys,
+  checkoffKey,
   checksComplete,
   computeReceipt,
+  consentView,
   defaultProfile,
+  effectiveProfile,
+  impliedItems,
+  labelParts,
+  parseConsent,
+  plainLabel,
+  setCheckoff,
+  validateWhen,
   describeWhen,
   loadProject,
   matchesWhen,
@@ -337,6 +347,182 @@ describe('profile values', () => {
     expect(parseStoredProfile(ITEMS, '{not json')).toEqual(defaultProfile(ITEMS));
     expect(parseStoredProfile(ITEMS, null)).toEqual(defaultProfile(ITEMS));
     expect(parseStoredProfile(ITEMS, '{"units":4,"supplier":"diy"}')).toEqual({ units: 4, 'temp-kit': false, supplier: 'diy' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Implications, link options and label links (task_021)
+
+const IMPLIES_YAML = `profile:
+  - id: model
+    type: choice
+    label: "Which build?"
+    options:
+      - {value: new, label: "New", implies: {temp-kit: true, units: 2}}
+      - {value: old, label: "Old", implies: {temp-kit: false}}
+      - {value: custom, label: "Custom"}
+      - {value: other, label: "Other: use the [other guide](/other/)", href: /other/}
+    default: new
+  - id: units
+    type: number
+    label: "Units?"
+    max: 10
+  - id: temp-kit
+    type: boolean
+    label: "Temperature kit?"
+  - id: supplier
+    type: choice
+    label: "From?"
+    options:
+      - {value: shop-a, label: "[Shop A](https://shop-a.example)"}
+      - {value: diy, label: "Sourced myself from [the BoM](https://example.invalid/bom)"}
+`;
+
+describe('profile implications', () => {
+  const items = parseConfig(BASE_CONFIG + IMPLIES_YAML).profile;
+
+  it('parses implies and href, keeping them on the options', () => {
+    expect(items[0]!.options).toEqual([
+      { value: 'new', label: 'New', implies: { 'temp-kit': true, units: 2 } },
+      { value: 'old', label: 'Old', implies: { 'temp-kit': false } },
+      { value: 'custom', label: 'Custom' },
+      { value: 'other', label: 'Other: use the [other guide](/other/)', href: '/other/' },
+    ]);
+  });
+
+  it('the default choice\'s implications apply to the defaults', () => {
+    expect(defaultProfile(items)).toEqual({ model: 'new', units: 2, 'temp-kit': true, supplier: 'shop-a' });
+  });
+
+  it('an implying choice overrides earlier answers and lists the implied items', () => {
+    const answers = { model: 'old', units: 3, 'temp-kit': true, supplier: 'diy' };
+    expect(effectiveProfile(items, answers)).toEqual({ model: 'old', units: 3, 'temp-kit': false, supplier: 'diy' });
+    expect(impliedItems(items, answers)).toEqual({ 'temp-kit': 'model' });
+    expect(answers['temp-kit']).toBe(true); // not mutated
+  });
+
+  it('switching to an option without implications keeps the stored values and shows the questions again', () => {
+    const stored = effectiveProfile(items, { model: 'new', units: 1, 'temp-kit': false, supplier: 'shop-a' });
+    expect(stored).toMatchObject({ units: 2, 'temp-kit': true });
+    const custom = effectiveProfile(items, { ...stored, model: 'custom' });
+    expect(custom).toEqual({ model: 'custom', units: 2, 'temp-kit': true, supplier: 'shop-a' });
+    expect(impliedItems(items, custom)).toEqual({});
+  });
+
+  it('last wins on conflicts, in item order', () => {
+    const two = parseConfig(
+      `${BASE_CONFIG}profile:\n  - {id: a, type: choice, label: A, options: [{value: x, label: X, implies: {k: true}}]}\n  - {id: b, type: choice, label: B, options: [{value: y, label: Y, implies: {k: false}}]}\n  - {id: k, type: boolean, label: K}\n`,
+    ).profile;
+    expect(effectiveProfile(two, { a: 'x', b: 'y', k: true })).toEqual({ a: 'x', b: 'y', k: false });
+    expect(impliedItems(two, { a: 'x', b: 'y', k: true })).toEqual({ k: 'b' });
+  });
+
+  it('a link option is never a value: normalising falls back to the default, and when rejects it', () => {
+    expect(normaliseProfile(items, { model: 'other' })).toMatchObject({ model: 'new', 'temp-kit': true });
+    expect(normaliseProfile(items, { model: 'old', 'temp-kit': true })).toMatchObject({ 'temp-kit': false });
+    expect(validateWhen({ model: 'other' }, items).map((p) => p.path)).toEqual(['model']);
+    expect(validateWhen({ model: ['new', 'custom'] }, items)).toEqual([]);
+  });
+
+  const invalid: Array<[string, string, string]> = [
+    ['implies an unknown id', `  - {id: m, type: choice, label: M, options: [{value: a, label: A, implies: {nope: true}}]}\n`, 'profile.0.options.0.implies.nope'],
+    ['implies its own item', `  - {id: m, type: choice, label: M, options: [{value: a, label: A, implies: {m: a}}]}\n`, 'profile.0.options.0.implies.m'],
+    [
+      'implies a boolean with a string',
+      `  - {id: m, type: choice, label: M, options: [{value: a, label: A, implies: {k: "yes"}}]}\n  - {id: k, type: boolean, label: K}\n`,
+      'profile.0.options.0.implies.k',
+    ],
+    [
+      'implies a number out of range',
+      `  - {id: m, type: choice, label: M, options: [{value: a, label: A, implies: {n: 9}}]}\n  - {id: n, type: number, label: N, max: 5}\n`,
+      'profile.0.options.0.implies.n',
+    ],
+    [
+      'implies a number comparator',
+      `  - {id: m, type: choice, label: M, options: [{value: a, label: A, implies: {n: ">=2"}}]}\n  - {id: n, type: number, label: N}\n`,
+      'profile.0.options.0.implies.n',
+    ],
+    [
+      'implies a choice value that is not an option',
+      `  - {id: m, type: choice, label: M, options: [{value: a, label: A, implies: {c: z}}]}\n  - {id: c, type: choice, label: C, options: [{value: x, label: X}]}\n`,
+      'profile.0.options.0.implies.c',
+    ],
+    [
+      'implies a link option',
+      `  - {id: m, type: choice, label: M, options: [{value: a, label: A, implies: {c: l}}]}\n  - {id: c, type: choice, label: C, options: [{value: x, label: X}, {value: l, label: L, href: /l/}]}\n`,
+      'profile.0.options.0.implies.c',
+    ],
+    ['implies on a link option', `  - {id: m, type: choice, label: M, options: [{value: a, label: A}, {value: l, label: L, href: /l/, implies: {k: true}}]}\n  - {id: k, type: boolean, label: K}\n`, 'profile.0.options.1.implies'],
+    ['default naming a link option', `  - {id: m, type: choice, label: M, options: [{value: a, label: A}, {value: l, label: L, href: /l/}], default: l}\n`, 'profile.0.default'],
+    ['only link options', `  - {id: m, type: choice, label: M, options: [{value: l, label: L, href: /l/}]}\n`, 'profile.0.options'],
+  ];
+  for (const [name, yaml, path] of invalid) {
+    it(`rejects ${name} at ${path}`, () => {
+      const problems = configProblems(`${BASE_CONFIG}profile:\n${yaml}`);
+      expect(problems.map((p) => p.path)).toContain(path);
+    });
+  }
+
+  it('the first choosable option is the default when none is given', () => {
+    const p = parseConfig(`${BASE_CONFIG}profile:\n  - {id: m, type: choice, label: M, options: [{value: l, label: L, href: /l/}, {value: a, label: A}]}\n`).profile;
+    expect(p[0]!.default).toBe('a');
+  });
+});
+
+describe('option label links', () => {
+  it('splits [text](url) links out of a label', () => {
+    expect(labelParts('Sourced myself from [the BoM](https://example.invalid/bom)')).toEqual([
+      { text: 'Sourced myself from ' },
+      { text: 'the BoM', href: 'https://example.invalid/bom' },
+    ]);
+    expect(labelParts('[A](/a/) or [B](b.html).')).toEqual([{ text: 'A', href: '/a/' }, { text: ' or ' }, { text: 'B', href: 'b.html' }, { text: '.' }]);
+    expect(labelParts('No links, *no* other Markdown')).toEqual([{ text: 'No links, *no* other Markdown' }]);
+  });
+
+  it('an unsafe URL stays text', () => {
+    expect(labelParts('Click [here](javascript:alert(1)) now')).toEqual([{ text: 'Click here) now' }]);
+    expect(labelParts('x [y](data:text/html,z)')).toEqual([{ text: 'x y' }]);
+  });
+
+  it('plain text is used in summaries and conditions', () => {
+    const items = parseConfig(BASE_CONFIG + IMPLIES_YAML).profile;
+    expect(plainLabel('Sourced myself from [the BoM](https://x.invalid)')).toBe('Sourced myself from the BoM');
+    expect(profileSummary(items, defaultProfile(items))).toBe('New · 2 × units · temp-kit yes · Shop A');
+    expect(describeWhen({ supplier: 'diy' }, items)).toBe('supplier: Sourced myself from the BoM');
+  });
+});
+
+describe('check-offs and consent', () => {
+  it('check-off keys and records', () => {
+    expect(checkoffKey('step-01', 'widget')).toBe('step-01/widget');
+    const on = setCheckoff({}, 'a/x', true);
+    expect(on).toEqual({ 'a/x': true });
+    expect(setCheckoff(on, 'a/x', false)).toEqual({});
+    expect([...checkedKeys({ 'a/x': true, 'a/y': false, 'a/z': 'yes' })]).toEqual(['a/x']);
+  });
+
+  it('a ticked receipt row is never missing', () => {
+    const receipt = computeReceipt(
+      [
+        { component: 'w', name: 'W', per: 'unit', qty: 2 },
+        { component: 'v', name: 'V', per: 'kit', qty: 1 },
+      ],
+      { units: 1 },
+      {},
+    );
+    expect(missingParts(receipt, { w: 0, v: 0 }).map((m) => m.component)).toEqual(['w', 'v']);
+    expect(missingParts(receipt, { w: 0, v: 0 }, new Set(['w'])).map((m) => m.component)).toEqual(['v']);
+  });
+
+  it('consent: only yes is remembered; the bar needs a change; the notice follows a no', () => {
+    expect(parseConsent('yes')).toBe('yes');
+    expect(parseConsent('no')).toBe('unasked');
+    expect(parseConsent(null)).toBe('unasked');
+    expect(consentView('unasked', false, false)).toEqual({ bar: false, notice: false });
+    expect(consentView('unasked', true, false)).toEqual({ bar: true, notice: false });
+    expect(consentView('yes', true, false)).toEqual({ bar: false, notice: false });
+    expect(consentView('no', true, false)).toEqual({ bar: false, notice: true });
+    expect(consentView('no', true, true)).toEqual({ bar: false, notice: false });
   });
 });
 

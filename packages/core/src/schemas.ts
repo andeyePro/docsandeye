@@ -10,7 +10,7 @@ import { z } from 'zod';
 import YAML from 'yaml';
 import { DocsiError, sortProblems, type Problem } from './errors.js';
 import { defaultHostingRegistry, type HostingRegistry } from './hosting.js';
-import { PROFILE_TYPES, YOUTUBE_ID_RE, type ProfileItem } from './interactive.js';
+import { PROFILE_TYPES, YOUTUBE_ID_RE, choosableOptions, impliesProblems, type ProfileItem } from './interactive.js';
 
 // ---------------------------------------------------------------------------
 // Primitive shapes
@@ -342,7 +342,12 @@ export const ProjectMetaSchema = z.strictObject({
 
 const ProfileOptionSchema = z.object({
   value: kebabId,
+  /** May contain Markdown links `[text](url)`. */
   label: nonEmptyString,
+  /** Answers this choice settles, `{<profile id>: <value>}`; checked against the other items in the config refinement. */
+  implies: z.record(z.string(), parameterScalar).optional(),
+  /** A link option: navigates instead of being chosen. */
+  href: nonEmptyString.optional(),
 });
 
 /**
@@ -370,6 +375,9 @@ export const ProfileItemSchema = z
           if (seen.has(o.value)) ctx.addIssue({ code: 'custom', path: ['options', i, 'value'], message: `duplicate option value ${o.value}` });
           seen.add(o.value);
         });
+        if (choosableOptions(p).length === 0) {
+          ctx.addIssue({ code: 'custom', path: ['options'], message: 'needs at least one option without href (link options cannot be chosen)' });
+        }
       }
     } else if (p.options !== undefined) {
       ctx.addIssue({ code: 'custom', path: ['options'], message: `not allowed for ${p.type}` });
@@ -389,11 +397,16 @@ export const ProfileItemSchema = z
       }
     } else if (p.type === 'boolean') {
       if (typeof p.default !== 'boolean') ctx.addIssue({ code: 'custom', path: ['default'], message: 'must be true or false' });
-    } else if (typeof p.default !== 'string' || !(p.options ?? []).some((o) => o.value === p.default)) {
+    } else if (typeof p.default !== 'string' || !choosableOptions(p).some((o) => o.value === p.default)) {
+      const linked = (p.options ?? []).some((o) => o.href !== undefined && o.value === p.default);
       ctx.addIssue({
         code: 'custom',
         path: ['default'],
-        message: `must be one of the option values (${(p.options ?? []).map((o) => o.value).join(', ')})`,
+        message: linked
+          ? `"${String(p.default)}" is a link option (href) and cannot be the default`
+          : `must be one of the option values (${choosableOptions(p)
+              .map((o) => o.value)
+              .join(', ')})`,
       });
     }
   })
@@ -406,8 +419,13 @@ export const ProfileItemSchema = z
     } else if (p.type === 'boolean') {
       out.default = p.default ?? false;
     } else {
-      out.options = p.options ?? [];
-      out.default = p.default ?? out.options[0]?.value ?? '';
+      out.options = (p.options ?? []).map((o) => {
+        const option: NonNullable<ProfileItem['options']>[number] = { value: o.value, label: o.label };
+        if (o.implies !== undefined) option.implies = o.implies;
+        if (o.href !== undefined) option.href = o.href;
+        return option;
+      });
+      out.default = p.default ?? choosableOptions(out)[0]?.value ?? '';
     }
     return out;
   });
@@ -479,6 +497,9 @@ function checkProfileConfig(c: ProfileConfigView, ctx: z.core.$RefinementCtx): v
     if (byId.has(item.id)) ctx.addIssue({ code: 'custom', path: ['profile', i, 'id'], message: `duplicate profile id ${item.id}` });
     else byId.set(item.id, item);
   });
+  for (const problem of impliesProblems(c.profile)) {
+    ctx.addIssue({ code: 'custom', path: ['profile', ...problem.path.split('.').map((k) => (/^\d+$/.test(k) ? Number(k) : k))], message: problem.message });
+  }
   const refs = [
     ['multiply_by', 'number'],
     ['supplier_from', 'choice'],

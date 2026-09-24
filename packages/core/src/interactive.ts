@@ -21,7 +21,12 @@ export type ProfileType = (typeof PROFILE_TYPES)[number];
 
 export interface ProfileOption {
   value: string;
+  /** May contain Markdown links `[text](url)` (only that syntax); see `labelParts`. */
   label: string;
+  /** Other profile items this choice settles, `{<profile id>: <value>}`: their questions are hidden and their values set. */
+  implies?: Profile;
+  /** A link option: rendered as a link that navigates, never a radio; it never becomes the item's value. */
+  href?: string;
 }
 
 /** One reader question, as validated and defaulted by the config schema. */
@@ -170,7 +175,7 @@ function valueProblem(item: ProfileItem, value: WhenScalar): string | undefined 
       if (typeof value === 'string' && parseComparator(value)) return undefined;
       return `"${item.id}" is a number profile item: use a number or a comparator such as ">=2"`;
     case 'choice': {
-      const values = (item.options ?? []).map((o) => o.value);
+      const values = choosableOptions(item).map((o) => o.value);
       if (typeof value === 'string' && values.includes(value)) return undefined;
       return `"${String(value)}" is not an option of "${item.id}" (options: ${values.join(', ')})`;
     }
@@ -181,7 +186,10 @@ const COMPARATOR_SYMBOL: Record<string, string> = { '>=': '≥', '<=': '≤', '>
 
 function describeValue(item: ProfileItem | undefined, value: WhenScalar): string {
   if (typeof value === 'boolean') return value ? 'yes' : 'no';
-  if (item?.type === 'choice') return item.options?.find((o) => o.value === value)?.label ?? String(value);
+  if (item?.type === 'choice') {
+    const label = item.options?.find((o) => o.value === value)?.label;
+    return label !== undefined ? plainLabel(label) : String(value);
+  }
   return String(value);
 }
 
@@ -216,17 +224,100 @@ export function describeWhen(when: When, items: readonly ProfileItem[] = []): st
 // ---------------------------------------------------------------------------
 // Profile values
 
-/** Defaults for every item. */
-export function defaultProfile(items: readonly ProfileItem[]): Profile {
-  const out: Profile = {};
-  for (const item of items) out[item.id] = item.default;
+/** The options a reader can choose: every option except link (`href`) options. */
+export function choosableOptions(item: Pick<ProfileItem, 'options'>): ProfileOption[] {
+  return (item.options ?? []).filter((o) => o.href === undefined);
+}
+
+/**
+ * Apply choice implications: for each choice item in order, the chosen
+ * option's `implies` overrides the named items' values. Later items win on
+ * conflicts, and an implied choice's own implications apply when that item
+ * comes later in the order. Values not implied are kept as given (so
+ * switching to an option without implications restores the question with
+ * whatever value it last held). Returns a new profile.
+ */
+export function effectiveProfile(items: readonly ProfileItem[], answers: Profile): Profile {
+  const out: Profile = { ...answers };
+  for (const [id, , value] of implications(items, out)) out[id] = value;
+  return out;
+}
+
+/** `{<implied id>: <id of the choice item that implies it>}` for a profile: the questions to hide. */
+export function impliedItems(items: readonly ProfileItem[], answers: Profile): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [id, by] of implications(items, { ...answers })) out[id] = by;
+  return out;
+}
+
+/** Walk the items in order, applying each chosen option's `implies` to `profile` as it goes. */
+function implications(items: readonly ProfileItem[], profile: Profile): Array<[string, string, ProfileValue]> {
+  const known = new Set(items.map((i) => i.id));
+  const out: Array<[string, string, ProfileValue]> = [];
+  for (const item of items) {
+    if (item.type !== 'choice') continue;
+    const option = choosableOptions(item).find((o) => o.value === profile[item.id]);
+    for (const [id, value] of Object.entries(option?.implies ?? {})) {
+      if (!known.has(id) || id === item.id) continue;
+      profile[id] = value;
+      out.push([id, item.id, value]);
+    }
+  }
   return out;
 }
 
 /**
+ * Problems with the `implies` of every choice option, paths relative to the
+ * profile list (`2.options.0.implies.temp-kit`): unknown or self ids, values
+ * not valid for the implied item (numbers must be integers in range; choice
+ * values must be choosable options), `implies` on a link option.
+ */
+export function impliesProblems(items: readonly ProfileItem[]): Array<{ path: string; message: string }> {
+  const out: Array<{ path: string; message: string }> = [];
+  const byId = new Map(items.map((i) => [i.id, i]));
+  items.forEach((item, i) => {
+    (item.options ?? []).forEach((option, j) => {
+      if (option.implies === undefined) return;
+      const at = `${i}.options.${j}.implies`;
+      if (option.href !== undefined) {
+        out.push({ path: at, message: 'a link option (href) cannot imply other answers' });
+        return;
+      }
+      for (const [id, value] of Object.entries(option.implies)) {
+        const target = byId.get(id);
+        if (!target) {
+          out.push({ path: `${at}.${id}`, message: `unknown profile id "${id}" (profile ids: ${items.map((x) => x.id).join(', ')})` });
+          continue;
+        }
+        if (id === item.id) {
+          out.push({ path: `${at}.${id}`, message: 'an option cannot imply its own item' });
+          continue;
+        }
+        const problem =
+          target.type === 'number'
+            ? typeof value === 'number' && Number.isInteger(value) && value >= (target.min ?? 1) && value <= (target.max ?? 100)
+              ? undefined
+              : `"${id}" is a number profile item: use an integer from ${target.min ?? 1} to ${target.max ?? 100}`
+            : valueProblem(target, value);
+        if (problem) out.push({ path: `${at}.${id}`, message: problem });
+      }
+    });
+  });
+  return out;
+}
+
+/** Defaults for every item, with the default choices' implications applied. */
+export function defaultProfile(items: readonly ProfileItem[]): Profile {
+  const out: Profile = {};
+  for (const item of items) out[item.id] = item.default;
+  return effectiveProfile(items, out);
+}
+
+/**
  * Coerce stored or form answers to a valid profile: unknown keys dropped,
- * numbers rounded and clamped to `[min, max]`, anything else invalid replaced
- * by the item's default. Never throws.
+ * numbers rounded and clamped to `[min, max]`, anything else invalid (a link
+ * option included) replaced by the item's default; then implications applied
+ * (`effectiveProfile`). Never throws.
  */
 export function normaliseProfile(items: readonly ProfileItem[], raw: unknown): Profile {
   const source = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
@@ -245,11 +336,11 @@ export function normaliseProfile(items: readonly ProfileItem[], raw: unknown): P
       if (typeof value === 'boolean') out[item.id] = value;
       else if (value === 'true' || value === 'on') out[item.id] = true;
       else if (value === 'false') out[item.id] = false;
-    } else if (typeof value === 'string' && (item.options ?? []).some((o) => o.value === value)) {
+    } else if (typeof value === 'string' && choosableOptions(item).some((o) => o.value === value)) {
       out[item.id] = value;
     }
   }
-  return out;
+  return effectiveProfile(items, out);
 }
 
 /** Parse a stored JSON string into a profile; malformed or absent → defaults. */
@@ -269,9 +360,58 @@ export function profileSummary(items: readonly ProfileItem[], profile: Profile):
       const value = profile[item.id] ?? item.default;
       if (item.type === 'number') return `${String(value)} × ${item.id}`;
       if (item.type === 'boolean') return `${item.id} ${value === true ? 'yes' : 'no'}`;
-      return item.options?.find((o) => o.value === value)?.label ?? String(value);
+      const label = item.options?.find((o) => o.value === value)?.label;
+      return label !== undefined ? plainLabel(label) : String(value);
     })
     .join(' · ');
+}
+
+// ---------------------------------------------------------------------------
+// Option labels
+
+export interface LabelPart {
+  text: string;
+  /** Present for a `[text](url)` link. */
+  href?: string;
+}
+
+const LABEL_LINK_RE = /\[([^\]\n]+)\]\(([^)\s]+)\)/g;
+const SCHEME_RE = /^([a-z][a-z0-9+.-]*):/i;
+
+/** True for URLs a label link may carry: http(s), mailto, or scheme-less (relative, root-relative, fragment). */
+export function isSafeHref(url: string): boolean {
+  const scheme = SCHEME_RE.exec(url)?.[1]?.toLowerCase();
+  return scheme === undefined || scheme === 'http' || scheme === 'https' || scheme === 'mailto';
+}
+
+/**
+ * Split an option label into text and `[text](url)` links, the only Markdown
+ * a label understands. A link with an unsafe URL (another scheme) stays as its text.
+ */
+export function labelParts(label: string): LabelPart[] {
+  const out: LabelPart[] = [];
+  let last = 0;
+  for (const m of label.matchAll(LABEL_LINK_RE)) {
+    const [whole, text, href] = m as unknown as [string, string, string];
+    if (m.index > last) out.push({ text: label.slice(last, m.index) });
+    out.push(isSafeHref(href) ? { text, href } : { text });
+    last = m.index + whole.length;
+  }
+  if (last < label.length) out.push({ text: label.slice(last) });
+  // Merge neighbouring text parts (an unsafe link next to plain text).
+  return out.reduce<LabelPart[]>((acc, part) => {
+    const prev = acc[acc.length - 1];
+    if (prev && prev.href === undefined && part.href === undefined) prev.text += part.text;
+    else acc.push({ ...part });
+    return acc;
+  }, []);
+}
+
+/** A label with its Markdown links reduced to their text (for summaries and "Only if" text). */
+export function plainLabel(label: string): string {
+  return labelParts(label)
+    .map((p) => p.text)
+    .join('');
 }
 
 /** localStorage keys, one per guide. */
@@ -279,7 +419,52 @@ export const STORAGE_KEYS = {
   profile: (guideId: string) => `docsandeye:profile:${guideId}`,
   receipt: (guideId: string) => `docsandeye:receipt:${guideId}`,
   checks: (guideId: string) => `docsandeye:checks:${guideId}`,
+  /** Check-offs ("have it" / "done") of parts, tools and receipt rows, keyed by `checkoffKey`. */
+  parts: (guideId: string) => `docsandeye:parts:${guideId}`,
 } as const;
+
+/** The key of one check-off within `STORAGE_KEYS.parts`: step id + component. */
+export function checkoffKey(stepId: string, component: string): string {
+  return `${stepId}/${component}`;
+}
+
+/** The checked keys of a stored check-off record (`{<key>: true}`); anything else is unchecked. */
+export function checkedKeys(record: Record<string, unknown>): Set<string> {
+  return new Set(Object.keys(record).filter((k) => record[k] === true));
+}
+
+/** A new check-off record with `key` set or cleared (cleared keys are removed, not stored as false). */
+export function setCheckoff(record: Record<string, unknown>, key: string, checked: boolean): Record<string, unknown> {
+  const out = { ...record };
+  if (checked) out[key] = true;
+  else delete out[key];
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Saving consent
+
+/** `yes`: saved in this browser; `no`: the reader declined (kept for the visit only); `unasked`: no decision yet. */
+export type ConsentState = 'yes' | 'no' | 'unasked';
+
+/** The one localStorage key written before consent is given: the consent itself, and only once it is `yes`. */
+export const CONSENT_KEY = 'docsandeye:consent';
+/** sessionStorage flag for "Hide this for now" on the not-saved notice. */
+export const CONSENT_NOTICE_HIDDEN_KEY = 'docsandeye:consent-notice-hidden';
+
+/** Stored consent value → state (`no` is never stored, so anything but `yes` is unasked). */
+export function parseConsent(stored: string | null | undefined): ConsentState {
+  return stored === 'yes' ? 'yes' : 'unasked';
+}
+
+/**
+ * What the consent UI shows: the bottom bar only once the reader has changed
+ * something and has not decided; the not-saved notice only after "Don't
+ * save", until hidden.
+ */
+export function consentView(state: ConsentState, changed: boolean, noticeHidden: boolean): { bar: boolean; notice: boolean } {
+  return { bar: state === 'unasked' && changed, notice: state === 'no' && !noticeHidden };
+}
 
 // ---------------------------------------------------------------------------
 // Body `when` comments
@@ -479,11 +664,13 @@ export interface MissingPart {
 /**
  * Parts received short of expectation, from the per-unit and per-kit groups
  * (the `elsewhere` group is sourced by the reader, so never "missing").
- * An absent or invalid received count means "all of them".
+ * An absent or invalid received count means "all of them". Components in
+ * `done` (rows the reader ticked "have it") are never missing.
  */
-export function missingParts(receipt: Receipt, received: Record<string, unknown>): MissingPart[] {
+export function missingParts(receipt: Receipt, received: Record<string, unknown>, done: ReadonlySet<string> = new Set()): MissingPart[] {
   const out: MissingPart[] = [];
   for (const row of [...receipt.perUnit, ...receipt.perKit]) {
+    if (done.has(row.component)) continue;
     const raw = received[row.component];
     const got = typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 ? Math.floor(raw) : row.expected;
     if (got >= row.expected) continue;
