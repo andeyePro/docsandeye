@@ -15,7 +15,8 @@ import { promisify } from 'node:util';
 import { parse, type HTMLElement } from 'node-html-parser';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadProject, stepsForGuide } from '@docsandeye/core';
-import { checkRefs, onlyIf, plainMailto, scriptJson, skipTargets, supplierLabels, whenAttr } from '../src/interactive-view.ts';
+import { checkRefs, guideNext, onlyIf, plainMailto, scriptJson, siteHref, skipTargets, supplierLabels, whenAttr } from '../src/interactive-view.ts';
+import { olderVideoSentence, sidebarEntryAfter, sidebarTargetHref, slugLabel, stepPagination } from '../src/view.ts';
 
 const execFileP = promisify(execFile);
 const BUILD_TIMEOUT = 600_000;
@@ -70,7 +71,7 @@ describe('profile', () => {
     const radios = form!.querySelectorAll('input[type="radio"][name="supplier"]');
     expect(radios.map((r) => r.getAttribute('value'))).toEqual(['shop-a', 'shop-b', 'diy']);
     expect(radios.filter((r) => r.hasAttribute('checked')).map((r) => r.getAttribute('value'))).toEqual(['shop-a']);
-    expect(form!.querySelector('fieldset legend')!.text).toBe('Where did your parts come from?');
+    expect(form!.querySelector('fieldset[data-profile-field="supplier"] legend')!.text).toBe('Where did your parts come from?');
   });
 
   it('guide and step pages carry the profile questions as JSON', () => {
@@ -78,7 +79,7 @@ describe('profile', () => {
       const script = page(rel).querySelector('script[data-docsi-profile]');
       expect(script?.getAttribute('type')).toBe('application/json');
       const items = JSON.parse(script!.text) as Array<{ id: string }>;
-      expect(items.map((i) => i.id)).toEqual(['units', 'temp-kit', 'supplier']);
+      expect(items.map((i) => i.id)).toEqual(['build', 'units', 'temp-kit', 'supplier']);
     }
   });
 
@@ -189,7 +190,7 @@ describe('receipt checklist', () => {
       'shop-b': { name: 'Shop B' },
       project: { name: 'The project', email: 'help@project.invalid', subject: 'Kit guide: help with a step' },
     });
-    expect(json(el, 'data-supplier-labels')).toEqual({ 'shop-a': 'Shop A kit', 'shop-b': 'Shop B', diy: 'Sourced myself' });
+    expect(json(el, 'data-supplier-labels')).toEqual({ 'shop-a': 'Shop A kit', 'shop-b': 'Shop B', diy: 'Sourced myself from the BoM' });
   });
 
   it('each table row carries its item data for the element (per, qty, from, when, supplier)', () => {
@@ -348,6 +349,143 @@ describe('client bundle', () => {
 });
 
 // ---------------------------------------------------------------------------
+// task_021: implications, link options, layout, check-offs, consent, navigation
+
+describe('profile: implies, link options and label links', () => {
+  const form = () => page(GUIDE).querySelector('docsi-profile form')!;
+
+  it('every question is a data-profile-field the element can hide', () => {
+    expect(form().querySelectorAll('[data-profile-field]').map((f) => f.getAttribute('data-profile-field'))).toEqual(['build', 'units', 'temp-kit', 'supplier']);
+  });
+
+  it('a link option is a link in the radio list, never a radio', () => {
+    const field = form().querySelector('fieldset[data-profile-field="build"]')!;
+    expect(field.querySelectorAll('input[type="radio"]').map((r) => r.getAttribute('value'))).toEqual(['full', 'basic', 'custom']);
+    const link = field.querySelector('a.docsi-profile-link')!;
+    expect(link.getAttribute('href')).toBe('/other/');
+    expect(link.text.trim()).toBe('Another kit: use the other guide');
+    expect(link.classList.contains('docsi-profile-option')).toBe(true);
+  });
+
+  it('the implying options travel in the profile JSON for the client', () => {
+    const items = JSON.parse(page(GUIDE).querySelector('script[data-docsi-profile]')!.text) as Array<{ id: string; options?: unknown[] }>;
+    expect(items[0]!.options).toEqual([
+      { value: 'full', label: 'Full kit (temperature upgrade included)', implies: { 'temp-kit': true } },
+      { value: 'basic', label: 'Basic kit', implies: { 'temp-kit': false } },
+      { value: 'custom', label: 'Custom build: I will say what I have' },
+      { value: 'other', label: 'Another kit: use the other guide', href: '/other/' },
+    ]);
+  });
+
+  it('a Markdown link in an option label renders as a link inside the label', () => {
+    const label = form().querySelector('input[name="supplier"][value="diy"]')!.parentNode as unknown as HTMLElement;
+    expect(label.text.replace(/\s+/g, ' ').trim()).toBe('Sourced myself from the BoM');
+    const a = label.querySelector('a')!;
+    expect(a.getAttribute('href')).toBe('https://bom.example/list');
+    expect(a.text).toBe('the BoM');
+    expect(form().outerHTML).not.toContain('[the BoM]');
+  });
+});
+
+describe('step layout: media above, stale video below', () => {
+  it('the media pane comes first, then the text, in one column', () => {
+    const step = page(STEP1).querySelector('docsi-step')!;
+    expect(step.childNodes.filter((n) => n.nodeType === 1).map((n) => (n as HTMLElement).classList.value[0])).toEqual(['docsi-media', 'docsi-text']);
+    expect(step.querySelector('.docsi-media > figure.docsi-video-figure docsi-youtube')).toBeTruthy();
+  });
+
+  it('a STALE video moves to an "Older video" section at the bottom, introduced by one sentence', () => {
+    const doc = page(STEP3);
+    expect(doc.querySelector('.docsi-media')).toBeFalsy();
+    const section = doc.querySelector('.docsi-text > section.docsi-older-video')!;
+    expect(section.querySelector('h2')!.text).toBe('Older video');
+    expect(section.querySelector('p.docsi-older-intro')!.text).toBe('This video shows Widget v1.0.0 where your kit has Widget v1.1.0.');
+    const details = section.querySelector('details.docsi-stale-video')!;
+    expect(details.hasAttribute('open')).toBe(true);
+    expect(details.querySelector('docsi-youtube[data-media="yt-03-old"]')).toBeTruthy();
+    const html = raw(STEP3);
+    expect(html.indexOf('class="docsi-safety"')).toBeLessThan(html.indexOf('class="docsi-older-video"'));
+    expect(html.indexOf('class="docsi-older-video"')).toBeLessThan(html.indexOf('class="docsi-meta"'));
+  });
+});
+
+describe('check-offs', () => {
+  it('every part and tool row starts with a hidden "have it" box keyed step/component', () => {
+    const rows = page(STEP1).querySelectorAll('.docsi-parts li');
+    expect(rows.map((li) => li.firstChild && (li.childNodes.find((n) => n.nodeType === 1) as HTMLElement).getAttribute('data-checkoff'))).toEqual([
+      'step-01-unpack/widget',
+      'step-01-unpack/spares-bag',
+      'step-01-unpack/plain',
+    ]);
+    const box = rows[0]!.querySelector('input.docsi-checkoff')!;
+    expect(box.getAttribute('type')).toBe('checkbox');
+    expect(box.hasAttribute('hidden')).toBe(true);
+    expect(box.getAttribute('aria-label')).toBe('Have it: Widget');
+  });
+
+  it('the receipt knows its step (for its rows\' check-offs)', () => {
+    expect(page(STEP1).querySelector('docsi-receipt')!.getAttribute('data-step')).toBe('step-01-unpack');
+  });
+});
+
+describe('saving consent', () => {
+  for (const rel of [GUIDE, STEP1, STEP3]) {
+    it(`${rel}: a hidden consent bar with Save / Don't save and a hidden not-saved notice`, () => {
+      const doc = page(rel);
+      const bar = doc.querySelector('.docsi-consent-bar')!;
+      expect(bar.hasAttribute('hidden')).toBe(true);
+      expect(bar.querySelector('p')!.text).toBe('Save your answers in this browser? They stay on this device and nothing is sent to anyone else.');
+      expect(bar.querySelectorAll('button').map((b) => [b.getAttribute('data-consent-action'), b.text])).toEqual([
+        ['save', 'Save'],
+        ['decline', "Don't save"],
+      ]);
+      const notice = doc.querySelector('.docsi-consent-notice')!;
+      expect(notice.hasAttribute('hidden')).toBe(true);
+      expect(notice.text).toContain('Not saved: your answers are lost when you leave.');
+      expect(notice.querySelectorAll('button').map((b) => b.getAttribute('data-consent-action'))).toEqual(['allow', 'hide']);
+      expect(`${bar.text} ${notice.text}`.toLowerCase()).not.toContain('cookie');
+    });
+  }
+
+  it('on step pages the notice sits right under the profile summary', () => {
+    const html = raw(STEP1);
+    const summary = html.indexOf('<docsi-profile-summary');
+    const notice = html.indexOf('class="docsi-consent-notice"');
+    expect(summary).toBeGreaterThan(0);
+    expect(notice).toBeGreaterThan(summary);
+    expect(notice).toBeLessThan(html.indexOf('class="docsi-body'));
+  });
+});
+
+describe('guide navigation', () => {
+  const pagination = (rel: string) => {
+    const doc = page(rel);
+    const link = (r: string) => {
+      const a = doc.querySelector(`.pagination-links a[rel="${r}"]`);
+      return a ? [a.getAttribute('href'), a.querySelector('.link-title')!.text.trim()] : null;
+    };
+    return { prev: link('prev'), next: link('next') };
+  };
+
+  it('the guide index leads to the first applicable step', () => {
+    expect(pagination(GUIDE).next).toEqual(['/kit/step-01-unpack/', 'Unpack the kit']);
+  });
+
+  it('steps lead to their neighbours; the first back to the guide index', () => {
+    expect(pagination(STEP1)).toEqual({ prev: ['/kit/', 'Kit guide'], next: ['/kit/step-02-probe/', 'Fit the temperature probe'] });
+    expect(pagination(STEP3)).toEqual({ prev: ['/kit/step-02-probe/', 'Fit the temperature probe'], next: ['/kit/step-04-unclosed/', 'A body with an unclosed block'] });
+  });
+
+  it('the last step leads to the sidebar entry after the guide (its title as label)', () => {
+    expect(pagination(STEP4)).toEqual({ prev: ['/kit/step-03-finish/', 'Finish the build'], next: ['/protocol/', 'Kit protocol'] });
+  });
+
+  it('the sidebar keeps its guide links', () => {
+    expect(page(STEP1).querySelector('.docsi-sidebar .docsi-guide-title')!.getAttribute('href')).toBe('/kit/');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Pure view helpers
 
 describe('interactive view helpers', () => {
@@ -380,13 +518,80 @@ describe('interactive view helpers', () => {
   it('checkRefs and supplierLabels', () => {
     expect(checkRefs(model.steps.get('step-04-unclosed')!)).toBeUndefined();
     expect(checkRefs(model.steps.get('step-02-probe')!)).toEqual([{ id: 'reads' }]);
-    expect(supplierLabels(model)).toEqual({ 'shop-a': 'Shop A kit', 'shop-b': 'Shop B', diy: 'Sourced myself' });
+    expect(supplierLabels(model)).toEqual({ 'shop-a': 'Shop A kit', 'shop-b': 'Shop B', diy: 'Sourced myself from the BoM' });
   });
 
   it('plainMailto', () => {
     expect(plainMailto({ name: 'X' })).toBeUndefined();
     expect(plainMailto({ name: 'X', email: 'x@y.invalid' })).toBe('mailto:x@y.invalid');
     expect(plainMailto({ name: 'X', email: 'x@y.invalid', subject: 'Hi there' }, 'Step')).toBe('mailto:x@y.invalid?subject=Hi%20there%3A%20Step');
+  });
+
+  it('siteHref puts root-relative links under the site base', () => {
+    expect(siteHref('/MEP/', '/')).toBe('/MEP/');
+    expect(siteHref('/MEP/', '/docs/')).toBe('/docs/MEP/');
+    expect(siteHref('https://x.example/a', '/docs/')).toBe('https://x.example/a');
+    expect(siteHref('//cdn.example/a', '/docs/')).toBe('//cdn.example/a');
+    expect(siteHref('bom.html', '/docs/')).toBe('bom.html');
+  });
+
+  it('guideNext is the first step applying to the default profile', () => {
+    const steps = stepsForGuide(model, 'kit');
+    const guide = model.config.guides[0]!;
+    expect(guideNext(guide, steps, model.config.profile)).toEqual({ link: '/kit/step-01-unpack/', label: 'Unpack the kit' });
+    expect(guideNext(guide, steps.slice(1), model.config.profile, '/d/')).toEqual({ link: '/d/kit/step-03-finish/', label: 'Finish the build' });
+    expect(guideNext(guide, [], model.config.profile)).toBeUndefined();
+  });
+
+  it('stepPagination: neighbours, the guide index first, the sidebar target last', () => {
+    const steps = [
+      { id: 'a', title: 'A' },
+      { id: 'b', title: 'B' },
+    ];
+    const guide = { base: '/g', title: 'Guide' };
+    expect(stepPagination(guide, steps, 'a')).toEqual({ prev: { link: '/g/', label: 'Guide' }, next: { link: '/g/b/', label: 'B' } });
+    expect(stepPagination(guide, steps, 'b', '/', { link: '/g/protocol/', label: 'Protocol' })).toEqual({
+      prev: { link: '/g/a/', label: 'A' },
+      next: { link: '/g/protocol/', label: 'Protocol' },
+    });
+    expect(stepPagination(guide, steps, 'b').next).toBe(false);
+  });
+
+  it('sidebarEntryAfter finds the entry after the guide\'s own, through groups', () => {
+    const sidebar = [
+      { label: 'Aseptic', items: [{ label: 'Assembly', link: '/AEP/' }, { slug: 'aep/protocol' }, { label: 'BoM', link: 'https://x.example/bom' }] },
+      { label: 'Mixed', items: [{ label: 'Assembly', link: '/MEP' }, { label: 'Protocol', slug: 'mep/protocol' }] },
+      { label: 'Budget', items: [{ label: 'Assembly', link: '/BAEP/' }] },
+      { label: 'After', items: ['after/page'] },
+      { label: 'Auto', link: '/auto/' },
+      { label: 'Generated', autogenerate: { directory: 'x' } },
+    ];
+    expect(sidebarEntryAfter(sidebar, '/AEP/')).toEqual({ slug: 'aep/protocol' });
+    expect(sidebarEntryAfter(sidebar, '/MEP/')).toEqual({ slug: 'mep/protocol', label: 'Protocol' });
+    expect(sidebarEntryAfter(sidebar, '/BAEP/')).toEqual({ slug: 'after/page' });
+    expect(sidebarEntryAfter(sidebar, '/aep/protocol/')).toBeUndefined();
+    expect(sidebarEntryAfter(sidebar, '/auto/')).toBeUndefined();
+    expect(sidebarEntryAfter(sidebar, '/none/')).toBeUndefined();
+    expect(sidebarEntryAfter(undefined, '/AEP/')).toBeUndefined();
+    expect(sidebarEntryAfter([{ label: 'A', link: '/a/' }, { label: 'B', link: '/b/#x' }], '/a')).toEqual({ link: '/b/#x', label: 'B' });
+  });
+
+  it('sidebarTargetHref and slugLabel', () => {
+    expect(sidebarTargetHref({ slug: 'aep/protocol' })).toBe('/aep/protocol/');
+    expect(sidebarTargetHref({ slug: 'aep/protocol' }, '/docs/')).toBe('/docs/aep/protocol/');
+    expect(sidebarTargetHref({ slug: 'index' })).toBe('/');
+    expect(sidebarTargetHref({ link: '/b/#x', label: 'B' }, '/docs/')).toBe('/docs/b/#x');
+    expect(sidebarTargetHref({ link: 'https://x.example/', label: 'X' }, '/docs/')).toBe('https://x.example/');
+    expect(slugLabel('aep/protocol')).toBe('Protocol');
+    expect(slugLabel('getting-started')).toBe('Getting started');
+  });
+
+  it('olderVideoSentence names the old and current versions', () => {
+    const pin = (component: string, shot_with: string, current: string) => ({ component, shot_with, current, changelog: [] });
+    expect(olderVideoSentence({ stale_heroes: [pin('widget', '1.0.0', '1.1.0')] }, model)).toBe('This video shows Widget v1.0.0 where your kit has Widget v1.1.0.');
+    expect(olderVideoSentence({ stale_heroes: [pin('widget', '1.0.0', '1.1.0'), pin('probe', '0.9.0', '1.0.0')] }, model)).toBe(
+      'This video shows Widget v1.0.0 and Temperature probe v0.9.0 where your kit has Widget v1.1.0 and Temperature probe v1.0.0.',
+    );
   });
 
   it('the fixture has a body problem that check reports and the build tolerates', () => {

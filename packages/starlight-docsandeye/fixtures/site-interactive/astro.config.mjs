@@ -11,6 +11,8 @@ export default defineConfig({
 		starlight({
 			title: 'Docs&I interactive fixture',
 			plugins: [docsandeye({ projectRoot: '../project-interactive' })],
+			// The kit guide's entry is followed by its protocol page: the last step's "next".
+			sidebar: [{ label: 'Kit', items: [{ label: 'Assembly', link: '/kit/' }, { slug: 'protocol' }] }],
 		}),
 	],
 });

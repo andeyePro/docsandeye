@@ -2,6 +2,15 @@ theme: starlight
 guides:
   - {id: kit, title: "Kit guide", base: /kit}
 profile:
+  - id: build
+    type: choice
+    label: "Which kit are you building?"
+    options:
+      - {value: full, label: "Full kit (temperature upgrade included)", implies: {temp-kit: true}}
+      - {value: basic, label: "Basic kit", implies: {temp-kit: false}}
+      - {value: custom, label: "Custom build: I will say what I have"}
+      - {value: other, label: "Another kit: use the other guide", href: /other/}
+    default: custom
   - id: units
     type: number
     label: "How many units did you receive?"
@@ -18,7 +27,7 @@ profile:
     options:
       - {value: shop-a, label: "Shop A kit"}
       - {value: shop-b, label: "Shop B"}
-      - {value: diy, label: "Sourced myself"}
+      - {value: diy, label: "Sourced myself from [the BoM](https://bom.example/list)"}
     default: shop-a
 receipt:
   multiply_by: units
