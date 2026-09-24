@@ -120,6 +120,9 @@ def load_catalogue(shoot: Path) -> list[dict]:
             "width": int(video["width"]) if video else None,
             "height": int(video["height"]) if video else None,
             "fps": _rate(video.get("avg_frame_rate") or video.get("r_frame_rate")) if video else None,
+            # FCPXML colour tag from the stream's own primaries and transfer: an HDR phone clip left
+            # untagged is read as Rec.709 and shown blown out.
+            "color_space": color_space_of(video) if video else None,
             "audio_rate": int(audio.get("sample_rate") or 48000) if audio else None,
             "audio_channels": int(audio.get("channels") or 2) if audio else None,
             "words": load_words(shoot / "transcripts" / f"{entry['id']}.json"),
@@ -127,6 +130,22 @@ def load_catalogue(shoot: Path) -> list[dict]:
             "pending": audio is not None and not (shoot / "transcripts" / f"{entry['id']}.json").exists(),
         })
     return files
+
+
+def color_space_of(stream: dict) -> str | None:
+    """FCPXML `colorSpace` (primaries-transfer-matrix) for a video stream, or None when untagged."""
+    prim, trc = stream.get("color_primaries"), stream.get("color_transfer")
+    if prim == "bt709" or (prim is None and trc == "bt709"):
+        return "1-1-1"
+    if prim == "bt2020":
+        if trc == "arib-std-b67":
+            return "9-18-9"   # Rec. 2020 HLG (also what Dolby Vision 8.4 phone footage is)
+        if trc == "smpte2084":
+            return "9-16-9"   # Rec. 2020 PQ
+        return "9-1-9"
+    if prim in ("bt470bg", "smpte170m"):
+        return "5-1-6" if prim == "bt470bg" else "6-1-6"
+    return None
 
 
 def load_words(path: Path) -> list[tuple[float, str]]:
@@ -396,7 +415,9 @@ def write_session_fcpxml(shoot: Path, s: dict, files: dict, sections: list[dict]
             w, h, frame = key
             name = _format_name(w, h, frame)
             attrs = f' name="{name}"' if name else ""
-            res.append(f'<format id="{fid}"{attrs} frameDuration="{_t(float(frame), frame)}" width="{w or 1920}" height="{h or 1080}"/>')
+            # Formats describe the timeline (a Rec. 709 SDR deliverable); the clips keep their own
+            # tags on the assets and Final Cut tone-maps HDR angles down into it.
+            res.append(f'<format id="{fid}"{attrs} frameDuration="{_t(float(frame), frame)}" width="{w or 1920}" height="{h or 1080}" colorSpace="1-1-1"/>')
             formats[key] = fid
         return formats[key]
 
@@ -411,9 +432,10 @@ def write_session_fcpxml(shoot: Path, s: dict, files: dict, sections: list[dict]
         audio = (f' hasAudio="1" audioSources="1" audioChannels="{f["audio_channels"]}" audioRate="{f["audio_rate"]}"'
                  if f["audio_rate"] else "")
         src = "file://" + quote(f["path"])
+        color = f' colorSpace="{f["color_space"]}"' if has_video and f.get("color_space") else ""
         res.append(
             f'<asset id="{aid}" name={quoteattr(f["name"])} start="0s" duration="{_t(f["duration"], frame)}"'
-            f' hasVideo="{1 if has_video else 0}"{fmt}{audio}>'
+            f' hasVideo="{1 if has_video else 0}"{fmt}{color}{audio}>'
             f'<media-rep kind="original-media" src={quoteattr(src)}/></asset>')
 
     by_session = defaultdict(list)
@@ -481,8 +503,12 @@ def write_session_fcpxml(shoot: Path, s: dict, files: dict, sections: list[dict]
             f'<mc-source angleID="angle-1" srcEnable="all"/>{"".join(marks)}</mc-clip></spine></sequence></project>')
 
     event = f"{shoot.name} session {s['number']:02d}"
+    # A library in wide-gamut HDR processing shows HDR clips as shot and tone-maps them into a
+    # Rec. 709 project; in standard processing the same clips are clipped and look overexposed.
+    hdr = any((files[m["id"]].get("color_space") or "1-1-1") != "1-1-1" for m in s["members"])
+    library = '<library colorProcessing="wide-gamut-hdr">' if hdr else "<library>"
     xml = ('<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE fcpxml>\n<fcpxml version="1.11">\n<resources>\n'
-           + "\n".join(res) + "\n</resources>\n<library>\n<event name=" + quoteattr(event) + ">\n"
+           + "\n".join(res) + "\n</resources>\n" + library + "\n<event name=" + quoteattr(event) + ">\n"
            + "\n".join(body) + "\n</event>\n</library>\n</fcpxml>\n")
     out = shoot / f"session-{s['number']:02d}.fcpxml"
     out.write_text(xml)
