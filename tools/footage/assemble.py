@@ -236,20 +236,22 @@ def build_sessions(files: list[dict]) -> list[dict]:
 
 
 def session_transcript(session: dict, by_id: dict) -> list[tuple[float, str]]:
-    """Sentences on the session clock, taken from the member with the most words per stretch."""
-    best = max((m for m in session["members"]), key=lambda m: len(by_id[m["id"]]["words"]), default=None)
-    if not best or not by_id[best["id"]]["words"]:
-        return []
-    words = [(t + best["start"], w) for t, w in by_id[best["id"]]["words"]]
-    # Fill spans the main member does not cover from the other members.
-    covered_to = best["start"] + by_id[best["id"]]["duration"]
-    for m in session["members"]:
-        if m is best:
+    """Sentences on the session clock. Each stretch of time is taken from ONE member (the one with
+    the most words overall, then the next, filling only what is not yet covered), so two cameras
+    that both heard a sentence do not print it twice."""
+    ranked = sorted(session["members"], key=lambda m: -len(by_id[m["id"]]["words"]))
+    covered: list[tuple[float, float]] = []
+    words: list[tuple[float, str]] = []
+    for m in ranked:
+        f = by_id[m["id"]]
+        if not f["words"]:
             continue
-        for t, w in by_id[m["id"]]["words"]:
+        span = (m["start"], m["start"] + f["duration"])
+        for t, w in f["words"]:
             tt = t + m["start"]
-            if tt < best["start"] or tt > covered_to:
+            if not any(a <= tt <= b for a, b in covered):
                 words.append((tt, w))
+        covered.append(span)
     words.sort(key=lambda x: x[0])  # stable: words sharing a timestamp keep their spoken order
     lines, cur, t0, last = [], [], None, None
     for t, w in words:
