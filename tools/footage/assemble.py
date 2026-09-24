@@ -48,7 +48,10 @@ from xml.sax.saxutils import escape, quoteattr
 
 NGRAM = 4
 BIN_S = 0.1
-MIN_VOTES = 6
+MIN_VOTES = 10
+PEAK_SHARE = 0.25      # the winning offset must hold this share of all votes, or the match is noise
+MAX_REPEATS = 2        # a phrase said more often than this in a file is a whisper loop, not evidence
+CLOCK_TOLERANCE_S = 45 * 60  # two files' recorded times must agree with the speech offset to this
 
 
 # --- catalogue -------------------------------------------------------------------------------
@@ -143,24 +146,33 @@ def load_words(path: Path) -> list[tuple[float, str]]:
 
 # --- sync ------------------------------------------------------------------------------------
 
-def pair_offset(a: list[tuple[float, str]], b: list[tuple[float, str]]) -> tuple[float, int] | None:
-    """Offset d such that time_in_a = time_in_b + d, with its vote count; None when unconvincing."""
+def grams_of(words: list[tuple[float, str]]) -> dict[tuple[str, ...], list[float]]:
     index: dict[tuple[str, ...], list[float]] = defaultdict(list)
-    for i in range(len(a) - NGRAM + 1):
-        index[tuple(w for _, w in a[i:i + NGRAM])].append(a[i][0])
+    for i in range(len(words) - NGRAM + 1):
+        index[tuple(w for _, w in words[i:i + NGRAM])].append(words[i][0])
+    return index
+
+
+def pair_offset(a: list[tuple[float, str]], b: list[tuple[float, str]]) -> tuple[float, int] | None:
+    """Offset d such that time_in_a = time_in_b + d, with its vote count; None when unconvincing.
+
+    Whisper, left running over a quiet stretch, emits the same phrase for minutes on end, and the
+    same phrase turns up in other files' quiet stretches too; those grams are dropped on both sides,
+    and the winning offset has to be a clear peak rather than the best of a smear."""
+    ia, ib = grams_of(a), grams_of(b)
     votes: Counter[int] = Counter()
-    for i in range(len(b) - NGRAM + 1):
-        gram = tuple(w for _, w in b[i:i + NGRAM])
-        hits = index.get(gram)
-        if not hits or len(hits) > 3:  # common phrases vote for everything; skip them
+    for gram, tbs in ib.items():
+        tas = ia.get(gram)
+        if not tas or len(tas) > MAX_REPEATS or len(tbs) > MAX_REPEATS:
             continue
-        for ta in hits:
-            votes[round((ta - b[i][0]) / BIN_S)] += 1
+        for ta in tas:
+            for tb in tbs:
+                votes[round((ta - tb) / BIN_S)] += 1
     if not votes:
         return None
     best, n = votes.most_common(1)[0]
     n += votes.get(best - 1, 0) + votes.get(best + 1, 0)
-    if n < MIN_VOTES:
+    if n < MIN_VOTES or n < PEAK_SHARE * sum(votes.values()):
         return None
     # Weighted mean over the winning bin and its neighbours.
     num = sum(k * votes.get(k, 0) for k in (best - 1, best, best + 1))
@@ -176,6 +188,12 @@ def build_sessions(files: list[dict]) -> list[dict]:
             r = pair_offset(fa["words"], fb["words"])
             if r:
                 d, n = r  # t_a = t_b + d  =>  start_b = start_a + d  (on a shared clock)
+                # The cameras' clocks are rough (a Sony can be half an hour out) but not hours out:
+                # a speech match that contradicts them is two quiet stretches sounding alike.
+                if fa["created"] and fb["created"]:
+                    by_clock = (fb["created"] - fa["created"]).total_seconds()
+                    if abs(d - by_clock) > CLOCK_TOLERANCE_S:
+                        continue
                 edges[fa["id"]].append((fb["id"], d, n))
                 edges[fb["id"]].append((fa["id"], -d, n))
     by_id = {f["id"]: f for f in files}
