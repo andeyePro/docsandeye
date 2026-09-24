@@ -70,6 +70,12 @@ docsi-step {
   overflow: hidden;
 }
 
+/* Body images (screenshots pasted into a step) never widen the page. */
+.docsi-body img {
+  max-width: 100%;
+  height: auto;
+}
+
 .docsi-media img {
   display: block;
   width: 100%;
@@ -733,10 +739,13 @@ docsi-youtube {
 }
 
 /* ---- profile options ------------------------------------------------------ */
+/* One option per line: a choice list reads top to bottom, and a link option
+   ("use the other guide") must not sit in the middle of a row of radios. */
 .docsi-profile-option {
-  display: inline-flex;
+  display: flex;
   gap: 0.35rem;
   align-items: baseline;
+  flex-basis: 100%;
 }
 
 .docsi-profile-link {
