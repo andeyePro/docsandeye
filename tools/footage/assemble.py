@@ -29,6 +29,8 @@ cutsheet
 sections.json is authored (by a person or by Claude reading session-NN.txt):
     [{"session": 1, "start": 12.0, "end": 245.5, "section": "Electrolysis", "step": "step-05-...",
       "kind": "instruction" | "troubleshooting" | "other", "take": 2, "keep": true, "note": "..."}]
+    Instead of "session", an entry may name a "file" (catalogue id) with start/end on that file's own
+    clock; it is placed in that file's session. Prefer this: it survives a re-sync.
 """
 
 from __future__ import annotations
@@ -97,6 +99,9 @@ def load_catalogue(shoot: Path) -> list[dict]:
     files = []
     for entry in json.loads((shoot / "catalogue.json").read_text()):
         probe = entry.get("probe") or {}
+        if not probe.get("streams"):
+            print(f"unreadable (no probe data, fix permissions and re-run prep): {entry['path']}", file=sys.stderr)
+            continue
         tags = _tags(probe)
         streams = probe.get("streams") or []
         video = next((s for s in streams if s.get("codec_type") == "video" and not (s.get("disposition") or {}).get("attached_pic")), None)
@@ -245,7 +250,7 @@ def session_transcript(session: dict, by_id: dict) -> list[tuple[float, str]]:
             tt = t + m["start"]
             if tt < best["start"] or tt > covered_to:
                 words.append((tt, w))
-    words.sort()
+    words.sort(key=lambda x: x[0])  # stable: words sharing a timestamp keep their spoken order
     lines, cur, t0, last = [], [], None, None
     for t, w in words:
         if cur and (t - last > 1.5 or len(cur) >= 30):
@@ -320,12 +325,29 @@ def _format_name(w: int | None, h: int | None, frame: Fraction) -> str:
     return f"FFVideoFormat{h or 1080}p{rate_s}" if (w, h) in ((1920, 1080), (3840, 2160)) and h else ""
 
 
+def resolve_sections(sections: list[dict], sessions: list[dict]) -> list[dict]:
+    """Convert entries authored on a file's clock (`file`, times relative to that file's start) to the
+    session clock, filling in `session`; entries already on the session clock pass through."""
+    where = {m["id"]: (s["number"], m["start"]) for s in sessions for m in s["members"]}
+    out = []
+    for sec in sections:
+        if "file" in sec:
+            if sec["file"] not in where:
+                print(f"sections: file {sec['file']} is in no session; entry skipped", file=sys.stderr)
+                continue
+            number, start = where[sec["file"]]
+            sec = {**sec, "session": number, "start": float(sec["start"]) + start, "end": float(sec["end"]) + start}
+        out.append(sec)
+    return out
+
+
 def cmd_fcpxml(shoot: Path, sections: list[dict], only: int | None = None) -> None:
     """One `session-NN.fcpxml` per session (or just `only`), each importing as its own event, so an
     editor can start on session 1 while later sessions are still being prepped and copy grades
     between them inside one library."""
     files = {f["id"]: f for f in load_catalogue(shoot)}
     sessions = load_sessions(shoot)
+    sections = resolve_sections(sections, sessions)
     for s in sessions:
         if only is None or s["number"] == only:
             write_session_fcpxml(shoot, s, files, sections)
@@ -447,6 +469,7 @@ def write_session_fcpxml(shoot: Path, s: dict, files: dict, sections: list[dict]
 
 def cmd_cutsheet(shoot: Path, sections: list[dict]) -> None:
     sessions = {s["number"]: s for s in load_sessions(shoot)}
+    sections = resolve_sections(sections, list(sessions.values()))
     lines = [f"# Cut sheet — {shoot.name}", "",
              "Times are on each session's multicam clock (the timeline of that session's project in the FCPXML).", ""]
     order = []
