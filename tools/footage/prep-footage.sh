@@ -98,11 +98,27 @@ for i, line in enumerate(pathlib.Path(lst).read_text().splitlines(), 1):
 PY
 log "catalogue.json written"
 
+# order.txt: "id<TAB>path", earliest recording first (creation time from the probe tags, then
+# path), so the first session's transcripts are complete, and its edit can start, while later
+# sessions are still being transcribed.
+python3 - "$OUT" <<'PY'
+import json, pathlib, sys
+out = pathlib.Path(sys.argv[1])
+def created(e):
+    p = e.get("probe") or {}
+    tags = dict((p.get("format") or {}).get("tags") or {})
+    for s in p.get("streams") or []:
+        for k, v in (s.get("tags") or {}).items():
+            tags.setdefault(k, v)
+    t = {k.lower(): v for k, v in tags.items()}
+    return str(t.get("com.apple.quicktime.creationdate") or t.get("creation_time") or "9999")
+entries = json.loads((out / "catalogue.json").read_text())
+entries.sort(key=lambda e: (created(e), e["path"]))
+(out / "order.txt").write_text("".join(f"{e['id']}\t{e['path']}\n" for e in entries))
+PY
+
 # --- audio + transcripts ---------------------------------------------------------------------
-n=0
-while IFS= read -r f; do
-  n=$((n + 1))
-  id="$(printf '%03d' "$n")"
+while IFS=$'\t' read -r id f; do
   if ! grep -q '"codec_type": "audio"' "$OUT/probe/$id.json" 2>/dev/null; then
     log "$id no audio (screen capture?): $(basename "$f")"
     continue
@@ -117,6 +133,6 @@ while IFS= read -r f; do
     whisper-cli -m "$MODEL" -l en -ml 1 -sow -oj -of "$OUT/transcripts/$id" -f "$OUT/audio/$id.wav" >> "$LOG" 2>&1 \
       || log "$id whisper failed"
   fi
-done < "$LIST"
+done < "$OUT/order.txt"
 
 log "done: $OUT"

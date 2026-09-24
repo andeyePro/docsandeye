@@ -115,6 +115,8 @@ def load_catalogue(shoot: Path) -> list[dict]:
             "audio_rate": int(audio.get("sample_rate") or 48000) if audio else None,
             "audio_channels": int(audio.get("channels") or 2) if audio else None,
             "words": load_words(shoot / "transcripts" / f"{entry['id']}.json"),
+            # Has speech to sync by but no transcript yet: prep-footage.sh has not reached it.
+            "pending": audio is not None and not (shoot / "transcripts" / f"{entry['id']}.json").exists(),
         })
     return files
 
@@ -266,7 +268,10 @@ def tc(seconds: float) -> str:
 def cmd_sync(shoot: Path) -> None:
     files = load_catalogue(shoot)
     by_id = {f["id"]: f for f in files}
-    sessions = build_sessions(files)
+    pending = [f for f in files if f["pending"]]
+    # Files still to be transcribed are left out rather than placed by guesswork; re-run sync
+    # when prep-footage.sh has finished and they join their sessions.
+    sessions = build_sessions([f for f in files if not f["pending"]])
     out = []
     for s in sessions:
         out.append({
@@ -283,8 +288,9 @@ def cmd_sync(shoot: Path) -> None:
         lines.append("")
         lines += [f"[{tc(t)}] {text}" for t, text in session_transcript(s, by_id)]
         (shoot / f"session-{s['number']:02d}.txt").write_text("\n".join(lines) + "\n")
-    (shoot / "sessions.json").write_text(json.dumps(out, indent=1))
-    print(f"{len(files)} files, {len(sessions)} sessions -> {shoot / 'sessions.json'}")
+    (shoot / "sessions.json").write_text(json.dumps(
+        {"sessions": out, "pending": [{"id": f["id"], "path": f["path"], "camera": f["camera"]} for f in pending]}, indent=1))
+    print(f"{len(files)} files, {len(sessions)} sessions, {len(pending)} not yet transcribed -> {shoot / 'sessions.json'}")
     for s in out:
         cams = ", ".join(sorted({m["camera"] for m in s["members"]}))
         print(f"  session {s['number']:02d}: {tc(s['duration'])}, {len(s['members'])} files ({cams})")
@@ -314,9 +320,23 @@ def _format_name(w: int | None, h: int | None, frame: Fraction) -> str:
     return f"FFVideoFormat{h or 1080}p{rate_s}" if (w, h) in ((1920, 1080), (3840, 2160)) and h else ""
 
 
-def cmd_fcpxml(shoot: Path, sections: list[dict]) -> None:
+def cmd_fcpxml(shoot: Path, sections: list[dict], only: int | None = None) -> None:
+    """One `session-NN.fcpxml` per session (or just `only`), each importing as its own event, so an
+    editor can start on session 1 while later sessions are still being prepped and copy grades
+    between them inside one library."""
     files = {f["id"]: f for f in load_catalogue(shoot)}
-    sessions = json.loads((shoot / "sessions.json").read_text())
+    sessions = load_sessions(shoot)
+    for s in sessions:
+        if only is None or s["number"] == only:
+            write_session_fcpxml(shoot, s, files, sections)
+
+
+def load_sessions(shoot: Path) -> list[dict]:
+    data = json.loads((shoot / "sessions.json").read_text())
+    return data["sessions"] if isinstance(data, dict) else data
+
+
+def write_session_fcpxml(shoot: Path, s: dict, files: dict, sections: list[dict]) -> None:
     res, formats, body = [], {}, []
     rid = 0
 
@@ -337,7 +357,8 @@ def cmd_fcpxml(shoot: Path, sections: list[dict]) -> None:
         return formats[key]
 
     asset_ids = {}
-    for fid, f in files.items():
+    for fid in [m["id"] for m in s["members"]]:
+        f = files[fid]
         aid = next_id()
         asset_ids[fid] = aid
         frame = _frame(f["fps"])
@@ -355,10 +376,10 @@ def cmd_fcpxml(shoot: Path, sections: list[dict]) -> None:
     for sec in sections:
         by_session[int(sec["session"])].append(sec)
 
-    for s in sessions:
+    if True:
         members = [m for m in s["members"] if files[m["id"]]["width"] is not None]
         if not members:
-            continue
+            return
         ref = files[members[0]["id"]]
         frame = _frame(ref["fps"])
         mfmt = fmt_for(ref)
@@ -415,16 +436,17 @@ def cmd_fcpxml(shoot: Path, sections: list[dict]) -> None:
             f'<mc-clip ref="{mid}" name={quoteattr(name)} offset="0s" start="0s" duration="{_t(s["duration"], frame)}">'
             f'<mc-source angleID="angle-1" srcEnable="all"/>{"".join(marks)}</mc-clip></spine></sequence></project>')
 
+    event = f"{shoot.name} session {s['number']:02d}"
     xml = ('<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE fcpxml>\n<fcpxml version="1.11">\n<resources>\n'
-           + "\n".join(res) + "\n</resources>\n<library>\n<event name=" + quoteattr(f"{shoot.name} (prepped)") + ">\n"
+           + "\n".join(res) + "\n</resources>\n<library>\n<event name=" + quoteattr(event) + ">\n"
            + "\n".join(body) + "\n</event>\n</library>\n</fcpxml>\n")
-    out = shoot / f"{shoot.name}.fcpxml"
+    out = shoot / f"session-{s['number']:02d}.fcpxml"
     out.write_text(xml)
     print(f"wrote {out}")
 
 
 def cmd_cutsheet(shoot: Path, sections: list[dict]) -> None:
-    sessions = {s["number"]: s for s in json.loads((shoot / "sessions.json").read_text())}
+    sessions = {s["number"]: s for s in load_sessions(shoot)}
     lines = [f"# Cut sheet — {shoot.name}", "",
              "Times are on each session's multicam clock (the timeline of that session's project in the FCPXML).", ""]
     order = []
@@ -453,6 +475,7 @@ def main(argv: list[str]) -> int:
     ap.add_argument("command", choices=["sync", "fcpxml", "cutsheet"])
     ap.add_argument("shoot", type=Path)
     ap.add_argument("--sections", type=Path)
+    ap.add_argument("--session", type=int, help="fcpxml: write only this session's file")
     a = ap.parse_args(argv)
     if not (a.shoot / "catalogue.json").exists():
         print(f"{a.shoot}: no catalogue.json (run prep-footage.sh first)", file=sys.stderr)
@@ -465,7 +488,7 @@ def main(argv: list[str]) -> int:
         elif a.command == "cutsheet":
             print(f"{path}: not found", file=sys.stderr)
             return 66
-    {"sync": lambda: cmd_sync(a.shoot), "fcpxml": lambda: cmd_fcpxml(a.shoot, sections),
+    {"sync": lambda: cmd_sync(a.shoot), "fcpxml": lambda: cmd_fcpxml(a.shoot, sections, a.session),
      "cutsheet": lambda: cmd_cutsheet(a.shoot, sections)}[a.command]()
     return 0
 

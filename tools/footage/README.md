@@ -36,13 +36,19 @@ was filmed more than once (by default the last). Then:
     python3 tools/footage/assemble.py fcpxml .footage/SHOOT
     python3 tools/footage/assemble.py cutsheet .footage/SHOOT
 
-`SHOOT.fcpxml` imports into Final Cut Pro 11 or later (File > Import > XML): one multicam clip per
-session with an angle per camera, and one project per session whose timeline carries a chapter marker
-at each kept section, a to-do marker at each troubleshooting span, and keyword ranges (keep, cut,
-alternate take) you can filter in the browser. The angle with the most footage plays by default;
-switch angles, audio and crops in the angle viewer as usual. If an angle is a few frames out, select
-the multicam clip and use Final Cut's own audio sync on that angle. `cut-sheet.md` is the same
-decisions as a list.
+One `session-NN.fcpxml` per recording session imports into Final Cut Pro 11 or later (File > Import >
+XML): each becomes its own event in the library, holding one multicam clip with an angle per camera
+and one project whose timeline carries a chapter marker at each kept section, a to-do marker at each
+troubleshooting span, and keyword ranges (keep, cut, alternate take) you can filter in the browser.
+The angle with the most footage plays by default; switch angles, audio and crops in the angle viewer
+as usual. If an angle is a few frames out, select the multicam clip and use Final Cut's own audio
+sync on that angle. `cut-sheet.md` is the same decisions as a list. Because every session lands in
+the same library, a grade set on one can be pasted onto the others (Edit > Paste Attributes).
+
+Sessions are delivered as they complete: prep-footage.sh transcribes the earliest recordings first,
+`sync` leaves out files it has not reached yet (listed under `pending` in `sessions.json`), and
+`fcpxml --session 1` writes that session's file alone. Re-run `sync` and `fcpxml` when prep has
+finished and the remaining files join their sessions.
 
 If Final Cut does not open the file, the fallback is its own sync: select one session's clips in the
 browser, choose File > New Multicam Clip, tick Use audio for synchronization, and use `cut-sheet.md`
