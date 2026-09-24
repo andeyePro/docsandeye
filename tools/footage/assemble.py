@@ -360,6 +360,13 @@ def _t(seconds: float, frame: Fraction) -> str:
     return f"{v.numerator}/{v.denominator}s" if v.denominator != 1 else f"{v.numerator}s"
 
 
+def _color_name(cs: str) -> str:
+    """FCPXML wants `<primaries>-<transfer>-<matrix> (<name>)`, as Final Cut itself writes it."""
+    names = {"1-1-1": "Rec. 709", "9-18-9": "Rec. 2020 HLG", "9-16-9": "Rec. 2020 PQ", "9-1-9": "Rec. 2020",
+             "5-1-6": "Rec. 601 (PAL)", "6-1-6": "Rec. 601 (NTSC)"}
+    return f"{cs} ({names[cs]})" if cs in names else cs
+
+
 def _format_name(w: int | None, h: int | None, frame: Fraction) -> str:
     rate = 1 / frame
     rate_s = {Fraction(24000, 1001): "2398", Fraction(30000, 1001): "2997", Fraction(60000, 1001): "5994"}.get(rate, str(round(float(rate))))
@@ -408,16 +415,18 @@ def write_session_fcpxml(shoot: Path, s: dict, files: dict, sections: list[dict]
         rid += 1
         return f"r{rid}"
 
-    def fmt_for(f: dict) -> str:
-        key = (f["width"], f["height"], _frame(f["fps"]))
+    def fmt_for(f: dict, color: str | None = None) -> str:
+        """A format per (size, rate, colour space). In FCPXML the colour space lives on the format, not
+        the asset, so an HLG phone clip and a Rec. 709 camera at the same size get two formats; the
+        timeline uses the Rec. 709 one and Final Cut tone-maps the HDR angles into it."""
+        color = color or f.get("color_space") or "1-1-1"
+        key = (f["width"], f["height"], _frame(f["fps"]), color)
         if key not in formats:
             fid = next_id()
-            w, h, frame = key
+            w, h, frame, cs = key
             name = _format_name(w, h, frame)
             attrs = f' name="{name}"' if name else ""
-            # Formats describe the timeline (a Rec. 709 SDR deliverable); the clips keep their own
-            # tags on the assets and Final Cut tone-maps HDR angles down into it.
-            res.append(f'<format id="{fid}"{attrs} frameDuration="{_t(float(frame), frame)}" width="{w or 1920}" height="{h or 1080}" colorSpace="1-1-1"/>')
+            res.append(f'<format id="{fid}"{attrs} frameDuration="{_t(float(frame), frame)}" width="{w or 1920}" height="{h or 1080}" colorSpace="{_color_name(cs)}"/>')
             formats[key] = fid
         return formats[key]
 
@@ -432,10 +441,9 @@ def write_session_fcpxml(shoot: Path, s: dict, files: dict, sections: list[dict]
         audio = (f' hasAudio="1" audioSources="1" audioChannels="{f["audio_channels"]}" audioRate="{f["audio_rate"]}"'
                  if f["audio_rate"] else "")
         src = "file://" + quote(f["path"])
-        color = f' colorSpace="{f["color_space"]}"' if has_video and f.get("color_space") else ""
         res.append(
             f'<asset id="{aid}" name={quoteattr(f["name"])} start="0s" duration="{_t(f["duration"], frame)}"'
-            f' hasVideo="{1 if has_video else 0}"{fmt}{color}{audio}>'
+            f' hasVideo="{1 if has_video else 0}"{fmt}{audio}>'
             f'<media-rep kind="original-media" src={quoteattr(src)}/></asset>')
 
     by_session = defaultdict(list)
@@ -448,7 +456,7 @@ def write_session_fcpxml(shoot: Path, s: dict, files: dict, sections: list[dict]
             return
         ref = files[members[0]["id"]]
         frame = _frame(ref["fps"])
-        mfmt = fmt_for(ref)
+        mfmt = fmt_for(ref, "1-1-1")  # the multicam and its project are a Rec. 709 deliverable
         mid = next_id()
         angles = defaultdict(list)
         for m in members:
@@ -506,7 +514,7 @@ def write_session_fcpxml(shoot: Path, s: dict, files: dict, sections: list[dict]
     # A library in wide-gamut HDR processing shows HDR clips as shot and tone-maps them into a
     # Rec. 709 project; in standard processing the same clips are clipped and look overexposed.
     hdr = any((files[m["id"]].get("color_space") or "1-1-1") != "1-1-1" for m in s["members"])
-    library = '<library colorProcessing="wide-gamut-hdr">' if hdr else "<library>"
+    library = '<library colorProcessing="wide-hdr">' if hdr else "<library>"
     xml = ('<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE fcpxml>\n<fcpxml version="1.11">\n<resources>\n'
            + "\n".join(res) + "\n</resources>\n" + library + "\n<event name=" + quoteattr(event) + ">\n"
            + "\n".join(body) + "\n</event>\n</library>\n</fcpxml>\n")
