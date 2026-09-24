@@ -407,14 +407,16 @@ describe('AC5: custom elements upgrade, not replace', () => {
 // ---------------------------------------------------------------------------
 
 describe('AC7 sidebar badges', () => {
-  it('step-02-cap carries both stale-media and updated badges', () => {
+  it('step-02-cap carries the stale-media badge; the updated badge is for maintainers only', () => {
     const doc = readHtml(DIST, 'AEP/index.html');
     const li = doc.querySelector('li[data-step="step-02-cap"]');
     expect(li).toBeTruthy();
-    const stale = li!.querySelector('.docsi-badge-stale');
-    const updated = li!.querySelector('.docsi-badge-updated');
-    expect(stale?.text.trim()).toBe('stale media');
-    expect(updated?.text.trim()).toBe('updated');
+    expect(li!.querySelector('.docsi-badge-stale')?.text.trim()).toBe('stale media');
+    expect(li!.querySelector('.docsi-badge-updated')).toBeNull();
+    if (maintainerBuildOk) {
+      const mdoc = readHtml(DIST_MAINTAINER, 'AEP/index.html');
+      expect(mdoc.querySelector('li[data-step="step-02-cap"] .docsi-badge-updated')?.text.trim()).toBe('updated');
+    }
   });
 
   it('step-01-raft carries neither badge', () => {
