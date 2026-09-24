@@ -25,9 +25,11 @@ interface Props {
 	mediaManifest?: MediaManifest | null;
 	/** The step title, for a YouTube clip's placeholder. */
 	title?: string;
+	/** Render the `<details>` open (the step's "Older video" section shows what changed up front). */
+	open?: boolean;
 }
 
-const { media, entry, model, hosting, base, mediaManifest = null, title = media.id } = Astro.props;
+const { media, entry, model, hosting, base, mediaManifest = null, title = media.id, open = false } = Astro.props;
 const isVideo = media.type === 'video';
 const summary = staleSummary(media, entry, model);
 const changelog = entry.stale_heroes.flatMap((hero) =>
@@ -40,7 +42,7 @@ const renderManifest = virtual.renderManifest ?? null;
 const diffs = entry.stale_heroes.filter((hero) => oldGeometryFor(oldGeometry, hero.component, hero.shot_with) !== undefined);
 ---
 
-<details class={isVideo ? 'docsi-stale docsi-stale-video' : 'docsi-stale'}>
+<details class={isVideo ? 'docsi-stale docsi-stale-video' : 'docsi-stale'} open={open}>
 	<summary>{summary}</summary>
 	{diffs.map((hero) => <GeometryDiff hero={hero} model={model} oldGeometry={oldGeometry} renderManifest={renderManifest} base={base} />)}
 	{

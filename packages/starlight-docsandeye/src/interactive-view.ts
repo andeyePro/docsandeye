@@ -6,8 +6,17 @@
  * browser.
  */
 import { receiptItems, type Guide, type ProjectModel, type Step } from '@docsandeye/core';
-import { describeWhen, type CheckRef, type Contact, type ProfileItem, type ReceiptItem, type StepRef, type When } from '@docsandeye/core/interactive';
-import { stepHref } from './view.ts';
+import { defaultProfile, describeWhen, matchesWhen, plainLabel, type CheckRef, type Contact, type ProfileItem, type ReceiptItem, type StepRef, type When } from '@docsandeye/core/interactive';
+import { stepHref, type PageLink } from './view.ts';
+
+/**
+ * A config-authored link for the page: a root-relative path (`/MEP/`) gets
+ * the site base (`/docs/MEP/`); absolute and relative URLs are kept as written.
+ */
+export function siteHref(url: string, siteBase = '/'): string {
+  if (!url.startsWith('/') || url.startsWith('//')) return url;
+  return `${siteBase.replace(/\/+$/, '')}${url}`;
+}
 
 /** JSON for a `data-when` attribute (Astro escapes it); undefined when there is no condition. */
 export function whenAttr(when: When | undefined): string | undefined {
@@ -45,12 +54,12 @@ export function guideReceiptItems(model: ProjectModel, guideId: string): Receipt
   return receiptItems(model, guideId);
 }
 
-/** Option label of a choice value of `supplier_from` (for "from <label>" wording); the value itself when unknown. */
+/** Option label (links reduced to text) of a choice value of `supplier_from` (for "from <label>" wording); the value itself when unknown. */
 export function supplierLabels(model: ProjectModel): Record<string, string> {
   const id = model.config.receipt?.supplier_from;
   const item = model.config.profile.find((p) => p.id === id);
   const out: Record<string, string> = {};
-  for (const o of item?.options ?? []) out[o.value] = o.label;
+  for (const o of item?.options ?? []) if (o.href === undefined) out[o.value] = plainLabel(o.label);
   return out;
 }
 
@@ -64,4 +73,11 @@ export function plainMailto(contact: Contact | undefined, subjectSuffix?: string
 /** `per unit` / `per kit` rows of the no-JavaScript receipt table, each ordered by name (as the client does). */
 export function staticReceiptGroups(items: readonly ReceiptItem[]): { perUnit: ReceiptItem[]; perKit: ReceiptItem[] } {
   return { perUnit: items.filter((i) => i.per === 'unit'), perKit: items.filter((i) => i.per === 'kit') };
+}
+
+/** The guide index page's "next": the first step that applies to the default profile. */
+export function guideNext(guide: Pick<Guide, 'base'>, steps: readonly Step[], items: readonly ProfileItem[], siteBase = '/'): PageLink | undefined {
+  const profile = defaultProfile(items);
+  const first = steps.find((s) => matchesWhen(s.when, profile));
+  return first ? { link: stepHref(guide, first.id, siteBase), label: first.title } : undefined;
 }

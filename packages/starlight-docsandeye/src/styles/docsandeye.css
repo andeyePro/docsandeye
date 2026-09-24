@@ -25,44 +25,41 @@
   --docsi-font-mono: var(--sl-font-mono);
 }
 
-/* Give the two-column step layout room: widen Starlight's content column on step pages. */
+/* Steps stack media above text; give the full-width video a little more room than prose alone. */
 :root:has(docsi-step) {
-  --sl-content-width: 72rem;
+  --sl-content-width: 56rem;
 }
 
 /* ---- step layout --------------------------------------------------------- */
+/* One column at every width: the media pane (video first, full width, then
+   renders and viewer in a wrapping row), then the text. The two layout tokens
+   stay defined for theme packs; the stacked layout no longer splits columns. */
 .docsi-step-wrap {
   margin-top: 1rem;
 }
 
 docsi-step {
-  display: grid;
-  grid-template-columns: var(--docsi-media-col) var(--docsi-text-col);
-  column-gap: 1%;
-  row-gap: 1.5rem;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
   color: var(--docsi-text);
   font-family: var(--docsi-font-body);
 }
 
-@media (max-width: 60rem) {
-  docsi-step {
-    grid-template-columns: 100%;
-  }
-}
-
 .docsi-media {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 1rem;
-  position: sticky;
-  top: calc(var(--sl-nav-height, 4rem) + 1rem);
 }
 
-@media (max-width: 60rem) {
-  .docsi-media {
-    position: static;
-  }
+.docsi-media > * {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.docsi-media > .docsi-video-figure,
+.docsi-media > details.docsi-stale {
+  flex-basis: 100%;
 }
 
 .docsi-media figure {
@@ -146,6 +143,7 @@ docsi-video video {
   width: 100%;
   height: auto;
   aspect-ratio: 16 / 9;
+  object-fit: contain;
   background: #000;
 }
 
@@ -704,4 +702,105 @@ docsi-youtube {
   width: 100%;
   aspect-ratio: 16 / 9;
   border: 0;
+}
+
+/* ---- check-offs ------------------------------------------------------------ */
+.docsi-checkoff[hidden] {
+  display: none !important;
+}
+
+.docsi-checkoff {
+  margin: 0;
+  accent-color: var(--docsi-accent);
+}
+
+[data-docsi-done] {
+  opacity: 0.6;
+}
+
+[data-docsi-done] .docsi-part-name::after {
+  content: ' ✓';
+  color: var(--sl-color-green-high);
+}
+
+/* ---- older video (a STALE video, moved to the bottom of the step) ---------- */
+.docsi-older-video {
+  margin-top: 2rem;
+}
+
+.docsi-older-intro {
+  margin: 0.5rem 0 0.75rem;
+}
+
+/* ---- profile options ------------------------------------------------------ */
+.docsi-profile-option {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+
+.docsi-profile-link {
+  color: var(--docsi-accent-high);
+}
+
+/* ---- saving consent --------------------------------------------------------- */
+.docsi-consent-bar {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--sl-color-hairline);
+  background: var(--docsi-bg);
+  color: var(--docsi-text);
+  font-size: var(--sl-text-sm);
+  box-shadow: 0 -0.25rem 1rem rgb(0 0 0 / 0.15);
+}
+
+.docsi-consent-bar[hidden],
+.docsi-consent-notice[hidden] {
+  display: none !important;
+}
+
+.docsi-consent-bar p {
+  margin: 0;
+}
+
+.docsi-consent-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.docsi-consent-bar button,
+.docsi-consent-notice button {
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--docsi-accent);
+  border-radius: 999px;
+  background: var(--docsi-bg);
+  color: var(--docsi-accent-high);
+  font: inherit;
+  cursor: pointer;
+}
+
+.docsi-consent-bar button[data-consent-action='save'] {
+  background: var(--docsi-accent);
+  color: var(--sl-color-text-invert, #fff);
+}
+
+.docsi-consent-notice {
+  margin: 0 0 1rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--docsi-stale-bg);
+  color: var(--docsi-stale-fg);
+  font-size: var(--sl-text-sm);
+}
+
+.docsi-consent-notice button {
+  margin-inline-start: 0.4rem;
+  padding: 0.1rem 0.6rem;
 }

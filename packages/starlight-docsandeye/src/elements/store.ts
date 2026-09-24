@@ -1,14 +1,22 @@
 /**
- * The reader's saved state: the profile, received counts and check answers,
- * one `localStorage` key each per guide. Every read and write is wrapped in
- * try/catch (storage may be disabled, full or blocked); absent or unreadable
- * state falls back to defaults. Profile and check changes are announced on
- * `document` so every element re-evaluates live.
+ * The reader's saved state: the profile, received counts, check answers and
+ * check-offs, one `localStorage` key each per guide, behind one consent gate.
+ * Every write lands in an in-memory copy first; it reaches `localStorage`
+ * only once the reader has chosen "Save" (`docsandeye:consent=yes`, the one
+ * key written for the gate itself). Until then the first write asks
+ * (`CONSENT_EVENT`), and after "Don't save" nothing is written at all. Every
+ * storage access is wrapped in try/catch (storage may be disabled, full or
+ * blocked); absent or unreadable state falls back to defaults. Profile, check
+ * and check-off changes are announced on `document` so every element
+ * re-evaluates live.
  */
-import { STORAGE_KEYS, parseStoredProfile, type Profile, type ProfileItem } from '@docsandeye/core/interactive';
+import { CONSENT_KEY, STORAGE_KEYS, parseConsent, parseStoredProfile, type ConsentState, type Profile, type ProfileItem } from '@docsandeye/core/interactive';
 
 export const PROFILE_EVENT = 'docsandeye:profile';
 export const CHECKS_EVENT = 'docsandeye:checks';
+export const PARTS_EVENT = 'docsandeye:parts';
+/** Fired on `document` when the consent state changes or a write needs a decision. */
+export const CONSENT_EVENT = 'docsandeye:consent';
 
 /**
  * This page's own writes, so the page keeps working for the visit when
@@ -27,13 +35,59 @@ export function readStorage(key: string): string | null {
   }
 }
 
-export function writeStorage(key: string, value: string): void {
-  memory.set(key, value);
+let consent: ConsentState | undefined;
+let changed = false;
+
+/** `yes` (saving), `no` (declined for this visit) or `unasked`. */
+export function consentState(): ConsentState {
+  if (consent === undefined) {
+    try {
+      consent = parseConsent(window.localStorage.getItem(CONSENT_KEY));
+    } catch {
+      consent = 'unasked';
+    }
+  }
+  return consent;
+}
+
+/** True once this page has written anything (the consent bar waits for it). */
+export function hasChanges(): boolean {
+  return changed;
+}
+
+function persist(key: string, value: string): void {
   try {
     window.localStorage.setItem(key, value);
   } catch {
     /* storage unavailable: the in-memory copy keeps the page working for this visit */
   }
+}
+
+function announceConsent(): void {
+  if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: { state: consentState() } }));
+}
+
+/**
+ * The reader's decision. Save: record consent and write everything this
+ * visit has changed so far. Don't save: remember it for this visit only;
+ * nothing is written.
+ */
+export function setConsent(save: boolean): void {
+  consent = save ? 'yes' : 'no';
+  if (save) {
+    persist(CONSENT_KEY, 'yes');
+    for (const [key, value] of memory) persist(key, value);
+  }
+  announceConsent();
+}
+
+export function writeStorage(key: string, value: string): void {
+  memory.set(key, value);
+  const first = !changed;
+  changed = true;
+  const state = consentState();
+  if (state === 'yes') persist(key, value);
+  else if (state === 'unasked' && first) announceConsent();
 }
 
 /** A stored JSON object, or `{}`. */
@@ -74,6 +128,7 @@ export function profileItems(doc: Document = document): ProfileItem[] {
   }
 }
 
+/** The saved answers with implications applied (see core's `normaliseProfile`). */
 export function loadProfile(guideId: string, items: readonly ProfileItem[]): Profile {
   return parseStoredProfile(items, readStorage(STORAGE_KEYS.profile(guideId)));
 }

@@ -1,5 +1,5 @@
 /**
- * `<docsi-step>`: the two-column step layout. Server-rendered and complete
+ * `<docsi-step>`: the stacked step layout (media, then text). Server-rendered and complete
  * without JavaScript; when upgraded, images in the media pane open in the
  * shared `<docsi-lightbox>`.
  */

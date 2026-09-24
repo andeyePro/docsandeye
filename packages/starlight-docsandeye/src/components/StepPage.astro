@@ -1,18 +1,22 @@
 ---
 import { stepsForGuide, type Guide, type ProjectModel, type StalenessReport, type Step } from '@docsandeye/core';
 import { wrapWhenBlocks } from '@docsandeye/core/interactive';
-import type { CarbonReport, RenderManifest } from '../data.ts';
+import * as docsi from 'virtual:docsandeye/model';
+import type { CarbonReport, MediaManifest, RenderManifest } from '../data.ts';
 import { onlyIf, skipTargets, whenAttr } from '../interactive-view.ts';
 import { renderMarkdown } from '../markdown.ts';
-import { carbonFor, guideHref } from '../view.ts';
+import { carbonFor, guideHref, olderVideoSentence } from '../view.ts';
 import CarbonFigure from './CarbonFigure.astro';
 import Checks from './Checks.astro';
+import ConsentBar from './ConsentBar.astro';
+import ConsentNotice from './ConsentNotice.astro';
 import MediaPane from './MediaPane.astro';
 import PartsList from './PartsList.astro';
 import ProfileData from './ProfileData.astro';
 import ProfileForm from './ProfileForm.astro';
 import ProfileSummary from './ProfileSummary.astro';
 import Receipt from './Receipt.astro';
+import StalenessDetails from './StalenessDetails.astro';
 
 interface Props {
 	guide: Guide;
@@ -36,17 +40,33 @@ const carbonEntry = carbonFor(carbon, pathname);
 const overview = guideHref(guide, base);
 const stepCondition = onlyIf(step.when, profile);
 const next = step.when ? skipTargets(stepsForGuide(model, guide.id), step.id, guide, base) : [];
+// A STALE video leaves the top of the page: the fresh text and renders lead,
+// and the video moves to an "Older video" section at the bottom.
+const media = (step.media ?? []).flatMap((id) => {
+	const item = model.media.get(id);
+	const entry = staleness[id];
+	return item && entry ? [{ media: item, entry }] : [];
+});
+const olderVideos = media.filter((m) => m.media.type === 'video' && m.entry.status === 'STALE');
+// `virtual-model.d.ts` predates `mediaManifest`; read the export structurally (as MediaPane does).
+const mediaManifest: MediaManifest | null = (docsi as { mediaManifest?: MediaManifest | null }).mediaManifest ?? null;
+const hasMediaPane = step.renders.length > 0 || step.viewer !== undefined || media.length > olderVideos.length;
 ---
 
 <div class="not-content docsi-step-wrap" id="_top" data-guide={guide.id}>
 	<ProfileData items={profile} />
 	<docsi-step data-step={step.id}>
-		<div class="docsi-media">
-			<MediaPane step={step} model={model} staleness={staleness} renderManifest={renderManifest} />
-		</div>
+		{
+			hasMediaPane && (
+				<div class="docsi-media">
+					<MediaPane step={step} model={model} staleness={staleness} renderManifest={renderManifest} olderVideosBelow />
+				</div>
+			)
+		}
 		<div class="docsi-text">
 			<h1>{step.title}</h1>
 			{profile.length > 0 && <ProfileSummary guideId={guide.id} href={overview} />}
+			<ConsentNotice />
 			{stepCondition && <p class="docsi-when-label docsi-step-condition">{stepCondition}</p>}
 			{
 				step.when && (
@@ -69,7 +89,7 @@ const next = step.when ? skipTargets(stepsForGuide(model, guide.id), step.id, gu
 			}
 			{step.profile && <ProfileForm guideId={guide.id} items={profile} />}
 			<div class="docsi-body sl-markdown-content" set:html={html} />
-			{step.receipt && <Receipt guideId={guide.id} model={model} />}
+			{step.receipt && <Receipt guideId={guide.id} stepId={step.id} model={model} />}
 			<PartsList step={step} model={model} />
 			<Checks guideId={guide.id} step={step} model={model} />
 			{
@@ -80,11 +100,34 @@ const next = step.when ? skipTargets(stepsForGuide(model, guide.id), step.id, gu
 					</aside>
 				)
 			}
+			{
+				olderVideos.length > 0 && (
+					<section class="docsi-older-video">
+						<h2>Older video</h2>
+						{olderVideos.map(({ media: video, entry }) => (
+							<Fragment>
+								<p class="docsi-older-intro">{olderVideoSentence(entry, model)}</p>
+								<StalenessDetails
+									media={video}
+									entry={entry}
+									model={model}
+									hosting={model.config.hosting}
+									base={base}
+									mediaManifest={mediaManifest}
+									title={step.title}
+									open
+								/>
+							</Fragment>
+						))}
+					</section>
+				)
+			}
 			<footer class="docsi-meta">
 				{carbonEntry && <CarbonFigure gco2e={carbonEntry.gco2e} />}
 			</footer>
 		</div>
 	</docsi-step>
+	<ConsentBar />
 </div>
 
 <script>

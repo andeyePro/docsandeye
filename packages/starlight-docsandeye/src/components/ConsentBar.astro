@@ -1,0 +1,15 @@
+---
+/**
+ * The saving-consent bar, fixed at the bottom of the page and shown (by
+ * `consent.ts`) only once the reader has changed something and not yet
+ * decided. Nothing is written to the browser before "Save".
+ */
+---
+
+<div class="docsi-consent-bar" role="region" aria-label="Saving your answers" hidden>
+	<p>Save your answers in this browser? They stay on this device and nothing is sent to anyone else.</p>
+	<p class="docsi-consent-actions">
+		<button type="button" data-consent-action="save">Save</button>
+		<button type="button" data-consent-action="decline">Don't save</button>
+	</p>
+</div>

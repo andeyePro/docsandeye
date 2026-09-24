@@ -2,9 +2,10 @@
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import { stepsForGuide } from '@docsandeye/core';
 import { config, maintainer, model } from 'virtual:docsandeye/model';
+import ConsentBar from '../components/ConsentBar.astro';
 import ProfileData from '../components/ProfileData.astro';
 import ProfileForm from '../components/ProfileForm.astro';
-import { checkRefs, onlyIf, whenAttr } from '../interactive-view.ts';
+import { checkRefs, guideNext, onlyIf, whenAttr } from '../interactive-view.ts';
 import { guideForRoutePattern, partsCount, stepHref, withBase } from '../view.ts';
 
 const guide = guideForRoutePattern(config.guides, Astro.routePattern);
@@ -14,10 +15,12 @@ if (!guide) {
 const steps = stepsForGuide(model, guide.id);
 const base = import.meta.env.BASE_URL;
 const profile = model.config.profile;
+// Starlight's "next" on the index is the first step that applies (the default profile); prev stays Starlight's own.
+const next = guideNext(guide, steps, profile, base) ?? false;
 ---
 
 <StarlightPage
-	frontmatter={{ id: guide.id, order: 0, title: guide.title, tableOfContents: false }}
+	frontmatter={{ id: guide.id, order: 0, title: guide.title, tableOfContents: false, next }}
 	docsandeye={{ kind: 'guide', guideId: guide.id }}
 >
 	<p class="docsi-guide-intro">
@@ -64,6 +67,7 @@ const profile = model.config.profile;
 			</p>
 		)
 	}
+	<ConsentBar />
 </StarlightPage>
 
 <script>

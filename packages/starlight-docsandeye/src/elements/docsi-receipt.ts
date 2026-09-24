@@ -3,13 +3,16 @@
  * renders a readable table of per-unit quantities; upgraded, this element
  * replaces it with the reader's own checklist (quantities multiplied by the
  * unit count, rows filtered by condition and supplier, a "received" input per
- * row) and a "Missing parts" panel with a pre-filled email to the supplier,
- * or supplier links when there is no one to email. The maths and the mailto
+ * row, a "have it" check-off at the start of every row) and a "Missing
+ * parts" panel with a pre-filled email to the supplier, or supplier links
+ * when there is no one to email. A ticked row is never missing; ticking a
+ * "Not in your package" row marks it sourced. The maths and the mailto
  * are core's pure functions; this element reads the items from the server's
  * table rows (`readReceiptItems`) and builds DOM.
  */
 import {
   STORAGE_KEYS,
+  checkoffKey,
   computeReceipt,
   missingParts,
   missingPartsMailto,
@@ -19,7 +22,8 @@ import {
   type ReceiptItem,
   type ReceiptRow,
 } from '@docsandeye/core/interactive';
-import { PROFILE_EVENT, dataJson, loadProfile, pageGuide, pageUrl, profileItems, readRecord, writeStorage } from './store.ts';
+import { applyCheckoffs, doneKeys } from './checkoffs.ts';
+import { PARTS_EVENT, PROFILE_EVENT, dataJson, loadProfile, pageGuide, pageUrl, profileItems, readRecord, writeStorage } from './store.ts';
 
 const ElementBase = (typeof HTMLElement === 'undefined' ? class {} : HTMLElement) as typeof HTMLElement;
 
@@ -66,12 +70,14 @@ export class DocsiReceipt extends ElementBase {
   private items: ReceiptItem[] = [];
 
   private guideId = '';
+  private stepId = '';
   private receipt: Receipt | undefined;
 
   connectedCallback(): void {
     if (this.hasAttribute('data-enhanced')) return;
     this.setAttribute('data-enhanced', '');
     this.guideId = this.dataset.guide ?? pageGuide() ?? '';
+    this.stepId = this.dataset.step ?? '';
     const live = this.querySelector<HTMLElement>('.docsi-receipt-live');
     const staticView = this.querySelector<HTMLElement>('.docsi-receipt-static');
     if (!live || !this.guideId) return;
@@ -80,6 +86,7 @@ export class DocsiReceipt extends ElementBase {
     live.hidden = false;
     if (staticView) staticView.hidden = true;
     document.addEventListener(PROFILE_EVENT, () => this.render(live));
+    document.addEventListener(PARTS_EVENT, () => this.renderMissing(live));
     live.addEventListener('input', (event) => {
       const input = event.target;
       if (!(input instanceof HTMLInputElement) || !input.dataset.component) return;
@@ -111,14 +118,24 @@ export class DocsiReceipt extends ElementBase {
       const ul = el('ul', undefined, 'docsi-receipt-elsewhere');
       for (const row of r.elsewhere) {
         const li = el('li');
-        li.append(`${row.expected} × `, supplierLink(row, row.name));
+        li.append(this.checkoff(row, 'Sourced'), `${row.expected} × `, supplierLink(row, row.name));
         if (row.note) li.append(el('span', ` — ${row.note}`, 'docsi-receipt-note'));
         ul.append(li);
       }
       live.append(ul);
     }
     live.append(el('div', undefined, 'docsi-missing'));
+    applyCheckoffs(live, this.guideId);
     this.renderMissing(live);
+  }
+
+  /** The "have it" box of a row (state and row marking come from `applyCheckoffs`). */
+  private checkoff(row: ReceiptRow, verb: string): HTMLInputElement {
+    const box = el('input', undefined, 'docsi-checkoff');
+    box.type = 'checkbox';
+    box.dataset.checkoff = checkoffKey(this.stepId, row.component);
+    box.setAttribute('aria-label', `${verb}: ${row.name}`);
+    return box;
   }
 
   private table(live: HTMLElement, caption: string, rows: readonly ReceiptRow[], received: Record<string, unknown>): void {
@@ -126,7 +143,7 @@ export class DocsiReceipt extends ElementBase {
     const table = el('table', undefined, 'docsi-receipt-table');
     table.append(el('caption', caption));
     const head = el('tr');
-    for (const h of ['Part', 'Expected', 'Received']) head.append(el('th', h));
+    for (const h of ['Have it', 'Part', 'Expected', 'Received']) head.append(el('th', h));
     const thead = el('thead');
     thead.append(head);
     table.append(thead);
@@ -146,7 +163,9 @@ export class DocsiReceipt extends ElementBase {
       input.value = String(typeof got === 'number' ? got : row.expected);
       const cell = el('td');
       cell.append(input);
-      tr.append(name, el('td', String(row.expected)), cell);
+      const have = el('td');
+      have.append(this.checkoff(row, 'Have it'));
+      tr.append(have, name, el('td', String(row.expected)), cell);
       body.append(tr);
     }
     table.append(body);
@@ -156,7 +175,10 @@ export class DocsiReceipt extends ElementBase {
   private renderMissing(live: HTMLElement): void {
     const panel = live.querySelector<HTMLElement>('.docsi-missing');
     if (!panel || !this.receipt) return;
-    const missing = missingParts(this.receipt, readRecord(STORAGE_KEYS.receipt(this.guideId)));
+    const done = new Set<string>();
+    const keys = doneKeys(this.guideId);
+    for (const row of [...this.receipt.perUnit, ...this.receipt.perKit]) if (keys.has(checkoffKey(this.stepId, row.component))) done.add(row.component);
+    const missing = missingParts(this.receipt, readRecord(STORAGE_KEYS.receipt(this.guideId)), done);
     panel.replaceChildren();
     panel.hidden = missing.length === 0;
     if (missing.length === 0) return;

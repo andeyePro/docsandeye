@@ -7,16 +7,19 @@
  * data (`data-per`, `data-qty`, `data-from`, `data-when`, supplier) so the
  * list is not sent twice; the element's own `data-*` attributes carry the
  * receipt config, the contacts (with their emails) and the supplier labels.
+ * The live checklist adds a "have it" check-off to every row (see `checkoffs.ts`).
  */
 import type { ProjectModel } from '@docsandeye/core';
 import { guideReceiptItems, onlyIf, plainMailto, staticReceiptGroups, supplierLabels, whenAttr } from '../interactive-view.ts';
 
 interface Props {
 	guideId: string;
+	/** The step the receipt is on: its check-offs are keyed `<step>/<component>`. */
+	stepId: string;
 	model: ProjectModel;
 }
 
-const { guideId, model } = Astro.props;
+const { guideId, stepId, model } = Astro.props;
 const { config } = model;
 const items = guideReceiptItems(model, guideId);
 const labels = supplierLabels(model);
@@ -35,6 +38,7 @@ const contacts = Object.entries(config.contacts).filter(([key]) => key !== 'proj
 
 <docsi-receipt
 	data-guide={guideId}
+	data-step={stepId}
 	data-config={JSON.stringify(config.receipt ?? {})}
 	data-contacts={JSON.stringify(config.contacts)}
 	data-supplier-labels={JSON.stringify(labels)}

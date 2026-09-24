@@ -15,9 +15,11 @@ interface Props {
 	renderManifest: RenderManifest | null;
 	/** Defaults to the virtual module's export (the route need not thread it through). */
 	mediaManifest?: MediaManifest | null;
+	/** Leave STALE videos out: the step page shows them in its "Older video" section instead. */
+	olderVideosBelow?: boolean;
 }
 
-const { step, model, staleness, renderManifest } = Astro.props;
+const { step, model, staleness, renderManifest, olderVideosBelow = false } = Astro.props;
 // `virtual-model.d.ts` predates `mediaManifest`; read the export structurally.
 const mediaManifest: MediaManifest | null =
 	Astro.props.mediaManifest ?? (docsi as { mediaManifest?: MediaManifest | null }).mediaManifest ?? null;
@@ -64,9 +66,10 @@ const mediaItems = (step.media ?? []).flatMap((id) => {
 	const entry = staleness[id];
 	return media && entry ? [{ media, entry }] : [];
 });
-// STALE media is demoted below the renders and in-flow media; the text pane follows in the grid.
+// STALE media is demoted below the renders and in-flow media (a STALE video
+// further, to the step's "Older video" section, when `olderVideosBelow`).
 const inFlow = mediaItems.filter((m) => m.entry.status !== 'STALE');
-const stale = mediaItems.filter((m) => m.entry.status === 'STALE');
+const stale = mediaItems.filter((m) => m.entry.status === 'STALE' && !(olderVideosBelow && m.media.type === 'video'));
 ---
 
 {

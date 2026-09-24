@@ -1,6 +1,7 @@
 declare module 'virtual:docsandeye/model' {
   import type { Config, ProjectModel, StalenessReport } from '@docsandeye/core';
   import type { CarbonReport, RenderManifest } from './data.ts';
+  import type { SidebarTarget } from './view.ts';
   export const config: Config;
   export const model: ProjectModel;
   export const staleness: StalenessReport;
@@ -8,4 +9,5 @@ declare module 'virtual:docsandeye/model' {
   export const carbon: CarbonReport | null;
   export const buildDate: string;
   export const maintainer: boolean;
+  export const sidebarNext: Record<string, SidebarTarget>;
 }

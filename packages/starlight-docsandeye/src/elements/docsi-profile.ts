@@ -1,18 +1,22 @@
 /**
  * `<docsi-profile>`: the reader's setup form (number input, checkboxes,
- * radio groups), server-rendered with the defaults. Upgraded, it shows the
- * saved answers and saves every change, which re-evaluates the page live.
+ * radio groups, link options), server-rendered with the defaults. Upgraded,
+ * it shows the saved answers, hides the questions the chosen options imply
+ * (`data-profile-field`), and saves every change, which re-evaluates the
+ * page live.
  *
  * `<docsi-profile-summary>`: the one-line "Your setup: … — change" bar on
  * step pages, hidden until upgraded (without JavaScript nothing is tailored,
  * so there is no setup to summarise).
  */
-import { normaliseProfile, profileSummary, type Profile, type ProfileItem } from '@docsandeye/core/interactive';
+import { impliedItems, normaliseProfile, profileSummary, type Profile, type ProfileItem } from '@docsandeye/core/interactive';
 import { PROFILE_EVENT, loadProfile, pageGuide, profileItems, saveProfile } from './store.ts';
 
 const ElementBase = (typeof HTMLElement === 'undefined' ? class {} : HTMLElement) as typeof HTMLElement;
 
 function fillForm(form: HTMLFormElement, items: readonly ProfileItem[], profile: Profile): void {
+  const implied = impliedItems(items, profile);
+  for (const field of form.querySelectorAll<HTMLElement>('[data-profile-field]')) field.hidden = field.dataset.profileField! in implied;
   for (const item of items) {
     const value = profile[item.id];
     if (item.type === 'choice') {

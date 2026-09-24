@@ -9,6 +9,7 @@ import type { HookParameters, StarlightPlugin } from '@astrojs/starlight/types';
 import { loadDocsandeyeData } from './data.ts';
 import { createDocsandeyeIntegration } from './integration.ts';
 import { hasThemeHead, type HeadEntry, resolveThemeCss, resolveThemeHead } from './theme.ts';
+import { guideHref, sidebarEntryAfter, type SidebarTarget } from './view.ts';
 
 export const PLUGIN_NAME = 'starlight-docsandeye';
 export const DOCSANDEYE_CSS = 'starlight-docsandeye/src/styles/docsandeye.css';
@@ -45,6 +46,15 @@ export default function docsandeye(options: DocsandeyeOptions = {}): StarlightPl
 
         const data = loadDocsandeyeData(projectRoot, process.env);
         const themeCss = resolveThemeCss(data.config.theme, astroRoot);
+
+        // The last step's "next": the sidebar entry after the guide's own (e.g. its protocol page).
+        const sidebar = Array.isArray(config.sidebar) ? (config.sidebar as unknown[]) : undefined;
+        const sidebarNext: Record<string, SidebarTarget> = {};
+        for (const guide of data.config.guides) {
+          const target = sidebarEntryAfter(sidebar, guideHref(guide));
+          if (target) sidebarNext[guide.id] = target;
+        }
+        data.sidebarNext = sidebarNext;
 
         // A themed site needs the first-paint script in <head>; the plugin adds
         // it so a site config never has to. A site that still adds it itself

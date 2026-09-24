@@ -2,9 +2,14 @@
 /**
  * `<docsi-profile>`: the reader's setup form, server-rendered with the
  * defaults so it reads (and tabs) without JavaScript; the element fills in
- * the saved answers and saves changes.
+ * the saved answers, hides the questions the chosen options imply (each
+ * field carries `data-profile-field`) and saves changes. A link option
+ * (`href`) is a plain link in the radio list, never a radio; option labels
+ * render their `[text](url)` links.
  */
-import type { ProfileItem } from '@docsandeye/core/interactive';
+import { labelParts, type ProfileItem } from '@docsandeye/core/interactive';
+import { siteHref } from '../interactive-view.ts';
+import ConsentNotice from './ConsentNotice.astro';
 
 interface Props {
 	guideId: string;
@@ -12,7 +17,9 @@ interface Props {
 }
 
 const { guideId, items } = Astro.props;
+const base = import.meta.env.BASE_URL;
 const fieldId = (id: string) => `docsi-profile-${id}`;
+const parts = (label: string) => labelParts(label).map((p) => (p.href ? { ...p, href: siteHref(p.href, base) } : p));
 ---
 
 {
@@ -21,11 +28,11 @@ const fieldId = (id: string) => `docsi-profile-${id}`;
 			<form class="docsi-profile-form" aria-labelledby="docsi-profile-heading">
 				<h2 id="docsi-profile-heading">Your setup</h2>
 				<p class="docsi-profile-intro">
-					Answer once and the guide hides the steps and parts that do not apply to you. Your answers stay in this browser.
+					Answer once and the guide hides the steps and parts that do not apply to you. You choose whether your answers are saved in this browser.
 				</p>
 				{items.map((item) =>
 					item.type === 'number' ? (
-						<p class="docsi-profile-field">
+						<p class="docsi-profile-field" data-profile-field={item.id}>
 							<label for={fieldId(item.id)}>{item.label}</label>
 							<input
 								type="number"
@@ -39,22 +46,30 @@ const fieldId = (id: string) => `docsi-profile-${id}`;
 							/>
 						</p>
 					) : item.type === 'boolean' ? (
-						<p class="docsi-profile-field docsi-profile-check">
+						<p class="docsi-profile-field docsi-profile-check" data-profile-field={item.id}>
 							<input type="checkbox" id={fieldId(item.id)} name={item.id} checked={item.default === true} />
 							<label for={fieldId(item.id)}>{item.label}</label>
 						</p>
 					) : (
-						<fieldset class="docsi-profile-field">
+						<fieldset class="docsi-profile-field" data-profile-field={item.id}>
 							<legend>{item.label}</legend>
-							{(item.options ?? []).map((option) => (
-								<label>
-									<input type="radio" name={item.id} value={option.value} checked={option.value === item.default} /> {option.label}
-								</label>
-							))}
+							{(item.options ?? []).map((option) =>
+								option.href !== undefined ? (
+									<a class="docsi-profile-option docsi-profile-link" href={siteHref(option.href, base)} data-option={option.value}>
+										{parts(option.label).map((p) => p.text).join('')}
+									</a>
+								) : (
+									<label class="docsi-profile-option">
+										<input type="radio" name={item.id} value={option.value} checked={option.value === item.default} />{' '}
+										{parts(option.label).map((p) => (p.href ? <a href={p.href}>{p.text}</a> : p.text))}
+									</label>
+								)
+							)}
 						</fieldset>
 					)
 				)}
-				<p class="docsi-profile-saved" role="status" hidden>Saved. The guide now shows what applies to your setup.</p>
+				<p class="docsi-profile-saved" role="status" hidden>The guide now shows what applies to your setup.</p>
+				<ConsentNotice />
 			</form>
 			<noscript>
 				<p class="docsi-note">Without JavaScript the guide shows every step; conditional parts are labelled “Only if”.</p>

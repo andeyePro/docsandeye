@@ -1,9 +1,11 @@
 ---
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import { stepsForGuide } from '@docsandeye/core';
+import { getEntry } from 'astro:content';
+import * as docsi from 'virtual:docsandeye/model';
 import { buildDate, carbon, config, maintainer, model, renderManifest, staleness } from 'virtual:docsandeye/model';
 import StepPage from '../components/StepPage.astro';
-import { guideForRoutePattern } from '../view.ts';
+import { guideForRoutePattern, sidebarTargetHref, slugLabel, stepPagination, type PageLink, type SidebarTarget } from '../view.ts';
 
 export function getStaticPaths({ routePattern }: { routePattern: string }) {
 	const guide = guideForRoutePattern(config.guides, routePattern);
@@ -24,10 +26,27 @@ if (!guide || !step) {
 // The step's own frontmatter travels through StarlightPage so a `docs` collection
 // extended with `stepFrontmatterSchema` validates it (and plain Starlight strips it).
 const { body: _body, ...stepFrontmatter } = step;
+
+// Prev/next: the neighbouring steps; the last step leads on to the sidebar
+// entry after the guide's own (a page's label is its title).
+const base = import.meta.env.BASE_URL;
+const steps = stepsForGuide(model, guide.id);
+const target: SidebarTarget | undefined = (docsi as { sidebarNext?: Record<string, SidebarTarget> }).sidebarNext?.[guide.id];
+let after: PageLink | undefined;
+const afterHref = target ? sidebarTargetHref(target, base) : undefined;
+if (target && afterHref) {
+	let label = target.label;
+	if (label === undefined && target.slug !== undefined) {
+		const entry = await getEntry('docs', target.slug).catch(() => undefined);
+		label = (entry?.data as { title?: string } | undefined)?.title ?? slugLabel(target.slug);
+	}
+	after = { link: afterHref, label: label ?? afterHref };
+}
+const { prev, next } = stepPagination(guide, steps, step.id, base, after);
 ---
 
 <StarlightPage
-	frontmatter={{ ...stepFrontmatter, title: step.title, tableOfContents: false }}
+	frontmatter={{ ...stepFrontmatter, title: step.title, tableOfContents: false, prev, next }}
 	docsandeye={{ kind: 'step', guideId: guide.id, stepId: step.id }}
 >
 	<StepPage

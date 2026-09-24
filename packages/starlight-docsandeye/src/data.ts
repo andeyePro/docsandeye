@@ -16,6 +16,7 @@ import {
   type ProjectModel,
   type StalenessReport,
 } from '@docsandeye/core';
+import type { SidebarTarget } from './view.ts';
 
 /** One entry of `build/render/manifest.json` (the render pipeline's output; not core's render plan). */
 export interface RenderManifestJob {
@@ -101,6 +102,8 @@ export interface DocsandeyeData {
   /** ISO date `YYYY-MM-DD` used as the "updated within 30 days" reference. */
   buildDate: string;
   maintainer: boolean;
+  /** Per guide id: the Starlight sidebar entry after the guide's own (the last step's "next"); set by the plugin from the site config. */
+  sidebarNext?: Record<string, SidebarTarget>;
 }
 
 export const RENDER_MANIFEST_PATH = 'build/render/manifest.json';

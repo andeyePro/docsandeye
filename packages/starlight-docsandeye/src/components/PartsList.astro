@@ -1,5 +1,12 @@
 ---
+/**
+ * The step's parts and tools. Each row starts with a "have it" check-off
+ * (`input.docsi-checkoff`, keyed `<step>/<component>`), server-rendered hidden
+ * so the lists read as plain lists without JavaScript; `checkoffs.ts` shows
+ * them and remembers their state.
+ */
 import type { ProjectModel, Step } from '@docsandeye/core';
+import { checkoffKey } from '@docsandeye/core/interactive';
 import { onlyIf, whenAttr } from '../interactive-view.ts';
 import { componentName } from '../view.ts';
 
@@ -10,39 +17,33 @@ interface Props {
 
 const { step, model } = Astro.props;
 const profile = model.config.profile;
+const lists = [
+	{ className: 'docsi-parts', heading: 'Parts', rows: step.parts },
+	{ className: 'docsi-tools', heading: 'Tools', rows: step.tools },
+].filter((list) => list.rows.length > 0);
 ---
 
 {
-	step.parts.length > 0 && (
-		<section class="docsi-parts">
-			<h2>Parts</h2>
+	lists.map((list) => (
+		<section class={list.className}>
+			<h2>{list.heading}</h2>
 			<ul>
-				{step.parts.map((part) => (
-					<li data-component={part.component} data-qty={part.qty} data-cat={part.cat} data-when={whenAttr(part.when)}>
-						<span class="docsi-qty">{part.qty}×</span>
-						<span class="docsi-part-name">{componentName(model, part.component)}</span>
-						<span class="docsi-cat">{part.cat}</span>
-						{part.when && <span class="docsi-when-inline">{onlyIf(part.when, profile)}</span>}
+				{list.rows.map((row) => (
+					<li data-component={row.component} data-qty={row.qty} data-cat={row.cat} data-when={whenAttr(row.when)}>
+						<input
+							type="checkbox"
+							class="docsi-checkoff"
+							data-checkoff={checkoffKey(step.id, row.component)}
+							aria-label={`Have it: ${componentName(model, row.component)}`}
+							hidden
+						/>
+						<span class="docsi-qty">{row.qty}×</span>
+						<span class="docsi-part-name">{componentName(model, row.component)}</span>
+						<span class="docsi-cat">{row.cat}</span>
+						{row.when && <span class="docsi-when-inline">{onlyIf(row.when, profile)}</span>}
 					</li>
 				))}
 			</ul>
 		</section>
-	)
-}
-{
-	step.tools.length > 0 && (
-		<section class="docsi-tools">
-			<h2>Tools</h2>
-			<ul>
-				{step.tools.map((tool) => (
-					<li data-component={tool.component} data-qty={tool.qty} data-cat={tool.cat} data-when={whenAttr(tool.when)}>
-						<span class="docsi-qty">{tool.qty}×</span>
-						<span class="docsi-part-name">{componentName(model, tool.component)}</span>
-						<span class="docsi-cat">{tool.cat}</span>
-						{tool.when && <span class="docsi-when-inline">{onlyIf(tool.when, profile)}</span>}
-					</li>
-				))}
-			</ul>
-		</section>
-	)
+	))
 }
