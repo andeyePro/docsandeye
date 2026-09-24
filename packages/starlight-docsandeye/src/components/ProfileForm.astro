@@ -7,7 +7,7 @@
  * (`href`) is a plain link in the radio list, never a radio; option labels
  * render their `[text](url)` links.
  */
-import { labelParts, type ProfileItem } from '@docsandeye/core/interactive';
+import { defaultProfile, labelParts, type ProfileItem } from '@docsandeye/core/interactive';
 import { siteHref } from '../interactive-view.ts';
 import ConsentNotice from './ConsentNotice.astro';
 
@@ -19,6 +19,8 @@ interface Props {
 const { guideId, items } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const fieldId = (id: string) => `docsi-profile-${id}`;
+// The defaults with the default choices' implications applied (an implied checkbox starts ticked).
+const defaults = defaultProfile(items);
 const parts = (label: string) => labelParts(label).map((p) => (p.href ? { ...p, href: siteHref(p.href, base) } : p));
 ---
 
@@ -42,12 +44,12 @@ const parts = (label: string) => labelParts(label).map((p) => (p.href ? { ...p, 
 								max={item.max}
 								step="1"
 								inputmode="numeric"
-								value={String(item.default)}
+								value={String(defaults[item.id])}
 							/>
 						</p>
 					) : item.type === 'boolean' ? (
 						<p class="docsi-profile-field docsi-profile-check" data-profile-field={item.id}>
-							<input type="checkbox" id={fieldId(item.id)} name={item.id} checked={item.default === true} />
+							<input type="checkbox" id={fieldId(item.id)} name={item.id} checked={defaults[item.id] === true} />
 							<label for={fieldId(item.id)}>{item.label}</label>
 						</p>
 					) : (
@@ -60,7 +62,7 @@ const parts = (label: string) => labelParts(label).map((p) => (p.href ? { ...p, 
 									</a>
 								) : (
 									<label class="docsi-profile-option">
-										<input type="radio" name={item.id} value={option.value} checked={option.value === item.default} />{' '}
+										<input type="radio" name={item.id} value={option.value} checked={option.value === defaults[item.id]} />{' '}
 										{parts(option.label).map((p) => (p.href ? <a href={p.href}>{p.text}</a> : p.text))}
 									</label>
 								)
