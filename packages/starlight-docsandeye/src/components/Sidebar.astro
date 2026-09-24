@@ -48,7 +48,7 @@ const otherGuides = config.guides.filter((g) => g.id !== guide?.id);
 											{step.title}
 										</a>
 										{badges.stale && <span class="docsi-badge docsi-badge-stale">stale media</span>}
-										{badges.updated && <span class="docsi-badge docsi-badge-updated">updated</span>}
+										{maintainer && badges.updated && <span class="docsi-badge docsi-badge-updated">updated</span>}
 										{step.when && (
 											<span class="docsi-skip-note" hidden>
 												(not for your setup)
