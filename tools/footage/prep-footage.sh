@@ -69,31 +69,50 @@ if [ ! -s "$MODEL" ]; then
 fi
 
 # --- catalogue -------------------------------------------------------------------------------
-# One ffprobe JSON per file; names are a stable index so re-runs line up.
+# Every file gets a permanent id, kept in ids.json: a file found on a later run (a folder that
+# became readable, a late card) gets the next free number, and the ids already used for
+# transcripts and section notes never move. Final Cut libraries inside the footage are skipped.
 LIST="$OUT/files.txt"
-find "$FOOTAGE" -type f \( -iname '*.mp4' -o -iname '*.mov' -o -iname '*.m4v' -o -iname '*.mts' \
-  -o -iname '*.mxf' -o -iname '*.wav' -o -iname '*.m4a' -o -iname '*.mp3' \) \
-  ! -name '._*' 2>>"$LOG" | LC_ALL=C sort > "$LIST" || true   # a folder we cannot read is logged, not fatal
+find "$FOOTAGE" -type d -name '*.fcpbundle' -prune -o -type f \( -iname '*.mp4' -o -iname '*.mov' \
+  -o -iname '*.m4v' -o -iname '*.mts' -o -iname '*.mxf' -o -iname '*.wav' -o -iname '*.m4a' -o -iname '*.mp3' \) \
+  ! -name '._*' -print 2>>"$LOG" | LC_ALL=C sort > "$LIST" || true   # a folder we cannot read is logged, not fatal
 COUNT="$(wc -l < "$LIST" | tr -d ' ')"
 log "$COUNT media files"
 
-n=0
-while IFS= read -r f; do
-  n=$((n + 1))
-  id="$(printf '%03d' "$n")"
-  [ -s "$OUT/probe/$id.json" ] || ffprobe -v error -print_format json -show_format -show_streams "$f" > "$OUT/probe/$id.json" || log "ffprobe failed: $f"
-done < "$LIST"
-
-# catalogue.json: [{id, path, probe}] assembled with the macOS system python (no packages).
+# ids.txt: "id<TAB>path" for every file, existing ids kept, new files numbered after the highest.
 python3 - "$LIST" "$OUT" <<'PY'
 import json, sys, pathlib
 lst, out = sys.argv[1], pathlib.Path(sys.argv[2])
+ids_path = out / "ids.json"
+ids = json.loads(ids_path.read_text()) if ids_path.exists() else {}
+paths = pathlib.Path(lst).read_text().splitlines()
+next_id = max([int(v) for v in ids.values()] + [0]) + 1
+for p in paths:
+    if p not in ids:
+        ids[p] = f"{next_id:03d}"
+        next_id += 1
+ids_path.write_text(json.dumps(ids, indent=1))
+(out / "ids.txt").write_text("".join(f"{ids[p]}\t{p}\n" for p in paths))
+PY
+
+while IFS=$'\t' read -r id f; do
+  [ -s "$OUT/probe/$id.json" ] || ffprobe -v error -print_format json -show_format -show_streams "$f" > "$OUT/probe/$id.json" || log "ffprobe failed: $f"
+done < "$OUT/ids.txt"
+
+# catalogue.json: [{id, path, probe}] assembled with the macOS system python (no packages).
+python3 - "$OUT" <<'PY'
+import json, sys, pathlib
+out = pathlib.Path(sys.argv[1])
 entries = []
-for i, line in enumerate(pathlib.Path(lst).read_text().splitlines(), 1):
-    pid = f"{i:03d}"
+for line in (out / "ids.txt").read_text().splitlines():
+    pid, path = line.split("\t", 1)
     p = out / "probe" / f"{pid}.json"
     probe = json.loads(p.read_text()) if p.exists() and p.stat().st_size else None
-    entries.append({"id": pid, "path": line, "probe": probe})
+    if probe is not None and not probe.get("streams"):
+        probe = None
+        p.unlink()  # a failed probe (unreadable file) is retried next run
+    entries.append({"id": pid, "path": path, "probe": probe})
+entries.sort(key=lambda e: e["id"])
 (out / "catalogue.json").write_text(json.dumps(entries, indent=1))
 PY
 log "catalogue.json written"
