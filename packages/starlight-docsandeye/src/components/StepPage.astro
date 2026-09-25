@@ -5,6 +5,7 @@ import { asideMarkdown } from '../asides.ts';
 import * as docsi from 'virtual:docsandeye/model';
 import type { CarbonReport, MediaManifest, RenderManifest } from '../data.ts';
 import { glossaryLinker, onlyIf, skipTargets, whenAttr } from '../interactive-view.ts';
+import { linkOptionsFor } from '../links.ts';
 import { renderMarkdown } from '../markdown.ts';
 import { carbonFor, guideHref, olderVideoSentence } from '../view.ts';
 import CarbonFigure from './CarbonFigure.astro';
@@ -39,9 +40,11 @@ const profile = itemsForGuide(model.config.profile, guide.id);
 const linkTerms = glossaryLinker(model.glossary);
 // `<!-- when … -->` blocks become labelled `<div class="docsi-when">`s; a body
 // whose comments cannot be read renders unwrapped (`docsandeye check` reports it).
-const html = linkTerms(await renderMarkdown(wrapWhenBlocks(step.body, profile).markdown));
+// Repo-relative links: a step of this guide → its page; other project paths → GitHub (`project.repo`).
+const links = linkOptionsFor(step, guide, stepsForGuide(model, guide.id), model.config.project, base);
+const html = linkTerms(await renderMarkdown(wrapWhenBlocks(step.body, profile).markdown, links));
 // The `safety` note is a Starlight danger aside titled "Safety".
-const safetyHtml = step.safety ? await renderMarkdown(asideMarkdown('danger', 'Safety', step.safety)) : undefined;
+const safetyHtml = step.safety ? await renderMarkdown(asideMarkdown('danger', 'Safety', step.safety), links) : undefined;
 const carbonEntry = carbonFor(carbon, pathname);
 const overview = guideHref(guide, base);
 const stepCondition = onlyIf(step.when, profile);
