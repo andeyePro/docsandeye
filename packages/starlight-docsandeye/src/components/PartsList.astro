@@ -40,7 +40,7 @@ const lists = [
 						/>
 						<span class="docsi-qty">{row.qty}×</span>
 						<span class="docsi-part-name">{componentName(model, row.component)}</span>
-						<span class="docsi-cat">{row.cat}</span>
+						<span class="docsi-cat">{row.cat === 'prev' ? 'earlier step' : row.cat}</span>
 						{row.when && <span class="docsi-when-inline">{onlyIf(row.when, profile)}</span>}
 					</li>
 				))}
