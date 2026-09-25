@@ -2,3 +2,7 @@
 fixtures/*/.astro/
 fixtures/*/.astro/
 fixtures/*/dist*/
+
+# Playwright end-to-end output
+e2e/test-results/
+e2e/playwright-report/

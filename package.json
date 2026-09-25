@@ -12,12 +12,16 @@
   "scripts": {
     "test": "vitest run",
     "build": "npm run build -w @docsandeye/core -w @docsandeye/themes && npm run build --workspaces --if-present",
-    "typecheck": "tsc --noEmit -p packages/core"
+    "typecheck": "tsc --noEmit -p packages/core",
+    "e2e": "node packages/starlight-docsandeye/e2e/build-fixture.mjs && playwright test -c packages/starlight-docsandeye/e2e/playwright.config.ts",
+    "typecheck:e2e": "tsc -p packages/starlight-docsandeye/e2e"
   },
   "engines": {
     "node": ">=22.12.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0",
     "@types/node": "22.20.1",
     "typescript": "7.0.2",
     "vitest": "5.0.0"
