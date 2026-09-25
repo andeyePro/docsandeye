@@ -4,8 +4,10 @@
  * defaults so it reads (and tabs) without JavaScript; the element fills in
  * the saved answers, hides the questions the chosen options imply (each
  * field carries `data-profile-field`) and saves changes. A link option
- * (`href`) is a plain link in the radio list, never a radio; option labels
- * render their `[text](url)` links.
+ * (`href`) is a plain link in the radio list, never a radio. An option
+ * label's `[text](url)` link reads as plain text inside the `<label>`, and
+ * the link itself follows the label as a small "site" link, so clicking the
+ * label only ever selects the option.
  */
 import { defaultProfile, labelParts, type ProfileItem } from '@docsandeye/core/interactive';
 import { siteHref } from '../interactive-view.ts';
@@ -61,10 +63,19 @@ const parts = (label: string) => labelParts(label).map((p) => (p.href ? { ...p, 
 										{parts(option.label).map((p) => p.text).join('')}
 									</a>
 								) : (
-									<label class="docsi-profile-option">
-										<input type="radio" name={item.id} value={option.value} checked={option.value === defaults[item.id]} />{' '}
-										{parts(option.label).map((p) => (p.href ? <a href={p.href}>{p.text}</a> : p.text))}
-									</label>
+									<span class="docsi-profile-option">
+										<label>
+											<input type="radio" name={item.id} value={option.value} checked={option.value === defaults[item.id]} />{' '}
+											{parts(option.label).map((p) => p.text).join('')}
+										</label>
+										{parts(option.label)
+											.filter((p) => p.href !== undefined)
+											.map((p) => (
+												<a class="docsi-profile-site" href={p.href} aria-label={`${p.text} (site)`}>
+													site
+												</a>
+											))}
+									</span>
 								)
 							)}
 						</fieldset>

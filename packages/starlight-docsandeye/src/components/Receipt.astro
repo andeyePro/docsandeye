@@ -22,13 +22,15 @@ interface Props {
 	items: readonly ProfileItem[];
 	/** Glossary term buttons for the page; the receipt's notes are one block. */
 	linkTerms?: (html: string, used?: Set<GlossaryEntry>) => string;
+	/** A maintainer build keeps `DRAFT:` notes; readers never see them. */
+	maintainer?: boolean;
 }
 
-const { guideId, stepId, model, items: profile, linkTerms = (html: string) => html } = Astro.props;
+const { guideId, stepId, model, items: profile, linkTerms = (html: string) => html, maintainer = false } = Astro.props;
 const noteTerms = new Set<GlossaryEntry>();
 const noteHtml = (note: string) => linkTerms(escapeHtml(note), noteTerms);
 const { config } = model;
-const items = guideReceiptItems(model, guideId);
+const items = guideReceiptItems(model, guideId, maintainer);
 const labels = supplierLabels(model);
 const { perUnit, perKit } = staticReceiptGroups(items);
 const multiplied = config.receipt?.multiply_by;

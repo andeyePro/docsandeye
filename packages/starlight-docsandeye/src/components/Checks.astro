@@ -6,7 +6,7 @@
  * hidden), reveals issues on No with a pre-filled email, and shows
  * "Step checked" once every visible check is Yes.
  */
-import { inlineCodeHtml, type GlossaryEntry, type ProjectModel, type Step } from '@docsandeye/core';
+import { inlineMarkdownHtml, type GlossaryEntry, type ProjectModel, type Step } from '@docsandeye/core';
 import type { ProfileItem } from '@docsandeye/core/interactive';
 import { onlyIf, plainMailto, whenAttr } from '../interactive-view.ts';
 
@@ -18,17 +18,19 @@ interface Props {
 	items: readonly ProfileItem[];
 	/** Glossary term buttons for the page; each check is one block. */
 	linkTerms?: (html: string, used?: Set<GlossaryEntry>) => string;
+	/** A maintainer build shows the "Draft checks" badge of `checks_draft`; readers never see it. */
+	maintainer?: boolean;
 }
 
-const { guideId, step, model, items, linkTerms = (html: string) => html } = Astro.props;
+const { guideId, step, model, items, linkTerms = (html: string) => html, maintainer = false } = Astro.props;
 const checks = step.checks ?? [];
 const contact = model.config.contacts.project;
 const help = plainMailto(contact, step.title);
 const name = (id: string) => `docsi-check-${step.id}-${id}`;
-// Questions and issues are plain text with `code` spans; glossary terms are linked once per check.
+// Questions and issues are inline Markdown (code, bold, emphasis, links); glossary terms are linked once per check.
 const blocks = checks.map((check) => {
 	const used = new Set<GlossaryEntry>();
-	const text = (value: string) => linkTerms(inlineCodeHtml(value), used);
+	const text = (value: string) => linkTerms(inlineMarkdownHtml(value), used);
 	return { question: text(check.question), issues: check.issues.map((issue) => ({ problem: text(issue.problem), fix: text(issue.fix) })) };
 });
 ---
@@ -38,7 +40,7 @@ const blocks = checks.map((check) => {
 		<docsi-checks data-guide={guideId} data-step={step.id} data-step-title={step.title} data-contact={contact ? JSON.stringify(contact) : undefined}>
 			<section class="docsi-checks">
 				<h2>Check your work</h2>
-				{step.checks_draft && <p class="docsi-checks-draft">Draft checks, under review</p>}
+				{maintainer && step.checks_draft && <p class="docsi-checks-draft">Draft checks, under review</p>}
 				<ol class="docsi-checks-list">
 					{checks.map((check, i) => (
 						<li class="docsi-check" data-check={check.id} data-question={check.question} data-when={whenAttr(check.when)}>

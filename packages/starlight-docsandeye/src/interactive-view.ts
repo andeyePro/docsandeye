@@ -60,9 +60,9 @@ export function checkRefs(step: Step): CheckRef[] | undefined {
   return step.checks.map((c) => (c.when ? { id: c.id, when: c.when } : { id: c.id }));
 }
 
-/** The receipt items of a guide (see core's `receiptItems`). */
-export function guideReceiptItems(model: ProjectModel, guideId: string): ReceiptItem[] {
-  return receiptItems(model, guideId);
+/** The receipt items of a guide (see core's `receiptItems`); `DRAFT:` notes only in a maintainer build. */
+export function guideReceiptItems(model: ProjectModel, guideId: string, maintainer = false): ReceiptItem[] {
+  return receiptItems(model, guideId, { maintainer });
 }
 
 /** Option label (links reduced to text) of a choice value of `supplier_from` (for "from <label>" wording); the value itself when unknown. */

@@ -340,9 +340,9 @@ details.docsi-stale figure {
   text-transform: lowercase;
 }
 
-/* The safety note is a Starlight danger aside; this only spaces it. */
+/* The safety note is a Starlight danger aside at the top of the step body; this only spaces it. */
 .docsi-safety {
-  margin-top: 1.5rem;
+  margin: 1rem 0;
 }
 
 .docsi-meta {
@@ -420,6 +420,7 @@ details.docsi-stale figure {
 }
 
 .docsi-steps,
+.docsi-guide-pages,
 .docsi-guides {
   list-style: none;
   padding: 0;
@@ -427,6 +428,7 @@ details.docsi-stale figure {
 }
 
 .docsi-steps li,
+.docsi-guide-pages li,
 .docsi-guides li {
   display: flex;
   flex-wrap: wrap;
@@ -438,6 +440,7 @@ details.docsi-stale figure {
 }
 
 .docsi-steps a,
+.docsi-guide-pages a,
 .docsi-guides a,
 .docsi-reshoot-link {
   display: block;
@@ -450,17 +453,24 @@ details.docsi-stale figure {
 }
 
 .docsi-steps a:hover,
+.docsi-guide-pages a:hover,
 .docsi-guides a:hover,
 .docsi-reshoot-link:hover {
   color: var(--sl-color-white);
 }
 
 .docsi-steps a[aria-current='page'],
+.docsi-guide-pages a[aria-current='page'],
 .docsi-guide-title[aria-current='page'],
 .docsi-reshoot-link[aria-current='page'] {
   font-weight: 600;
   color: var(--sl-color-text-invert);
   background-color: var(--sl-color-text-accent);
+}
+
+/* Companion pages follow the steps, set a little apart. */
+.docsi-guide-pages {
+  margin-top: 0.4rem;
 }
 
 .docsi-badge {
@@ -615,6 +625,10 @@ docsi-youtube [hidden],
 }
 
 fieldset.docsi-profile-field {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 0.35rem;
   border: 1px solid var(--sl-color-hairline);
   border-radius: 0.5rem;
   padding: 0.4rem 0.75rem 0.6rem;
@@ -847,13 +861,26 @@ docsi-youtube {
 }
 
 /* ---- profile options ------------------------------------------------------ */
-/* One option per line: a choice list reads top to bottom, and a link option
-   ("use the other guide") must not sit in the middle of a row of radios. */
+/* One option per line at normal line spacing: a choice list reads top to
+   bottom, and a link option ("use the other guide") must not sit in the
+   middle of a row of radios. */
 .docsi-profile-option {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.35rem;
   align-items: baseline;
-  flex-basis: 100%;
+  margin: 0;
+  line-height: var(--sl-line-height, 1.5);
+}
+
+.docsi-profile-option > label,
+.docsi-profile-option > label > input {
+  margin: 0;
+}
+
+/* A label's link sits after the label, never inside it: clicking the label only selects. */
+.docsi-profile-site {
+  font-size: var(--sl-text-xs);
 }
 
 .docsi-profile-link {

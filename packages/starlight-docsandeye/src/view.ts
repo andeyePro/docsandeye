@@ -407,6 +407,27 @@ export function sidebarTargetHref(target: SidebarTarget, siteBase = '/'): string
   return `${siteBase.replace(/\/+$/, '')}${target.link}`;
 }
 
+/**
+ * The sidebar links of a guide's companion `pages`: each slug resolves to the
+ * Starlight content entry with that id, compared case-insensitively
+ * (Starlight lowercases slugs, so a page in `AEP/` is served at `/aep/…`), and
+ * its href is Starlight's own for that entry. A slug with no entry keeps its
+ * lower-cased form (`found: false`).
+ */
+export function guidePageLinks(
+  pages: readonly { label: string; slug: string }[] | undefined,
+  docIds: readonly string[],
+  siteBase = '/',
+): Array<{ label: string; href: string; found: boolean }> {
+  const byLower = new Map(docIds.map((id) => [id.replace(/^\/+|\/+$/g, '').toLowerCase(), id]));
+  return (pages ?? []).map(({ label, slug }) => {
+    const wanted = slug.replace(/^\/+|\/+$/g, '').toLowerCase();
+    const id = byLower.get(wanted) ?? byLower.get(`${wanted}/index`);
+    const target = id === undefined ? wanted : id.replace(/(^|\/)index$/, '');
+    return { label, href: sidebarTargetHref({ slug: target === '' ? 'index' : target }, siteBase)!, found: id !== undefined };
+  });
+}
+
 /** A readable label for a slug with no title to hand: `aep/protocol` → `Protocol`. */
 export function slugLabel(slug: string): string {
   const last = slug.split('/').filter(Boolean).pop() ?? slug;

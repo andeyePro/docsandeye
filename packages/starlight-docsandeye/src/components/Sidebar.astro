@@ -1,14 +1,16 @@
 ---
 /**
  * Sidebar override: on Docs&I pages, list the current guide's steps in order
- * with staleness/updated badges; elsewhere defer to Starlight's own sidebar.
+ * with staleness/updated badges, then the guide's companion `pages`;
+ * elsewhere defer to Starlight's own sidebar.
  */
+import { getCollection } from 'astro:content';
 import MobileMenuFooter from '@astrojs/starlight/components/MobileMenuFooter.astro';
 import Default from '@astrojs/starlight/components/Sidebar.astro';
 import { stepsForGuide } from '@docsandeye/core';
 import { buildDate, config, maintainer, model, staleness } from 'virtual:docsandeye/model';
 import { checkRefs, whenAttr } from '../interactive-view.ts';
-import { guideHref, stepBadges, stepHref, withBase } from '../view.ts';
+import { guideHref, guidePageLinks, stepBadges, stepHref, withBase } from '../view.ts';
 
 interface Marker {
 	kind: 'guide' | 'step' | 'reshoot';
@@ -22,6 +24,9 @@ const base = import.meta.env.BASE_URL;
 const guide = marker?.guideId ? config.guides.find((g) => g.id === marker.guideId) : undefined;
 const steps = guide ? stepsForGuide(model, guide.id) : [];
 const otherGuides = config.guides.filter((g) => g.id !== guide?.id);
+// Companion pages (`guides[].pages`) link to Starlight's own URL for their entry.
+const pages = guide?.pages?.length ? guidePageLinks(guide.pages, (await getCollection('docs')).map((e) => e.id), base) : [];
+const current = Astro.url.pathname.replace(/\/?$/, '/');
 ---
 
 {
@@ -63,6 +68,17 @@ const otherGuides = config.guides.filter((g) => g.id !== guide?.id);
 								);
 							})}
 						</ol>
+						{pages.length > 0 && (
+							<ul class="docsi-guide-pages">
+								{pages.map((p) => (
+									<li>
+										<a href={p.href} aria-current={p.href === current ? 'page' : undefined}>
+											{p.label}
+										</a>
+									</li>
+								))}
+							</ul>
+						)}
 					</div>
 				)}
 				{otherGuides.length > 0 && (

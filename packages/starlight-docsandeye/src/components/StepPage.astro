@@ -32,7 +32,7 @@ interface Props {
 	pathname: string;
 }
 
-const { guide, step, model, staleness, renderManifest, carbon, pathname } = Astro.props;
+const { guide, step, model, staleness, renderManifest, carbon, maintainer, pathname } = Astro.props;
 const base = import.meta.env.BASE_URL;
 // Only the questions that belong to this guide (`profile[].guides`).
 const profile = itemsForGuide(model.config.profile, guide.id);
@@ -43,7 +43,7 @@ const linkTerms = glossaryLinker(model.glossary);
 // Repo-relative links: a step of this guide → its page; other project paths → GitHub (`project.repo`).
 const links = linkOptionsFor(step, guide, stepsForGuide(model, guide.id), model.config.project, base);
 const html = linkTerms(await renderMarkdown(wrapWhenBlocks(step.body, profile).markdown, links));
-// The `safety` note is a Starlight danger aside titled "Safety".
+// The `safety` note is a Starlight danger aside titled "Safety", at the top of the step body: read before anything is done.
 const safetyHtml = step.safety ? await renderMarkdown(asideMarkdown('danger', 'Safety', step.safety), links) : undefined;
 const carbonEntry = carbonFor(carbon, pathname);
 const overview = guideHref(guide, base);
@@ -96,12 +96,12 @@ const hasMediaPane = step.renders.length > 0 || step.viewer !== undefined || med
 					</p>
 				)
 			}
+			{safetyHtml && <div class="docsi-safety" set:html={safetyHtml} />}
 			{step.profile && <ProfileForm guideId={guide.id} items={profile} />}
 			<div class="docsi-body sl-markdown-content" set:html={html} />
-			{step.receipt && <Receipt guideId={guide.id} stepId={step.id} model={model} items={profile} linkTerms={linkTerms} />}
+			{step.receipt && <Receipt guideId={guide.id} stepId={step.id} model={model} items={profile} linkTerms={linkTerms} maintainer={maintainer} />}
 			<PartsList step={step} model={model} items={profile} />
-			<Checks guideId={guide.id} step={step} model={model} items={profile} linkTerms={linkTerms} />
-			{safetyHtml && <div class="docsi-safety" set:html={safetyHtml} />}
+			<Checks guideId={guide.id} step={step} model={model} items={profile} linkTerms={linkTerms} maintainer={maintainer} />
 			{
 				olderVideos.length > 0 && (
 					<section class="docsi-older-video">
