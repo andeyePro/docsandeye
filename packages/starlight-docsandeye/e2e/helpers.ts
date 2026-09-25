@@ -45,7 +45,8 @@ export async function setUnits(page: Page, units: number, field = 'units'): Prom
     input = page.locator(`#docsi-profile-${field}`);
     await input.fill(String(units));
     await input.dispatchEvent('change');
-    const save = page.getByRole('button', { name: 'Save' });
+    // The consent bar's Save, not the form's own submit button.
+    const save = page.locator('.docsi-consent-bar').getByRole('button', { name: 'Save' });
     if (await save.count()) await save.click();
     await openReady(page, back);
     return;
