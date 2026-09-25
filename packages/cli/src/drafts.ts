@@ -1,8 +1,8 @@
 /**
  * Draft markers left in a built site: reader-visible text on a guide or step
  * page that contains `<!-- TODO` (a comment the author escaped or put in code,
- * so the renderer printed it instead of stripping it) or a line starting
- * `DRAFT:`. `docsandeye check --dist` reports each as an error. Only text
+ * so the renderer printed it instead of stripping it) or the word `DRAFT:`
+ * anywhere in a line. `docsandeye check --dist` reports each as an error. Only text
  * counts: attributes, `<script>`/`<style>` bodies and HTML comments are not
  * shown to a reader.
  */
@@ -13,7 +13,7 @@ import { findIndexPages, pagePath, STEP_META_NAME } from './budget.js';
 export const GUIDE_META_NAME = 'docsandeye:guide';
 
 const TODO_MARK = '<!-- TODO';
-const DRAFT_LINE = /^DRAFT:/;
+const DRAFT_MARK = /\bDRAFT:/;
 
 /** Parse with `<pre>` (and `<noscript>`) as ordinary markup; the parser's default keeps them as raw text. */
 const PARSE_OPTIONS = { comment: false, blockTextElements: { script: true, style: true } };
@@ -65,7 +65,8 @@ export function draftMarkers(page: string | HTMLElement): string[] {
   for (const line of visibleLines(root)) {
     const todo = line.indexOf(TODO_MARK);
     if (todo >= 0) found.push(`contains "${TODO_MARK}": ${excerpt(line, todo)}`);
-    if (DRAFT_LINE.test(line)) found.push(`line starts "DRAFT:": ${excerpt(line, 0)}`);
+    const draft = line.search(DRAFT_MARK);
+    if (draft >= 0) found.push(`contains "DRAFT:": ${excerpt(line, draft)}`);
   }
   return found;
 }

@@ -173,7 +173,7 @@ export {
 } from './links.js';
 export type { LinkContext, LinkTarget } from './links.js';
 
-export { buildReceipt, isDraftNote, receiptItems, type ReceiptItemsOptions } from './receipt.js';
+export { buildReceipt, isDraftNote, readerNote, receiptItems, type ReceiptItemsOptions } from './receipt.js';
 
 export { COLLECTION_DIRS, GLOSSARY_FILE, isDenylisted, loadProject, stepsForGuide } from './load.js';
 export type { LoadProjectOptions, ProjectModel } from './load.js';

@@ -4,7 +4,7 @@
  * CO2.js estimate written to `build/carbon.json`. Since v0.2 an over-budget
  * page is an error by default (`--no-strict` demotes it to a warning). A step
  * part or tool its body never mentions is a warning; with `--dist`, a draft
- * marker (`<!-- TODO`, a `DRAFT:` line) left in a guide or step page is an error.
+ * marker (`<!-- TODO`, the word `DRAFT:`) left in a guide or step page is an error.
  */
 import fs from 'node:fs';
 import path from 'node:path';

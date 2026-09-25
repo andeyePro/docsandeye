@@ -12,8 +12,18 @@ export function isDraftNote(note: string): boolean {
   return /^\s*draft:/i.test(note);
 }
 
+/**
+ * The part of a note a reader may see: everything before the first `DRAFT:`
+ * (a maintainer's open question may follow a finished sentence), or nothing
+ * when the note is a draft from the start.
+ */
+export function readerNote(note: string): string | undefined {
+  const text = note.split(/\bdraft:/i, 1)[0]!.trim();
+  return text === '' ? undefined : text;
+}
+
 export interface ReceiptItemsOptions {
-  /** A maintainer build keeps `DRAFT:` notes; a reader build (the default) drops them. */
+  /** A maintainer build keeps `DRAFT:` text; a reader build (the default) drops it. */
   maintainer?: boolean;
 }
 
@@ -21,8 +31,8 @@ export interface ReceiptItemsOptions {
  * Components with `receipt` data that belong to `guideId`: those referenced
  * (as a part or tool) by a step of the guide, plus those no step references
  * at all — a receipt-only item such as a spares bag belongs to every guide.
- * Ordered by component name, then id. A `DRAFT:` note is left out unless
- * `options.maintainer`.
+ * Ordered by component name, then id. A note's `DRAFT:` part is left out
+ * unless `options.maintainer`.
  */
 export function receiptItems(model: ProjectModel, guideId: string, options: ReceiptItemsOptions = {}): ReceiptItem[] {
   const inGuide = new Set<string>();
@@ -42,7 +52,8 @@ export function receiptItems(model: ProjectModel, guideId: string, options: Rece
     const item: ReceiptItem = { component: component.id, name: component.name, per: receipt.per, qty: receipt.qty };
     if (receipt.from !== undefined) item.from = [...receipt.from];
     if (receipt.when !== undefined) item.when = receipt.when;
-    if (receipt.note !== undefined && (options.maintainer === true || !isDraftNote(receipt.note))) item.note = receipt.note;
+    const note = receipt.note === undefined ? undefined : options.maintainer === true ? receipt.note : readerNote(receipt.note);
+    if (note !== undefined) item.note = note;
     if (component.supplier) {
       item.supplier = { name: component.supplier.name };
       if (component.supplier.url !== undefined) item.supplier.url = component.supplier.url;

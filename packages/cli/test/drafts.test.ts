@@ -1,8 +1,9 @@
 /**
  * Draft markers in a built site (`src/drafts.ts`) and the unmentioned-part
  * warning, through `docsandeye check`. The `dist-drafts` fixture holds a
- * guide page with an escaped `<!-- TODO` in a code block, a step page with
- * two `DRAFT:` lines, and a page that is neither (never checked); script and
+ * guide page with an escaped `<!-- TODO` in a code block and a `DRAFT:` after
+ * a sentence, a step page with two `DRAFT:` lines, and a page that is neither
+ * (never checked); script and
  * style bodies, attributes and real comments carry markers that must not count.
  */
 import { execFile } from 'node:child_process';
@@ -41,21 +42,27 @@ describe('visibleLines', () => {
 });
 
 describe('draftMarkers', () => {
-  it('finds a literal "<!-- TODO" in reader text and lines starting "DRAFT:"', () => {
+  it('finds a literal "<!-- TODO" and the word "DRAFT:" in reader text', () => {
     expect(draftMarkers('<pre><code>&lt;!-- TODO: fix --&gt;</code></pre><p>DRAFT: not final</p>')).toEqual([
       'contains "<!-- TODO": <!-- TODO: fix -->',
-      'line starts "DRAFT:": DRAFT: not final',
+      'contains "DRAFT:": DRAFT: not final',
     ]);
   });
 
-  it('ignores comments, attributes, script and style bodies, and DRAFT: mid-line', () => {
-    const html = '<!-- TODO real --><p data-x="DRAFT: a" title="<!-- TODO">Text, then DRAFT: here</p><script>"<!-- TODO"</script><style>/* DRAFT: */</style>';
+  it('finds DRAFT: after a finished sentence (a part note) but not inside a word', () => {
+    expect(draftMarkers('<p>1 GB or larger. DRAFT: whether the order includes it</p><p>Redraft: fine</p>')).toEqual([
+      'contains "DRAFT:": DRAFT: whether the order includes it',
+    ]);
+  });
+
+  it('ignores comments, attributes, and script and style bodies', () => {
+    const html = '<!-- TODO real --><p data-x="DRAFT: a" title="<!-- TODO">Text</p><script>"<!-- TODO"</script><style>/* DRAFT: */</style>';
     expect(draftMarkers(html)).toEqual([]);
   });
 
   it('cuts a long excerpt to 60 characters', () => {
     const [line] = draftMarkers(`<p>DRAFT: ${'x'.repeat(100)}</p>`);
-    expect(line!.slice('line starts "DRAFT:": '.length)).toHaveLength(60);
+    expect(line!.slice('contains "DRAFT:": '.length)).toHaveLength(60);
   });
 });
 
@@ -63,8 +70,9 @@ describe('draftErrors over a dist directory', () => {
   it('checks guide and step pages only', () => {
     expect(draftErrors(draftsDist)).toEqual([
       'draft: /kit/ contains "<!-- TODO": <!-- TODO: explain the jumper -->',
-      'draft: /kit/step-01-a/ line starts "DRAFT:": DRAFT: check this torque value with the maintainer',
-      'draft: /kit/step-01-a/ line starts "DRAFT:": DRAFT: second line of a paragraph',
+      'draft: /kit/ contains "DRAFT:": DRAFT: an open question after it is still a draft.',
+      'draft: /kit/step-01-a/ contains "DRAFT:": DRAFT: check this torque value with the maintainer',
+      'draft: /kit/step-01-a/ contains "DRAFT:": DRAFT: second line of a paragraph',
     ]);
   });
 });
@@ -85,9 +93,9 @@ describe('docsandeye check', () => {
     const result = await runCli(['check', '--project', tmp, '--dist', draftsDist]);
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('draft: /kit/ contains "<!-- TODO"');
-    expect(result.stderr).toContain('draft: /kit/step-01-a/ line starts "DRAFT:"');
+    expect(result.stderr).toContain('draft: /kit/step-01-a/ contains "DRAFT:"');
     expect(result.stderr).not.toContain('/about/');
-    expect(result.stdout.trim().split('\n').at(-1)).toBe('errors: 3, warnings: 1');
+    expect(result.stdout.trim().split('\n').at(-1)).toBe('errors: 4, warnings: 1');
   });
 
   it('warns about a part the step body never mentions, without --dist', async () => {

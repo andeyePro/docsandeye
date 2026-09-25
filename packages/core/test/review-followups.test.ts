@@ -8,6 +8,7 @@ import {
   DocsiError,
   inlineMarkdownHtml,
   isDraftNote,
+  readerNote,
   linkGlossaryTerms,
   parseConfig,
   parseGlossary,
@@ -87,19 +88,28 @@ describe('draft receipt notes', () => {
     expect(isDraftNote('DRAFT without a colon')).toBe(false);
   });
 
+  it('readerNote: the text before DRAFT:, or nothing', () => {
+    expect(readerNote('1 GB or larger. DRAFT: whether the order includes it')).toBe('1 GB or larger.');
+    expect(readerNote('DRAFT: to confirm')).toBeUndefined();
+    expect(readerNote('  Draft:x')).toBeUndefined();
+    expect(readerNote('Bag B')).toBe('Bag B');
+    expect(readerNote('Redraft: not a marker')).toBe('Redraft: not a marker');
+  });
+
   const model = {
     config: { guides: [{ id: 'g', title: 'G', base: '/g' }] },
     steps: new Map(),
     components: new Map([
       ['a', { id: 'a', name: 'A', receipt: { per: 'unit', qty: 1, note: 'DRAFT: to confirm' } }],
       ['b', { id: 'b', name: 'B', receipt: { per: 'kit', qty: 1, note: 'Bag B' } }],
+      ['c', { id: 'c', name: 'C', receipt: { per: 'unit', qty: 1, note: 'One spare. DRAFT: per order?' } }],
     ]),
   } as unknown as ProjectModel;
 
-  it('receiptItems drops DRAFT notes for readers (the default) and keeps them for maintainers', () => {
-    expect(receiptItems(model, 'g').map((i) => i.note)).toEqual([undefined, 'Bag B']);
-    expect(receiptItems(model, 'g', { maintainer: false }).map((i) => i.note)).toEqual([undefined, 'Bag B']);
-    expect(receiptItems(model, 'g', { maintainer: true }).map((i) => i.note)).toEqual(['DRAFT: to confirm', 'Bag B']);
+  it('receiptItems drops DRAFT text for readers (the default) and keeps it for maintainers', () => {
+    expect(receiptItems(model, 'g').map((i) => i.note)).toEqual([undefined, 'Bag B', 'One spare.']);
+    expect(receiptItems(model, 'g', { maintainer: false }).map((i) => i.note)).toEqual([undefined, 'Bag B', 'One spare.']);
+    expect(receiptItems(model, 'g', { maintainer: true }).map((i) => i.note)).toEqual(['DRAFT: to confirm', 'Bag B', 'One spare. DRAFT: per order?']);
   });
 });
 
