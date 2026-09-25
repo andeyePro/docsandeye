@@ -26,8 +26,9 @@ const { prev, next } = guideIndexPagination(guide, steps, base);
 	docsandeye={{ kind: 'guide', guideId: guide.id }}
 >
 	<p class="docsi-guide-intro">
-		{steps.length} {steps.length === 1 ? 'step' : 'steps'}. Follow them in order; each step lists its parts, tools and
-		safety notes.
+		{steps.length === 1
+			? 'One step. It lists its parts, tools and safety notes.'
+			: `${steps.length} steps. Follow them in order; each step lists its parts, tools and safety notes.`}
 	</p>
 	<ProfileData items={profile} />
 	<ProfileForm guideId={guide.id} items={profile} />
