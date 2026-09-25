@@ -17,6 +17,11 @@ describe('mentionsComponent', () => {
     expect(mentionsComponent('A male end goes in.', { id: 'barb-1-16-to-male-luer-lock', name: '1/16" barb to male luer lock' })).toBe(false);
     expect(mentionsComponent('Push the barb in.', { id: 'barb-1-16-to-male-luer-lock', name: '1/16" barb to male luer lock' })).toBe(true);
   });
+  it('tolerates a plural on either side', () => {
+    expect(mentionsComponent('Fit four 8 mm screws.', { id: 'screw-8mm', name: '8 mm screw' })).toBe(true);
+    expect(mentionsComponent('Screw the GL45 cap on.', { id: 'gl45-cap', name: 'GL45 caps' })).toBe(true);
+  });
+
   it('does not match inside another word', () => {
     expect(mentionsComponent('Deregulator is not a word.', regulator)).toBe(false);
   });

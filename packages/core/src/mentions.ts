@@ -19,7 +19,9 @@ const WORD_CHAR = '[\\p{L}\\p{N}_]';
  */
 export function mentionPattern(phrase: string, kebab = false): RegExp {
   const escape = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const words = phrase.trim().split(kebab ? /[\s-]+/ : /\s+/).map(escape);
+  // "caps" in a name still matches "cap" in the text and the other way round.
+  const plural = (w: string) => `${escape(w.replace(/s$/i, ''))}s?`;
+  const words = phrase.trim().split(kebab ? /[\s-]+/ : /\s+/).map(plural);
   return new RegExp(`(?<!${WORD_CHAR})${words.join(kebab ? '[\\s-]+' : '\\s+')}(?!${WORD_CHAR})`, 'iu');
 }
 
