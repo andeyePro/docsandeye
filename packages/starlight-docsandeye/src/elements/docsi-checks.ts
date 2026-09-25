@@ -73,7 +73,7 @@ export class DocsiChecks extends ElementBase {
           ? checkMailto({
               contact,
               stepTitle: this.dataset.stepTitle ?? '',
-              question: li.querySelector('.docsi-check-q')?.textContent?.trim() ?? '',
+              question: li.dataset.question ?? li.querySelector('.docsi-check-q')?.textContent?.trim() ?? '',
               profileSummary: profileSummary(items, profile),
               pageUrl: pageUrl(),
             })

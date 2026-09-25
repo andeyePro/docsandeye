@@ -6,17 +6,18 @@
  * them and remembers their state.
  */
 import type { ProjectModel, Step } from '@docsandeye/core';
-import { checkoffKey } from '@docsandeye/core/interactive';
+import { checkoffKey, type ProfileItem } from '@docsandeye/core/interactive';
 import { onlyIf, whenAttr } from '../interactive-view.ts';
 import { componentName } from '../view.ts';
 
 interface Props {
 	step: Step;
 	model: ProjectModel;
+	/** The guide's profile questions (for the "Only …" labels). */
+	items: readonly ProfileItem[];
 }
 
-const { step, model } = Astro.props;
-const profile = model.config.profile;
+const { step, model, items: profile } = Astro.props;
 const lists = [
 	{ className: 'docsi-parts', heading: 'Parts', rows: step.parts },
 	{ className: 'docsi-tools', heading: 'Tools', rows: step.tools },

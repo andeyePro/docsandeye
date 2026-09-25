@@ -434,3 +434,13 @@ export function stepPagination(
     next: following ? { link: stepHref(guide, following.id, siteBase), label: following.title } : (after ?? false),
   };
 }
+
+/** Prev/next of a guide index page: no "Previous"; "Next" is the first step (none without steps). */
+export function guideIndexPagination(
+  guide: Pick<Guide, 'base'>,
+  steps: readonly Pick<Step, 'id' | 'title'>[],
+  siteBase = '/',
+): { prev: false; next: PageLink | false } {
+  const first = steps[0];
+  return { prev: false, next: first ? { link: stepHref(guide, first.id, siteBase), label: first.title } : false };
+}

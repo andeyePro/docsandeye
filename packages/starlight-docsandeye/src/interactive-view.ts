@@ -5,9 +5,9 @@
  * maths, mailtos) live in `@docsandeye/core/interactive`, shared with the
  * browser.
  */
-import { receiptItems, type Guide, type ProjectModel, type Step } from '@docsandeye/core';
-import { defaultProfile, describeWhen, matchesWhen, plainLabel, type CheckRef, type Contact, type ProfileItem, type ReceiptItem, type StepRef, type When } from '@docsandeye/core/interactive';
-import { stepHref, type PageLink } from './view.ts';
+import { compileGlossary, linkGlossaryTerms, receiptItems, termIds, type GlossaryEntry, type Guide, type ProjectModel, type Step } from '@docsandeye/core';
+import { plainLabel, whenLabel, type CheckRef, type Contact, type ProfileItem, type ReceiptItem, type StepRef, type When } from '@docsandeye/core/interactive';
+import { stepHref } from './view.ts';
 
 /**
  * A config-authored link for the page: a root-relative path (`/MEP/`) gets
@@ -23,9 +23,20 @@ export function whenAttr(when: When | undefined): string | undefined {
   return when && Object.keys(when).length > 0 ? JSON.stringify(when) : undefined;
 }
 
-/** `Only if: …` for a condition, or undefined. */
+/** `Only if: …` (or `Only with …`) for a condition, or undefined. */
 export function onlyIf(when: When | undefined, items: readonly ProfileItem[]): string | undefined {
-  return when && Object.keys(when).length > 0 ? `Only if: ${describeWhen(when, items)}` : undefined;
+  return when && Object.keys(when).length > 0 ? whenLabel(when, items) : undefined;
+}
+
+/**
+ * Glossary term buttons for one page: `link(html, used?)` wraps the first
+ * occurrence of each term in `html`; calls sharing a `used` set form one
+ * block (one check, one receipt). Ids are unique across the page.
+ */
+export function glossaryLinker(glossary: readonly GlossaryEntry[] | undefined): (html: string, used?: Set<GlossaryEntry>) => string {
+  const compiled = compileGlossary(glossary ?? []);
+  const ids = termIds();
+  return (html, used) => (compiled.length === 0 ? html : linkGlossaryTerms(html, compiled, ids, used));
 }
 
 /** JSON for an inline `<script type="application/json">`: `<` escaped so the text can never close the element. */
@@ -73,11 +84,4 @@ export function plainMailto(contact: Contact | undefined, subjectSuffix?: string
 /** `per unit` / `per kit` rows of the no-JavaScript receipt table, each ordered by name (as the client does). */
 export function staticReceiptGroups(items: readonly ReceiptItem[]): { perUnit: ReceiptItem[]; perKit: ReceiptItem[] } {
   return { perUnit: items.filter((i) => i.per === 'unit'), perKit: items.filter((i) => i.per === 'kit') };
-}
-
-/** The guide index page's "next": the first step that applies to the default profile. */
-export function guideNext(guide: Pick<Guide, 'base'>, steps: readonly Step[], items: readonly ProfileItem[], siteBase = '/'): PageLink | undefined {
-  const profile = defaultProfile(items);
-  const first = steps.find((s) => matchesWhen(s.when, profile));
-  return first ? { link: stepHref(guide, first.id, siteBase), label: first.title } : undefined;
 }

@@ -332,30 +332,17 @@ details.docsi-stale figure {
   min-width: 2.5rem;
 }
 
+/* The category tag (part, printed, prev, tool): small lower-case text at the right. */
 .docsi-cat {
   margin-left: auto;
   font-size: var(--sl-text-xs);
   color: var(--docsi-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  text-transform: lowercase;
 }
 
+/* The safety note is a Starlight danger aside; this only spaces it. */
 .docsi-safety {
   margin-top: 1.5rem;
-  padding: 0.75rem 1rem;
-  border-left: 4px solid var(--sl-color-red);
-  background: var(--sl-color-red-low);
-  color: var(--sl-color-white);
-  border-radius: 0 0.5rem 0.5rem 0;
-}
-
-.docsi-safety-label {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-.docsi-safety p {
-  margin: 0;
 }
 
 .docsi-meta {
@@ -369,15 +356,50 @@ details.docsi-stale figure {
 }
 
 /* ---- guide index ---------------------------------------------------------- */
+/* The step list reads like the sidebar's: number, title and parts count in
+   aligned columns on hairline-separated rows; notes wrap under the title. */
+.docsi-guide-steps {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  border-top: 1px solid var(--sl-color-hairline-light);
+}
+
 .docsi-guide-steps li {
-  display: flex;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  gap: 0.1rem 0.75rem;
   align-items: baseline;
+  margin: 0;
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--sl-color-hairline-light);
+}
+
+.docsi-guide-steps li > :nth-child(n + 4) {
+  grid-column: 2 / -1;
+}
+
+.docsi-step-num {
+  font-family: var(--docsi-font-mono);
+  font-size: var(--sl-text-sm);
+  color: var(--docsi-text-muted);
+  text-align: end;
+}
+
+.docsi-guide-steps a {
+  color: var(--sl-color-gray-2);
+  text-decoration: none;
+}
+
+.docsi-guide-steps a:hover {
+  color: var(--sl-color-white);
 }
 
 .docsi-parts-count {
-  font-size: var(--sl-text-sm);
+  font-size: var(--sl-text-xs);
   color: var(--docsi-text-muted);
+  text-align: end;
+  white-space: nowrap;
 }
 
 /* ---- sidebar --------------------------------------------------------------- */
@@ -622,6 +644,88 @@ fieldset.docsi-profile-field {
   width: 4.5rem;
 }
 
+/* Narrow screens: each row is one line (box, name, expected, received) with
+   the note in small text below, not one cell per line. */
+@media (max-width: 40rem) {
+  .docsi-receipt-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .docsi-receipt-table,
+  .docsi-receipt-table tbody {
+    display: block;
+  }
+
+  .docsi-receipt-table caption {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .docsi-receipt-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--sl-color-hairline);
+  }
+
+  .docsi-receipt-table td {
+    padding: 0;
+    border: 0;
+  }
+
+  .docsi-receipt-table td:first-child:not(.docsi-receipt-have),
+  .docsi-receipt-part {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+
+  .docsi-receipt-table td:nth-child(3):not(.docsi-receipt-expected) {
+    flex-basis: 100%;
+    color: var(--docsi-text-muted);
+    font-size: var(--sl-text-xs);
+  }
+
+  .docsi-receipt-expected::after {
+    content: ' ×';
+    color: var(--docsi-text-muted);
+  }
+
+  .docsi-receipt-table input {
+    width: 3.5rem;
+  }
+}
+
+.docsi-receipt-elsewhere {
+  margin: 0.75rem 0;
+}
+
+.docsi-receipt-elsewhere > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.docsi-receipt-elsewhere ul {
+  list-style: none;
+  padding: 0;
+}
+
+.docsi-receipt-elsewhere li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.4rem;
+  align-items: baseline;
+}
+
+.docsi-receipt-elsewhere .docsi-receipt-note {
+  flex-basis: 100%;
+}
+
 .docsi-missing {
   padding: 0.5rem 0.9rem;
   border-left: 4px solid var(--docsi-stale-fg);
@@ -812,4 +916,53 @@ docsi-youtube {
 .docsi-consent-notice button {
   margin-inline-start: 0.4rem;
   padding: 0.1rem 0.6rem;
+}
+
+/* ---- glossary terms ---------------------------------------------------------- */
+/* A term reads as text with a dotted underline; the tip opens beside it. */
+.docsi-term {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+  cursor: help;
+}
+
+.docsi-term:focus-visible {
+  outline: 2px solid var(--docsi-accent);
+  outline-offset: 1px;
+}
+
+.docsi-term-tip {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.docsi-tip {
+  position: absolute;
+  z-index: 30;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  background: var(--sl-color-bg-nav, var(--docsi-bg));
+  color: var(--docsi-text);
+  font-size: var(--sl-text-sm);
+  line-height: 1.4;
+  box-shadow: var(--sl-shadow-md);
+}
+
+.docsi-tip[hidden] {
+  display: none;
+}
+
+.docsi-tip a {
+  color: var(--docsi-accent-high);
 }

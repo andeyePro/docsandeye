@@ -1,6 +1,6 @@
 /**
  * The single client entry: registers the Docs&I custom elements and starts
- * the condition evaluator, the check-offs and the saving-consent UI. The server renders complete, legible markup;
+ * the condition evaluator, the check-offs, the saving-consent UI and the glossary tips. The server renders complete, legible markup;
  * these elements only upgrade it.
  */
 import { initCheckoffs } from './checkoffs.ts';
@@ -15,6 +15,7 @@ import { DocsiReceipt } from './docsi-receipt.ts';
 import { DocsiStep } from './docsi-step.ts';
 import { DocsiVideo } from './docsi-video.ts';
 import { DocsiYoutube } from './docsi-youtube.ts';
+import { initGlossary } from './glossary.ts';
 
 if (!customElements.get('docsi-step')) customElements.define('docsi-step', DocsiStep);
 if (!customElements.get('docsi-model')) customElements.define('docsi-model', DocsiModel);
@@ -30,3 +31,4 @@ if (!customElements.get('docsi-checks')) customElements.define('docsi-checks', D
 initConditions();
 initCheckoffs();
 initConsent();
+initGlossary();

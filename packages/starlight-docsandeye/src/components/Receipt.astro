@@ -9,7 +9,8 @@
  * receipt config, the contacts (with their emails) and the supplier labels.
  * The live checklist adds a "have it" check-off to every row (see `checkoffs.ts`).
  */
-import type { ProjectModel } from '@docsandeye/core';
+import { escapeHtml, type GlossaryEntry, type ProjectModel } from '@docsandeye/core';
+import type { ProfileItem } from '@docsandeye/core/interactive';
 import { guideReceiptItems, onlyIf, plainMailto, staticReceiptGroups, supplierLabels, whenAttr } from '../interactive-view.ts';
 
 interface Props {
@@ -17,9 +18,15 @@ interface Props {
 	/** The step the receipt is on: its check-offs are keyed `<step>/<component>`. */
 	stepId: string;
 	model: ProjectModel;
+	/** The guide's profile questions (for the "Only …" labels). */
+	items: readonly ProfileItem[];
+	/** Glossary term buttons for the page; the receipt's notes are one block. */
+	linkTerms?: (html: string, used?: Set<GlossaryEntry>) => string;
 }
 
-const { guideId, stepId, model } = Astro.props;
+const { guideId, stepId, model, items: profile, linkTerms = (html: string) => html } = Astro.props;
+const noteTerms = new Set<GlossaryEntry>();
+const noteHtml = (note: string) => linkTerms(escapeHtml(note), noteTerms);
 const { config } = model;
 const items = guideReceiptItems(model, guideId);
 const labels = supplierLabels(model);
@@ -70,8 +77,8 @@ const contacts = Object.entries(config.contacts).filter(([key]) => key !== 'proj
 								>
 									<td>
 										<span class="docsi-receipt-name">{row.name}</span>
-										{row.note && <span class="docsi-receipt-note">{row.note}</span>}
-										{row.when && <span class="docsi-when-inline">{onlyIf(row.when, config.profile)}</span>}
+										{row.note && <span class="docsi-receipt-note" set:html={noteHtml(row.note)} />}
+										{row.when && <span class="docsi-when-inline">{onlyIf(row.when, profile)}</span>}
 									</td>
 									<td>{row.qty}</td>
 									{showFrom && <td>{fromText(row.from)}</td>}

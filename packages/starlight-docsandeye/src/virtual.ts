@@ -29,7 +29,7 @@ export function serialiseDocsandeyeData(data: DocsandeyeData): string {
   const { model } = data;
   return [
     `export const config = ${js(data.config)};`,
-    `export const model = { config, components: ${mapLiteral(model.components)}, steps: ${mapLiteral(model.steps)}, media: ${mapLiteral(model.media)}, problems: ${js(model.problems)} };`,
+    `export const model = { config, components: ${mapLiteral(model.components)}, steps: ${mapLiteral(model.steps)}, media: ${mapLiteral(model.media)}, problems: ${js(model.problems)}, glossary: ${js(model.glossary ?? [])} };`,
     `export const staleness = ${js(data.staleness)};`,
     `export const renderManifest = ${js(data.renderManifest)};`,
     `export const mediaManifest = ${js(data.mediaManifest)};`,

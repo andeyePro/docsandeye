@@ -55,7 +55,9 @@ export function readReceiptItems(root: ParentNode): ReceiptItem[] {
     };
     if (d.from !== undefined) item.from = d.from.split(' ').filter(Boolean);
     if (d.when !== undefined) item.when = dataJson(tr, 'when', {});
-    const note = tr.querySelector('.docsi-receipt-note')?.textContent;
+    const noteEl = tr.querySelector('.docsi-receipt-note')?.cloneNode(true) as Element | undefined;
+    for (const tip of noteEl?.querySelectorAll('.docsi-term-tip') ?? []) tip.remove();
+    const note = noteEl?.textContent;
     if (note) item.note = note;
     if (d.supplierName !== undefined) {
       item.supplier = { name: d.supplierName };
@@ -66,8 +68,26 @@ export function readReceiptItems(root: ParentNode): ReceiptItem[] {
   return items;
 }
 
+/**
+ * The server's note elements by component, taken out of the (then hidden)
+ * table so the live rows show them with their glossary term buttons, and
+ * every term id stays unique on the page.
+ */
+export function takeReceiptNotes(root: ParentNode): Map<string, Element> {
+  const notes = new Map<string, Element>();
+  for (const tr of root.querySelectorAll<HTMLElement>('.docsi-receipt-static tr[data-component]')) {
+    const note = tr.querySelector('.docsi-receipt-note');
+    if (note) {
+      notes.set(tr.dataset.component!, note);
+      note.remove();
+    }
+  }
+  return notes;
+}
+
 export class DocsiReceipt extends ElementBase {
   private items: ReceiptItem[] = [];
+  private notes = new Map<string, Element>();
 
   private guideId = '';
   private stepId = '';
@@ -82,6 +102,7 @@ export class DocsiReceipt extends ElementBase {
     const staticView = this.querySelector<HTMLElement>('.docsi-receipt-static');
     if (!live || !this.guideId) return;
     this.items = readReceiptItems(this);
+    this.notes = takeReceiptNotes(this);
     this.render(live);
     live.hidden = false;
     if (staticView) staticView.hidden = true;
@@ -107,6 +128,7 @@ export class DocsiReceipt extends ElementBase {
     const received = readRecord(STORAGE_KEYS.receipt(this.guideId));
     const labels = dataJson<Record<string, string>>(this, 'supplier-labels', {});
     const r = this.receipt;
+    const elsewhereOpen = live.querySelector<HTMLDetailsElement>('.docsi-receipt-elsewhere')?.open ?? false;
 
     live.replaceChildren();
     const from = r.supplier !== undefined ? ` · ${labels[r.supplier] ?? r.supplier}` : '';
@@ -114,19 +136,29 @@ export class DocsiReceipt extends ElementBase {
     this.table(live, 'Per unit', r.perUnit, received);
     this.table(live, 'Per kit (does not scale with units)', r.perKit, received);
     if (r.elsewhere.length > 0) {
-      live.append(el('h3', 'Not in your package — source these yourself'));
-      const ul = el('ul', undefined, 'docsi-receipt-elsewhere');
+      // Closed by default: on a phone the list would otherwise push the rest of the step far down.
+      const details = el('details', undefined, 'docsi-receipt-elsewhere');
+      details.open = elsewhereOpen;
+      details.append(el('summary', `Not in your package — source these yourself (${r.elsewhere.length})`));
+      const ul = el('ul');
       for (const row of r.elsewhere) {
         const li = el('li');
         li.append(this.checkoff(row, 'Sourced'), `${row.expected} × `, supplierLink(row, row.name));
-        if (row.note) li.append(el('span', ` — ${row.note}`, 'docsi-receipt-note'));
+        const note = this.note(row);
+        if (note) li.append(note);
         ul.append(li);
       }
-      live.append(ul);
+      details.append(ul);
+      live.append(details);
     }
     live.append(el('div', undefined, 'docsi-missing'));
     applyCheckoffs(live, this.guideId);
     this.renderMissing(live);
+  }
+
+  /** The row's note: the server's element (with its term buttons) when there is one. */
+  private note(row: ReceiptRow): Element | undefined {
+    return this.notes.get(row.component) ?? (row.note ? el('span', row.note, 'docsi-receipt-note') : undefined);
   }
 
   /** The "have it" box of a row (state and row marking come from `applyCheckoffs`). */
@@ -151,8 +183,9 @@ export class DocsiReceipt extends ElementBase {
     for (const row of rows) {
       const tr = el('tr');
       tr.dataset.component = row.component;
-      const name = el('td', row.name);
-      if (row.note) name.append(el('span', row.note, 'docsi-receipt-note'));
+      const name = el('td', row.name, 'docsi-receipt-part');
+      const note = this.note(row);
+      if (note) name.append(note);
       const input = el('input');
       input.type = 'number';
       input.min = '0';
@@ -161,11 +194,11 @@ export class DocsiReceipt extends ElementBase {
       input.setAttribute('aria-label', `Received: ${row.name}`);
       const got = received[row.component];
       input.value = String(typeof got === 'number' ? got : row.expected);
-      const cell = el('td');
+      const cell = el('td', undefined, 'docsi-receipt-received');
       cell.append(input);
-      const have = el('td');
+      const have = el('td', undefined, 'docsi-receipt-have');
       have.append(this.checkoff(row, 'Have it'));
-      tr.append(have, name, el('td', String(row.expected)), cell);
+      tr.append(have, name, el('td', String(row.expected), 'docsi-receipt-expected'), cell);
       body.append(tr);
     }
     table.append(body);

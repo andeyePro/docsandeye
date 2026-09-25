@@ -6,20 +6,31 @@
  * hidden), reveals issues on No with a pre-filled email, and shows
  * "Step checked" once every visible check is Yes.
  */
-import type { ProjectModel, Step } from '@docsandeye/core';
+import { inlineCodeHtml, type GlossaryEntry, type ProjectModel, type Step } from '@docsandeye/core';
+import type { ProfileItem } from '@docsandeye/core/interactive';
 import { onlyIf, plainMailto, whenAttr } from '../interactive-view.ts';
 
 interface Props {
 	guideId: string;
 	step: Step;
 	model: ProjectModel;
+	/** The guide's profile questions (for the "Only …" labels). */
+	items: readonly ProfileItem[];
+	/** Glossary term buttons for the page; each check is one block. */
+	linkTerms?: (html: string, used?: Set<GlossaryEntry>) => string;
 }
 
-const { guideId, step, model } = Astro.props;
+const { guideId, step, model, items, linkTerms = (html: string) => html } = Astro.props;
 const checks = step.checks ?? [];
 const contact = model.config.contacts.project;
 const help = plainMailto(contact, step.title);
 const name = (id: string) => `docsi-check-${step.id}-${id}`;
+// Questions and issues are plain text with `code` spans; glossary terms are linked once per check.
+const blocks = checks.map((check) => {
+	const used = new Set<GlossaryEntry>();
+	const text = (value: string) => linkTerms(inlineCodeHtml(value), used);
+	return { question: text(check.question), issues: check.issues.map((issue) => ({ problem: text(issue.problem), fix: text(issue.fix) })) };
+});
 ---
 
 {
@@ -29,12 +40,10 @@ const name = (id: string) => `docsi-check-${step.id}-${id}`;
 				<h2>Check your work</h2>
 				{step.checks_draft && <p class="docsi-checks-draft">Draft checks, under review</p>}
 				<ol class="docsi-checks-list">
-					{checks.map((check) => (
-						<li class="docsi-check" data-check={check.id} data-when={whenAttr(check.when)}>
-							<p class="docsi-check-q" id={`${name(check.id)}-q`}>
-								{check.question}
-							</p>
-							{check.when && <p class="docsi-when-label">{onlyIf(check.when, model.config.profile)}</p>}
+					{checks.map((check, i) => (
+						<li class="docsi-check" data-check={check.id} data-question={check.question} data-when={whenAttr(check.when)}>
+							<p class="docsi-check-q" id={`${name(check.id)}-q`} set:html={blocks[i]!.question} />
+							{check.when && <p class="docsi-when-label">{onlyIf(check.when, items)}</p>}
 							<div class="docsi-check-answer" role="radiogroup" aria-labelledby={`${name(check.id)}-q`} hidden>
 								<label>
 									<input type="radio" name={name(check.id)} value="yes" /> Yes
@@ -47,9 +56,9 @@ const name = (id: string) => `docsi-check-${step.id}-${id}`;
 								<details class="docsi-check-issues">
 									<summary>If not: likely issues</summary>
 									<ul>
-										{check.issues.map((issue) => (
+										{blocks[i]!.issues.map((issue) => (
 											<li>
-												<strong>{issue.problem}</strong> — {issue.fix}
+												<strong set:html={issue.problem} /> — <Fragment set:html={issue.fix} />
 											</li>
 										))}
 									</ul>

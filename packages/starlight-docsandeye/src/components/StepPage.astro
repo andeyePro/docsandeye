@@ -1,9 +1,10 @@
 ---
 import { stepsForGuide, type Guide, type ProjectModel, type StalenessReport, type Step } from '@docsandeye/core';
-import { wrapWhenBlocks } from '@docsandeye/core/interactive';
+import { describeWhen, itemsForGuide, wrapWhenBlocks } from '@docsandeye/core/interactive';
+import { asideMarkdown } from '../asides.ts';
 import * as docsi from 'virtual:docsandeye/model';
 import type { CarbonReport, MediaManifest, RenderManifest } from '../data.ts';
-import { onlyIf, skipTargets, whenAttr } from '../interactive-view.ts';
+import { glossaryLinker, onlyIf, skipTargets, whenAttr } from '../interactive-view.ts';
 import { renderMarkdown } from '../markdown.ts';
 import { carbonFor, guideHref, olderVideoSentence } from '../view.ts';
 import CarbonFigure from './CarbonFigure.astro';
@@ -32,10 +33,15 @@ interface Props {
 
 const { guide, step, model, staleness, renderManifest, carbon, pathname } = Astro.props;
 const base = import.meta.env.BASE_URL;
-const profile = model.config.profile;
+// Only the questions that belong to this guide (`profile[].guides`).
+const profile = itemsForGuide(model.config.profile, guide.id);
+// Glossary terms: the first occurrence per block (the body, each check, the receipt) becomes a tip button.
+const linkTerms = glossaryLinker(model.glossary);
 // `<!-- when … -->` blocks become labelled `<div class="docsi-when">`s; a body
 // whose comments cannot be read renders unwrapped (`docsandeye check` reports it).
-const html = await renderMarkdown(wrapWhenBlocks(step.body, profile).markdown);
+const html = linkTerms(await renderMarkdown(wrapWhenBlocks(step.body, profile).markdown));
+// The `safety` note is a Starlight danger aside titled "Safety".
+const safetyHtml = step.safety ? await renderMarkdown(asideMarkdown('danger', 'Safety', step.safety)) : undefined;
 const carbonEntry = carbonFor(carbon, pathname);
 const overview = guideHref(guide, base);
 const stepCondition = onlyIf(step.when, profile);
@@ -79,7 +85,7 @@ const hasMediaPane = step.renders.length > 0 || step.viewer !== undefined || med
 						data-guide-href={overview}
 						hidden
 					>
-						This step doesn't apply to your setup ({stepCondition?.replace(/^Only if: /, '')}).{' '}
+						This step doesn't apply to your setup ({describeWhen(step.when, profile)}).{' '}
 						<a class="docsi-skip-link" href={overview}>
 							Back to the guide overview
 						</a>
@@ -89,17 +95,10 @@ const hasMediaPane = step.renders.length > 0 || step.viewer !== undefined || med
 			}
 			{step.profile && <ProfileForm guideId={guide.id} items={profile} />}
 			<div class="docsi-body sl-markdown-content" set:html={html} />
-			{step.receipt && <Receipt guideId={guide.id} stepId={step.id} model={model} />}
-			<PartsList step={step} model={model} />
-			<Checks guideId={guide.id} step={step} model={model} />
-			{
-				step.safety && (
-					<aside class="docsi-safety">
-						<strong class="docsi-safety-label">Safety</strong>
-						<p>{step.safety}</p>
-					</aside>
-				)
-			}
+			{step.receipt && <Receipt guideId={guide.id} stepId={step.id} model={model} items={profile} linkTerms={linkTerms} />}
+			<PartsList step={step} model={model} items={profile} />
+			<Checks guideId={guide.id} step={step} model={model} items={profile} linkTerms={linkTerms} />
+			{safetyHtml && <div class="docsi-safety" set:html={safetyHtml} />}
 			{
 				olderVideos.length > 0 && (
 					<section class="docsi-older-video">
