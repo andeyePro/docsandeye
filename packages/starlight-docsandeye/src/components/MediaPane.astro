@@ -23,6 +23,8 @@ const { step, model, staleness, renderManifest, olderVideosBelow = false } = Ast
 // `virtual-model.d.ts` predates `mediaManifest`; read the export structurally.
 const mediaManifest: MediaManifest | null =
 	Astro.props.mediaManifest ?? (docsi as { mediaManifest?: MediaManifest | null }).mediaManifest ?? null;
+// A render that has not been produced is a maintainer's to-do, not something a reader needs to see.
+const maintainer = (docsi as { maintainer?: boolean }).maintainer === true;
 const base = import.meta.env.BASE_URL;
 const hosting = model.config.hosting;
 
@@ -88,9 +90,11 @@ const stale = mediaItems.filter((m) => m.entry.status === 'STALE' && !(olderVide
 				<figcaption>{presentation.kind === 'download' ? render.id : caption}</figcaption>
 			</figure>
 		) : (
-			<p class="docsi-render-missing" data-render={render.id}>
-				Render “{render.id}” of {componentName(model, render.component)} has not been produced yet.
-			</p>
+			maintainer && (
+				<p class="docsi-render-missing" data-render={render.id}>
+					Render “{render.id}” of {componentName(model, render.component)} has not been produced yet.
+				</p>
+			)
 		)
 	)
 }
@@ -111,9 +115,11 @@ const stale = mediaItems.filter((m) => m.entry.status === 'STALE' && !(olderVide
 				)}
 			</Fragment>
 		) : (
-			<p class="docsi-render-missing" data-render="viewer">
-				3D model of {componentName(model, viewer.component)} has not been produced yet.
-			</p>
+			maintainer && (
+				<p class="docsi-render-missing" data-render="viewer">
+					3D model of {componentName(model, viewer.component)} has not been produced yet.
+				</p>
+			)
 		))
 }
 {
