@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { GUIDE } from './helpers.ts';
+import { EXTERNAL, GUIDE, SEARCH } from './helpers.ts';
 
-test('Pagefind finds a glossary term used in a step', async ({ page }) => {
+test('Pagefind finds a term used in a step', async ({ page }) => {
   await page.goto(GUIDE);
   const open = page.locator('site-search button[data-open-modal]');
   await expect(open).toBeEnabled();
@@ -9,8 +9,10 @@ test('Pagefind finds a glossary term used in a step', async ({ page }) => {
   const dialog = page.locator('site-search dialog');
   await expect(dialog).toBeVisible();
 
-  // "tray" is a glossary term used only in step 1's body.
   const input = dialog.locator('#starlight__search input');
-  await input.fill('tray');
-  await expect(dialog.locator('.pagefind-ui__result-title', { hasText: 'Unpack the kit' }).first()).toBeVisible();
+  await input.fill(SEARCH);
+  const results = dialog.locator('.pagefind-ui__result-title');
+  // The fixture's "tray" is a glossary term used only in step 1's body.
+  if (EXTERNAL) await expect(results.first()).toBeVisible();
+  else await expect(results.filter({ hasText: 'Unpack the kit' }).first()).toBeVisible();
 });

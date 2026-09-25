@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { STEP1, openReady } from './helpers.ts';
+import { STEP, openReady } from './helpers.ts';
 
 test('a glossary term opens its tip from the keyboard and Escape returns focus', async ({ page }) => {
-  await openReady(page, STEP1);
+  await openReady(page, STEP);
   // The first term on the page a reader can reach (one inside a hidden "Only if" block is not).
   const term = page.locator('button.docsi-term:visible').first();
   const tipText = (await term.getAttribute('data-tip'))!;

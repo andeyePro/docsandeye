@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { STEP1, openReady, setUnits } from './helpers.ts';
+import { STEP1, fixtureOnly, openReady, setUnits } from './helpers.ts';
+
+// Both tests assert the fixture's profile questions and `when` content.
+test.beforeEach(fixtureOnly);
 
 test('an option with `implies` hides the implied question and sets it in the summary', async ({ page }) => {
   await openReady(page, STEP1);

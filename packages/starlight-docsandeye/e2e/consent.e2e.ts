@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { STEP1, openReady } from './helpers.ts';
+import { STEP, openReady } from './helpers.ts';
 
 const bar = (page: Page) => page.locator('.docsi-consent-bar');
-const yes = (page: Page) => page.locator('[data-check="count"]').getByLabel('Yes');
+// The first check a reader can see (one inside a hidden "Only if" block is not).
+const yes = (page: Page) => page.locator('[data-check]:visible').first().getByLabel('Yes');
 
 test('the consent bar waits for the first change; "Save" keeps the answer across a reload', async ({ page }) => {
-  await openReady(page, STEP1);
+  await openReady(page, STEP);
   await expect(bar(page)).toBeHidden();
 
   await yes(page).check();
@@ -21,7 +22,7 @@ test('the consent bar waits for the first change; "Save" keeps the answer across
 });
 
 test('"Don\'t save" shows the not-saved notice and writes nothing', async ({ page }) => {
-  await openReady(page, STEP1);
+  await openReady(page, STEP);
   await yes(page).check();
   await expect(bar(page)).toBeVisible();
 
