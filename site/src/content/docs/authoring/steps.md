@@ -41,12 +41,12 @@ Stand the arm in the socket on top of the base. The flat side faces the cable sl
 | `renders` | no | List of render entries, below. Render ids must be unique within the step. |
 | `viewer` | no | One `{component, format}` entry for the in-page 3D viewer. `format` defaults to `glb`. |
 | `media` | no | List of media ids from `docs/media/`. |
-| `safety` | no | One sentence shown as a danger aside titled "Safety". |
+| `safety` | no | One sentence shown as a danger aside titled "Safety", at the top of the step body. |
 | `when` | no | Show the step only for readers whose setup matches. See [Reader-interactive guides](/authoring/interactive/#conditions-when). |
 | `receipt` | no | `true` shows the receipt checklist on this step. |
 | `profile` | no | `true` shows the setup form on this step (the guide page always has it). |
 | `checks` | no | Yes/no questions ending the step, each `id`, `question`, `issues` (`problem`, `fix`) and optional `when`. See [Step checks](/authoring/interactive/#step-checks). |
-| `checks_draft` | no | `true` marks the checks as a draft under review. |
+| `checks_draft` | no | `true` marks the checks as a draft under review. The badge shows only in a maintainer build (`DOCSANDEYE_MAINTAINER=1`). |
 
 ### Parts and tools
 
@@ -126,6 +126,7 @@ Keep step text short for readers who know the words, and put the explanation one
 | `terms` | no | Aliases (plurals, other spellings). |
 | `tip` | yes | At most 240 characters. |
 | `link` | no | A "Read more" link in the tip. |
+| `exclude` | no | Phrases, in any case, in whose company the term is not matched: `exclude: ["mm OD", "OD,"]` keeps `OD` (optical density) out of "25 mm OD tubing". A use with one of the phrases within 12 characters either side is skipped, and the next use is tried. |
 
 No term or alias may appear twice. On each step page, the first use of each term in the body gets a dotted underline; click, tap, or focus and press Enter to show the tip beside it, and Escape or a click elsewhere closes it. On a mouse, hovering shows it after a moment. The first use in each check (question and issues) and in the receipt notes is marked the same way. Terms inside code, links, headings and `<summary>` are left alone. Without JavaScript the tip is the word's tooltip, and screen readers read it as the word's description.
 
@@ -133,4 +134,4 @@ No term or alias may appear twice. On each step page, the first use of each term
 
 ## What the page shows
 
-The step page shows the media first (renders, the 3D viewer and the step's photos and videos, with stale items folded into a "what changed" panel), then the title, the body, the parts and tools lists, the checks, the safety aside and the page's carbon figure.
+The step page shows the media first (renders, the 3D viewer and the step's photos and videos, with stale items folded into a "what changed" panel), then the title, the safety aside, the body, the parts and tools lists, the checks and the page's carbon figure.

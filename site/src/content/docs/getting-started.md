@@ -48,6 +48,8 @@ Content lives under `docs/` as plain files:
 
 The file name must match the `id` inside it. Steps belong to a guide named in `docsandeye.config.yaml`; a step with no `guide` field belongs to the first guide.
 
+Pages that go with a guide but are not steps (a protocol, wiring notes) are ordinary Starlight pages under `src/content/docs/`. Keep their folder names lower-case, because Starlight serves every page at a lower-case URL, and list them in the guide's `pages` to show them in its sidebar group. See [Companion pages](/authoring/config/#companion-pages).
+
 ## 3. Render
 
 ```sh
@@ -112,7 +114,7 @@ npx docsandeye check --project ../bench-lamp --dist ../bench-lamp/dist
 
 Two environment variables change a build:
 
-- `DOCSANDEYE_MAINTAINER=1` adds the `/reshoot/` dashboard listing which media need reshooting and why.
+- `DOCSANDEYE_MAINTAINER=1` adds the `/reshoot/` dashboard listing which media need reshooting and why, and shows draft material readers never see: the "Draft checks" badge of `checks_draft` and receipt notes that start with `DRAFT:`.
 - `DOCSANDEYE_BUILD_DATE=2026-09-04` fixes the date used for the "updated" sidebar badge. Default is today.
 
 ## Next

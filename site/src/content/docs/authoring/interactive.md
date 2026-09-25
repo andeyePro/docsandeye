@@ -43,7 +43,7 @@ profile:
 | `options` | Choice only, required: `{value, label}` pairs; values are kebab-case. An option may add `implies` or `href` (below). |
 | `short`, `unit_label`, `unit_label_plural`, `guides` | Optional: human labels for the setup bar and "Only …" labels, and the guides the question belongs to. See [Configuration](/authoring/config/#profile-labels-and-guides). |
 
-An option `label` may contain Markdown links, `[text](url)`, and nothing else: "Sourced myself from [the BoM](https://example.invalid/bom)" shows "the BoM" as a link. Summaries and "Only if" labels use the plain text.
+An option `label` may contain Markdown links, `[text](url)`, and nothing else: "Sourced myself from [the BoM](https://example.invalid/bom)" reads "Sourced myself from the BoM" as the radio's label, followed by a small separate "site" link to the URL, so clicking the label only ever selects the option. Summaries and "Only if" labels use the plain text.
 
 ### Options that settle other answers, and options that are links
 
@@ -117,6 +117,8 @@ receipt:
   note: "Two for the arm, two for the module"
 ```
 
+A `note` that starts with `DRAFT:` (any case) is a maintainer's reminder: it appears only in a maintainer build (`DOCSANDEYE_MAINTAINER=1`) and is left out for readers.
+
 Components without `receipt` are not in the checklist. A guide's checklist lists the components its steps use, plus any receipt component no step uses (a spares bag, say).
 
 Put `receipt: true` on a step, usually the first, to show the checklist there. The reader sees each part with a "have it" box, its expected count (`qty` × units for `per: unit`) and a "received" box. Parts whose `from` leaves out the reader's supplier move to "Not in your package — source these yourself (N)", a closed fold-out, with the component's `supplier` link. On a phone each row is one line (box, part, expected, received) with its note below in small text. When a count comes up short, a "Missing parts" panel lists the shortfall and offers an email to that supplier's contact, pre-filled with the parts, the number of units and the page address. If the supplier has no email address, the panel links each missing part's supplier instead. A row ticked "have it" is never in the email; ticking a "Not in your package" row marks it sourced.
@@ -134,10 +136,10 @@ checks:
     issues:
       - {problem: "Nothing lights", fix: "Check the plug is fully home."}
       - {problem: "It flickers", fix: "Reseat the module."}
-checks_draft: true   # optional: "Draft checks, under review"
+checks_draft: true   # optional: "Draft checks, under review" (maintainer builds only)
 ```
 
-A question or issue may contain `` `code` ``, shown as code. The checks come after the parts list and before the safety aside. Answering No reveals that question's issues and a "Something else — contact us" email to `contacts.project`, naming the step, the question and the reader's setup. When every check that applies is Yes, the step shows "Step checked" and gets a tick in the guide list and sidebar. Check `id`s are kebab-case and unique within the step.
+A question or issue may contain inline Markdown: `` `code` ``, `**bold**`, `*emphasis*` and `[links](https://example.invalid)`. Nothing else is Markdown there: a `#` or `-` at the start stays as written. The checks come after the parts list; the safety aside is at the top of the step. The "Draft checks, under review" badge of `checks_draft` shows only in a maintainer build. Answering No reveals that question's issues and a "Something else — contact us" email to `contacts.project`, naming the step, the question and the reader's setup. When every check that applies is Yes, the step shows "Step checked" and gets a tick in the guide list and sidebar. Check `id`s are kebab-case and unique within the step.
 
 ## Saving in this browser
 

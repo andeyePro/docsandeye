@@ -88,8 +88,24 @@ Every field is optional, and a field this block does not supply is simply omitte
 | `id` | yes | kebab-case (`[a-z0-9]+(-[a-z0-9.]+)*`). What a step's `guide` frontmatter field names. |
 | `title` | yes | Non-empty. The heading and sidebar label for the guide. |
 | `base` | yes | Must start with `/`. The URL prefix for the guide's index and its step pages, so `base: /lamp` publishes `/lamp/` and `/lamp/step-01-.../`. |
+| `pages` | no | Companion pages listed under the guide's steps in its sidebar group: `{label, slug}` pairs, where `slug` is the page's path under `src/content/docs` without the extension. |
 
 A step with no `guide` field belongs to the first guide in this list, so a single-guide project never has to name it. See [Steps](/authoring/steps/).
+
+### Companion pages
+
+A guide often has pages of its own beside the steps: a protocol, wiring notes, a troubleshooting table. Write them as ordinary Starlight pages and name them in `pages`:
+
+```yaml
+guides:
+  - id: lamp
+    title: Bench lamp
+    base: /lamp
+    pages:
+      - {label: "Wiring notes", slug: lamp/wiring}
+```
+
+Put companion pages in a lower-case folder, even when the guide's `base` is not: Starlight lower-cases every slug, so a page at `src/content/docs/Lamp/wiring.md` is served at `/lamp/wiring/`, not `/Lamp/wiring/`. The sidebar looks the slug up in any case and links to the URL Starlight actually serves, but a lower-case folder keeps the file path, the link and the canonical URL the same. The "Other guides" list stays below the guide's group.
 
 ## `profile` labels and guides
 
