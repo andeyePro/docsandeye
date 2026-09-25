@@ -21,6 +21,7 @@ project:
   licence: "CERN-OHL-S-2.0"
   licensor: "Acme Robotics"
   repo: "https://github.com/example/bench-lamp"
+  branch: "main"
   function: "Lights a workbench from a swing arm."
   documentation_home: "https://docs.example.org/bench-lamp"
 
@@ -73,7 +74,8 @@ Everything except `guides` has a default, so the shortest valid config is a `gui
 | `version` | no | Free string. Fills `version` in `okh.yml`. |
 | `licence` | no | SPDX-style identifier for the project as a whole. Fills `license.hardware` in `okh.yml`. Components carry their own `licence` field for the bill of materials. |
 | `licensor` | no | Fills `licensor` in `okh.yml`. |
-| `repo` | no | Must be a URL. Fills `repo` in `okh.yml`. |
+| `repo` | no | Must be a URL. Fills `repo` in `okh.yml`, and is where repo-relative links in step bodies point on the site. See [Links](/authoring/steps/#links). |
+| `branch` | no | The branch those links point at (`<repo>/blob/<branch>/…`). Absent means `main`. |
 | `function` | no | Fills `function` in `okh.yml`. |
 | `documentation_home` | no | Must be a URL. Fills `documentation-home` in `okh.yml`. |
 

@@ -80,6 +80,19 @@ Write the text so it stands alone. It is the fallback when a video is stale, and
 
 Paragraphs that apply only to some setups go between `<!-- when … -->` and `<!-- /when -->` comments. See [Paragraphs](/authoring/interactive/#paragraphs).
 
+### Links
+
+Link to other steps and to files in the repository as you would on GitHub, relative to the step file:
+
+```md
+Next, [set up electrolysis](step-05-set-up-electrolysis.md).
+Print the [vial cap](../../Components/Vial%20Cap) and see the [plugin README](../../AEP-Plugin/README.md#over-ssh).
+```
+
+On the site, a link to another step of the same guide goes to that step's page, keeping any `#fragment`. Any other path inside the project goes to the file or folder on GitHub, `<repo>/blob/<branch>/<path>`, when [`project.repo`](/authoring/config/#project) is set (`project.branch` defaults to `main`; an image loads from `raw` instead of `blob`). The project folder is taken to be the repository root. URLs with a scheme (`https:`, `mailto:`), site-absolute paths (`/…`) and bare `#fragments` are left alone.
+
+A link the site cannot place is left as written, and `docsandeye check` warns with its line: a path that climbs above the project root, or, without `project.repo`, a path that is not a step of the guide. The same rules apply to `href` and `src` in raw HTML `<a>` and `<img>` tags, and to the `safety` note.
+
 ### Asides
 
 Notes, tips and warnings go in Starlight's aside syntax and look exactly like Starlight's own asides elsewhere on the site:
