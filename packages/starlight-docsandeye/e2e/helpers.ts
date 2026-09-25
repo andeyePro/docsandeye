@@ -36,7 +36,19 @@ export async function openReady(page: Page, path: string): Promise<void> {
 
 /** Set a number answer in the profile form (fires `change`, as leaving the field does); `units` by default. */
 export async function setUnits(page: Page, units: number, field = 'units'): Promise<void> {
-  const input = page.locator(`#docsi-profile-${field}`);
+  let input = page.locator(`#docsi-profile-${field}`);
+  if ((await input.count()) === 0) {
+    // A site may keep the form on the guide page only; answer there and come back (answers are
+    // in memory for the visit, so the step page sees them).
+    const back = page.url();
+    await openReady(page, GUIDE);
+    input = page.locator(`#docsi-profile-${field}`);
+    await input.fill(String(units));
+    await input.dispatchEvent('change');
+    await page.getByRole('button', { name: 'Save' }).click().catch(() => undefined);
+    await openReady(page, back);
+    return;
+  }
   await input.fill(String(units));
   await input.dispatchEvent('change');
 }
