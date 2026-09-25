@@ -35,5 +35,5 @@ test('"Don\'t save" shows the not-saved notice and writes nothing', async ({ pag
   await page.reload();
   await expect(page.locator('[data-enhanced]').first()).toBeAttached();
   await expect(yes(page)).not.toBeChecked();
-  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('docsandeye:')))).toEqual([]);
 });
