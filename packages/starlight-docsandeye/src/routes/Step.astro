@@ -44,12 +44,13 @@ if (target && afterHref) {
 	after = { link: afterHref, label: label ?? afterHref };
 }
 const { prev, next } = stepPagination(guide, steps, step.id, base, after);
-// Starlight turns `description` into the description, OpenGraph and Twitter tags.
-const description = stepDescription(step.body ?? '');
+// Starlight turns `description` into the description, OpenGraph and Twitter tags;
+// a body with no text at all falls back to the step title, never the site description.
+const description = stepDescription(step.body ?? '') ?? step.title;
 ---
 
 <StarlightPage
-	frontmatter={{ ...stepFrontmatter, title: step.title, ...(description ? { description } : {}), tableOfContents: false, prev, next }}
+	frontmatter={{ ...stepFrontmatter, title: step.title, description, tableOfContents: false, prev, next }}
 	docsandeye={{ kind: 'step', guideId: guide.id, stepId: step.id }}
 >
 	<StepPage

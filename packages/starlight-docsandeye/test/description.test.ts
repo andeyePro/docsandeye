@@ -24,7 +24,7 @@ describe('stepDescription', () => {
     expect(plainText('See [the list][bom], <https://a.example/b> and :kbd[Enter]{.k} now.')).toBe('See the list, https://a.example/b and Enter now.');
   });
 
-  it('skips headings, asides, fences, lists, quotes, tables, images and HTML blocks before the first paragraph', () => {
+  it('skips headings, asides, fences, quotes, tables, images and HTML blocks before the first paragraph', () => {
     const body = [
       '# Heading',
       '',
@@ -39,8 +39,6 @@ describe('stepDescription', () => {
       '',
       'more code',
       '```',
-      '',
-      '- a list item',
       '',
       '> a quote',
       '',
@@ -66,10 +64,41 @@ describe('stepDescription', () => {
     expect(stepDescription('<!--\nhidden\n\nstill hidden\n-->\nVisible text.')).toBe('Visible text.');
   });
 
-  it('is undefined for a body with no prose paragraph', () => {
+  it('is undefined only for a body with no text', () => {
     expect(stepDescription('')).toBeUndefined();
-    expect(stepDescription(':::note\nOnly an aside.\n:::\n')).toBeUndefined();
     expect(stepDescription('![Only](a.png)\n')).toBeUndefined();
+    expect(stepDescription('<!-- TODO: all hidden -->\n')).toBeUndefined();
+  });
+
+  describe('fallbacks when no paragraph comes before the first list', () => {
+    it('uses the text of the first aside', () => {
+      expect(stepDescription(':::note\nOnly an aside.\n:::\n')).toBe('Only an aside.');
+      const body = ':::caution[Mains power]\nUnplug the **PSU** first.\n\n- then wait\n:::\n\n1. Open the lid.\n2. Lift the board.\n\nA closing paragraph.';
+      expect(stepDescription(body)).toBe('Unplug the PSU first. then wait');
+    });
+
+    it('prefers a paragraph that comes before the first list over an aside', () => {
+      expect(stepDescription(':::note\nAn aside.\n:::\n\nIntro paragraph.\n\n1. Step one.')).toBe('Intro paragraph.');
+    });
+
+    it('a paragraph after the first list does not count', () => {
+      expect(stepDescription(':::tip\nSort first.\n:::\n\n- a list item\n\nLater paragraph.')).toBe('Sort first.');
+    });
+
+    it('uses the first list item when there is no aside', () => {
+      expect(stepDescription('1. Fit the **septum** to the cap,\n   pressing it home.\n2. Screw the cap on.\n\nThen wait.')).toBe('Fit the septum to the cap, pressing it home.');
+      expect(stepDescription('## Parts\n\n- [Widget](w.md)\n- Bolt')).toBe('Widget');
+    });
+
+    it('otherwise uses the first sentence of any text, when blocks included', () => {
+      expect(stepDescription('## Wire it up. Carefully.\n\n![x](x.png)')).toBe('Wire it up.');
+      expect(stepDescription('<!-- when units>=2 -->\nOnly for several units. More.\n<!-- /when -->')).toBe('Only for several units.');
+      expect(stepDescription('| Pin | Wire |\n|---|---|\n| 1 | red |')).toBe('Pin Wire 1 red');
+    });
+
+    it('ignores asides and lists inside when blocks', () => {
+      expect(stepDescription('<!-- when units>=2 -->\n:::note\nHidden aside.\n:::\n<!-- /when -->\n\n- Shown item')).toBe('Shown item');
+    });
   });
 
   it('cuts a long paragraph at a word boundary to at most 155 characters', () => {
