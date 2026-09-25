@@ -95,6 +95,8 @@ export async function runCheck(opts: CheckOptions, io: Io): Promise<number> {
   // Body `when` comment problems do not stop a site build (the text renders
   // unwrapped), so only `check` reports them.
   for (const p of model?.bodyProblems ?? []) errors.push(formatProblem(p));
+  // A glossary entry no step mentions is dead weight, not a broken page.
+  for (const p of model?.warnings ?? []) warnings.push(`warning: ${formatProblem(p)}`);
 
   if (model) {
     const guard = await runGuard(opts.root, model);
