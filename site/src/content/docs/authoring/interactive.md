@@ -41,6 +41,7 @@ profile:
 | `default` | Number: an integer from `min` to `max` (default `min`). Boolean: `true` or `false` (default `false`). Choice: one option `value` (default the first). |
 | `min`, `max` | Number only. Default 1 and 100. |
 | `options` | Choice only, required: `{value, label}` pairs; values are kebab-case. An option may add `implies` or `href` (below). |
+| `short`, `unit_label`, `unit_label_plural`, `guides` | Optional: human labels for the setup bar and "Only …" labels, and the guides the question belongs to. See [Configuration](/authoring/config/#profile-labels-and-guides). |
 
 An option `label` may contain Markdown links, `[text](url)`, and nothing else: "Sourced myself from [the BoM](https://example.invalid/bom)" shows "the BoM" as a link. Summaries and "Only if" labels use the plain text.
 
@@ -88,7 +89,7 @@ Building more than one? Test each module now.
 <!-- /when -->
 ```
 
-Conditions are `id=value`, `id=a,b` (any of), or `id>=n`, `id>n`, `id<n`, `id<=n`; several, separated by spaces, must all hold. The comments keep the file readable on GitHub. On the site the block gets a visible "Only if: …" label. Blocks do not nest. A nested or unclosed block, or a condition that cannot be read, is reported by `docsandeye check` with the file line; the site still builds and shows that text unconditionally.
+Conditions are `id=value`, `id=a,b` (any of), or `id>=n`, `id>n`, `id<n`, `id<=n`; several, separated by spaces, must all hold. The comments keep the file readable on GitHub. On the site the block gets a visible "Only if: …" (or "Only with …") label. Blocks do not nest. A nested or unclosed block, or a condition that cannot be read, is reported by `docsandeye check` with the file line; the site still builds and shows that text unconditionally.
 
 ## Receipt checklist
 
@@ -118,7 +119,7 @@ receipt:
 
 Components without `receipt` are not in the checklist. A guide's checklist lists the components its steps use, plus any receipt component no step uses (a spares bag, say).
 
-Put `receipt: true` on a step, usually the first, to show the checklist there. The reader sees each part with a "have it" box, its expected count (`qty` × units for `per: unit`) and a "received" box. Parts whose `from` leaves out the reader's supplier move to "Not in your package — source these yourself", with the component's `supplier` link. When a count comes up short, a "Missing parts" panel lists the shortfall and offers an email to that supplier's contact, pre-filled with the parts, the number of units and the page address. If the supplier has no email address, the panel links each missing part's supplier instead. A row ticked "have it" is never in the email; ticking a "Not in your package" row marks it sourced.
+Put `receipt: true` on a step, usually the first, to show the checklist there. The reader sees each part with a "have it" box, its expected count (`qty` × units for `per: unit`) and a "received" box. Parts whose `from` leaves out the reader's supplier move to "Not in your package — source these yourself (N)", a closed fold-out, with the component's `supplier` link. On a phone each row is one line (box, part, expected, received) with its note below in small text. When a count comes up short, a "Missing parts" panel lists the shortfall and offers an email to that supplier's contact, pre-filled with the parts, the number of units and the page address. If the supplier has no email address, the panel links each missing part's supplier instead. A row ticked "have it" is never in the email; ticking a "Not in your package" row marks it sourced.
 
 Every step's parts and tools lists get the same box at the start of each row. A ticked row is muted with a tick, never hidden. Ticks are remembered per guide, per step and component, with the other answers. Without JavaScript the lists are plain lists.
 
@@ -136,7 +137,7 @@ checks:
 checks_draft: true   # optional: "Draft checks, under review"
 ```
 
-The checks come after the parts list and before the safety box. Answering No reveals that question's issues and a "Something else — contact us" email to `contacts.project`, naming the step, the question and the reader's setup. When every check that applies is Yes, the step shows "Step checked" and gets a tick in the guide list and sidebar. Check `id`s are kebab-case and unique within the step.
+A question or issue may contain `` `code` ``, shown as code. The checks come after the parts list and before the safety aside. Answering No reveals that question's issues and a "Something else — contact us" email to `contacts.project`, naming the step, the question and the reader's setup. When every check that applies is Yes, the step shows "Step checked" and gets a tick in the guide list and sidebar. Check `id`s are kebab-case and unique within the step.
 
 ## Saving in this browser
 
@@ -149,7 +150,7 @@ Nothing here is a cookie and nothing involves a third party, so the wording is a
 
 ## Guide navigation
 
-The guide page's "Next" goes to the first step that applies. Each step's "Previous" and "Next" go to its neighbours (the first step's "Previous" is the guide page). The last step's "Next" is the entry after the guide's own in your Starlight `sidebar`, if there is one, so a guide can lead on to its protocol page:
+The guide page has no "Previous"; its "Next" goes to the first step. Each step's "Previous" and "Next" go to its neighbours (the first step's "Previous" is the guide page). The last step's "Next" is the entry after the guide's own in your Starlight `sidebar`, if there is one, so a guide can lead on to its protocol page:
 
 ```js
 sidebar: [

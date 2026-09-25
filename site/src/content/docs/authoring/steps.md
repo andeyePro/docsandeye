@@ -41,7 +41,7 @@ Stand the arm in the socket on top of the base. The flat side faces the cable sl
 | `renders` | no | List of render entries, below. Render ids must be unique within the step. |
 | `viewer` | no | One `{component, format}` entry for the in-page 3D viewer. `format` defaults to `glb`. |
 | `media` | no | List of media ids from `docs/media/`. |
-| `safety` | no | One sentence shown in a safety box. |
+| `safety` | no | One sentence shown as a danger aside titled "Safety". |
 | `when` | no | Show the step only for readers whose setup matches. See [Reader-interactive guides](/authoring/interactive/#conditions-when). |
 | `receipt` | no | `true` shows the receipt checklist on this step. |
 | `profile` | no | `true` shows the setup form on this step (the guide page always has it). |
@@ -80,6 +80,44 @@ Write the text so it stands alone. It is the fallback when a video is stale, and
 
 Paragraphs that apply only to some setups go between `<!-- when … -->` and `<!-- /when -->` comments. See [Paragraphs](/authoring/interactive/#paragraphs).
 
+### Asides
+
+Notes, tips and warnings go in Starlight's aside syntax and look exactly like Starlight's own asides elsewhere on the site:
+
+```md
+:::note
+The vial clicks when it is seated.
+:::
+
+:::caution[Mind the edge]
+The frame edge is sharp.
+:::
+```
+
+The four kinds are `:::note`, `:::tip`, `:::caution` and `:::danger`. The title in square brackets is optional (the default is the kind's name) and may hold inline Markdown. The body is ordinary Markdown. Text that merely looks like a directive, such as `10:30` or `a:b`, is left as written.
+
+### Glossary
+
+Keep step text short for readers who know the words, and put the explanation one tap away for those who do not. List the terms in `docs/glossary.yaml` (optional):
+
+```yaml
+- term: septum
+  terms: [septa]          # optional aliases, matched the same way
+  tip: "The silicone disc in the vial cap that seals every port and self-heals needle holes."
+  link: https://example.invalid/septum   # optional "Read more"
+```
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `term` | yes | The word or phrase, matched as a whole word, in any case. |
+| `terms` | no | Aliases (plurals, other spellings). |
+| `tip` | yes | At most 240 characters. |
+| `link` | no | A "Read more" link in the tip. |
+
+No term or alias may appear twice. On each step page, the first use of each term in the body gets a dotted underline; click, tap, or focus and press Enter to show the tip beside it, and Escape or a click elsewhere closes it. On a mouse, hovering shows it after a moment. The first use in each check (question and issues) and in the receipt notes is marked the same way. Terms inside code, links, headings and `<summary>` are left alone. Without JavaScript the tip is the word's tooltip, and screen readers read it as the word's description.
+
+`docsandeye check` reports an invalid entry as an error and a term that no step mentions as a warning.
+
 ## What the page shows
 
-The step page has two columns. The media column holds the renders, the 3D viewer and the step's photos and videos, with stale items folded into a "what changed" panel. The text column holds the title, the body, the parts and tools lists, the safety box and the page's carbon figure.
+The step page shows the media first (renders, the 3D viewer and the step's photos and videos, with stale items folded into a "what changed" panel), then the title, the body, the parts and tools lists, the checks, the safety aside and the page's carbon figure.

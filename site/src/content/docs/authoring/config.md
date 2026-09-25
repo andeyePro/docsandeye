@@ -60,7 +60,7 @@ Everything except `guides` has a default, so the shortest valid config is a `gui
 | `denylist` | no | `[]` | Globs, relative to this file, that the project loader never reads. Merged with the defaults below. |
 | `hosting` | no | `{ provider: local }` | Where media files are served from (below). |
 | `byte_budget_kb` | no | `150` | Positive integer. The initial-load budget for a step page, in KB. `docsandeye check --dist dist` fails a page over budget. See [Carbon](/carbon/). |
-| `profile` | no | `[]` | Questions the reader answers once (number, boolean, choice). See [Reader-interactive guides](/authoring/interactive/). |
+| `profile` | no | `[]` | Questions the reader answers once (number, boolean, choice), with optional `short`, `unit_label`, `unit_label_plural` and `guides` (below). See [Reader-interactive guides](/authoring/interactive/). |
 | `receipt` | no | — | `multiply_by` (a number profile id) and `supplier_from` (a choice profile id) for the receipt checklist. See [Reader-interactive guides](/authoring/interactive/#receipt-checklist). |
 | `contacts` | no | `{}` | Support contacts keyed by `supplier_from` option values, plus `project`: `name`, optional `email` and `subject`. See [Reader-interactive guides](/authoring/interactive/#receipt-checklist). |
 
@@ -88,6 +88,26 @@ Every field is optional, and a field this block does not supply is simply omitte
 | `base` | yes | Must start with `/`. The URL prefix for the guide's index and its step pages, so `base: /lamp` publishes `/lamp/` and `/lamp/step-01-.../`. |
 
 A step with no `guide` field belongs to the first guide in this list, so a single-guide project never has to name it. See [Steps](/authoring/steps/).
+
+## `profile` labels and guides
+
+Besides the fields in [Reader-interactive guides](/authoring/interactive/#profile-the-readers-setup), each profile question may carry:
+
+| Field | Applies to | Meaning |
+| --- | --- | --- |
+| `short` | any | A short name for the "Your setup" bar and "Only …" labels, e.g. `short: "temperature kit"`. Default in the bar: the `label`. |
+| `unit_label`, `unit_label_plural` | number | The unit, e.g. `Pioreactor` and `Pioreactors`, so the bar reads "3 Pioreactors". Default: the `id`. |
+| `guides` | any | Guide ids the question belongs to. Without it, the question applies to every guide. |
+
+```yaml
+profile:
+  - {id: units, type: number, label: "How many Pioreactors?", unit_label: Pioreactor, unit_label_plural: Pioreactors}
+  - {id: temp-kit, type: boolean, label: "Do you have the temperature kit?", short: "temperature kit", guides: [aep]}
+```
+
+The "Your setup" bar then reads, for example, "3 Pioreactors · temperature kit: yes · LabCrafter kit": a choice shows its option label, a boolean its `short` with yes or no, a number its count and unit. Questions a choice [implies](/authoring/interactive/#options-that-settle-other-answers-and-options-that-are-links) show the same way. Conditions read in the same words: `when: {temp-kit: true}` is labelled "Only with temperature kit" (`false`: "Only without temperature kit"), and `units: ">=2"` reads "2 or more Pioreactors". Write `short` so it reads well after "with".
+
+A guide's pages (its form, summary bar, conditions and receipt) use only the questions that apply to that guide. Answers are still stored per guide. A step's `when` that names a question outside the step's guide is a `schema` problem reported by `docsandeye check`.
 
 ## `denylist`
 
