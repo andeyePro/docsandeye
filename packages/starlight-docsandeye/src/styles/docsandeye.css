@@ -579,11 +579,15 @@ docsi-youtube [hidden],
 }
 
 .docsi-skip-notice,
+/* Neutral background: the accent tint fails WCAG AA contrast for small text (axe: 4.29 light,
+   3.76 for the link in dark), and the bar is read on every step. */
 .docsi-profile-summary {
   margin: 0 0 1rem;
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
-  background: var(--docsi-accent-low);
+  border: 1px solid var(--sl-color-hairline);
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-text);
   font-size: var(--sl-text-sm);
 }
 
