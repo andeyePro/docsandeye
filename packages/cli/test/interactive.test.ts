@@ -86,3 +86,20 @@ describe('check: glossary (task_022)', () => {
     expect(err.some((l) => l.startsWith('docs/glossary.yaml:0.tip: schema:'))).toBe(true);
   });
 });
+
+describe('check: step body links', () => {
+  it('a link the site leaves as written is a warning with its line, not an error', async () => {
+    const root = project({
+      'docsandeye.config.yaml': CONFIG,
+      'docs/steps/s1.md': `---\nid: s1\norder: 1\ntitle: One\n---\nSee [two](s2.md) and the [cap](../../Components/Vial%20Cap).\n`,
+      'docs/steps/s2.md': `---\nid: s2\norder: 2\ntitle: Two\n---\nTwo.\n`,
+    });
+    const { code, err, out } = await check(root);
+    expect(code).toBe(0);
+    expect(err).toContain(
+      'warning: docs/steps/s1.md:body.line.6: schema: link "../../Components/Vial%20Cap" is not a step of guide "g" and project.repo is not set; the site leaves it as written (it works only on GitHub)',
+    );
+    expect(err.filter((l) => l.includes('s2.md'))).toEqual([]);
+    expect(out.at(-1)).toMatch(/^errors: 0, warnings: [1-9]/);
+  });
+});

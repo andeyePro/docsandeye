@@ -1,4 +1,5 @@
 theme: starlight
+project: {repo: "https://github.com/example/kit", branch: dev}
 guides:
   - {id: kit, title: "Kit guide", base: /kit}
   - {id: other, title: "Other guide", base: /other}

@@ -183,6 +183,31 @@ describe('conditional content', () => {
   });
 });
 
+describe('repo-relative links in step bodies', () => {
+  // Fixture: project.repo https://github.com/example/kit, branch dev; step-03-finish's last paragraphs.
+  const REPO = 'https://github.com/example/kit';
+  const hrefs = () => Object.fromEntries(page(STEP3).querySelectorAll('.docsi-body a').map((a) => [a.text.trim(), a.getAttribute('href')]));
+
+  it('a step of the same guide links to its page, fragment kept', () => {
+    expect(hrefs()).toMatchObject({ unpacking: '/kit/step-01-unpack/#keep-the-spares', probe: '/kit/step-02-probe/' });
+  });
+
+  it('other project paths (and another guide\'s step) link to GitHub on the branch, encoded, folders without the slash', () => {
+    expect(hrefs()).toMatchObject({
+      'widget file': `${REPO}/blob/dev/docs/components/widget.yaml`,
+      readme: `${REPO}/blob/dev/README.md#over-ssh`,
+      'cap folder': `${REPO}/blob/dev/Components/Vial%20Cap`,
+      'other guide’s step': `${REPO}/blob/dev/docs/steps/other-01-paint.md`,
+      'The parts folder': `${REPO}/blob/dev/docs/components`,
+    });
+    expect(page(STEP3).querySelector('.docsi-body img[alt="Wiring"]')!.getAttribute('src')).toBe(`${REPO}/raw/dev/Media/wiring%20diagram.png`);
+  });
+
+  it('a path above the project root, absolute URLs and fragments are left as written', () => {
+    expect(hrefs()).toMatchObject({ outside: '../../../elsewhere/notes.md', 'the site': 'https://example.com/x', top: '#_top' });
+  });
+});
+
 describe('receipt checklist', () => {
   const receipt = () => page(STEP1).querySelector('docsi-receipt')!;
 
