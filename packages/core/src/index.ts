@@ -161,6 +161,18 @@ export type {
 export { compileGlossary, inlineCodeHtml, linkGlossaryTerms, termButton, termIds, unusedGlossaryEntries } from './glossary.js';
 export type { CompiledGlossaryEntry, GlossaryEntry, TermIds } from './glossary.js';
 
+export {
+  DEFAULT_BRANCH,
+  isRelativeLink,
+  linkTarget,
+  markdownLinks,
+  repoBlobUrl,
+  resolveRelativeLink,
+  stepFilePath,
+  unresolvedLinkMessage,
+} from './links.js';
+export type { LinkContext, LinkTarget } from './links.js';
+
 export { buildReceipt, receiptItems } from './receipt.js';
 
 export { COLLECTION_DIRS, GLOSSARY_FILE, isDenylisted, loadProject, stepsForGuide } from './load.js';

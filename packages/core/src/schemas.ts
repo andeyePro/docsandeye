@@ -368,6 +368,8 @@ export const ProjectMetaSchema = z.strictObject({
   licence: z.string().optional(),
   licensor: z.string().optional(),
   repo: z.url().optional(),
+  /** Branch that repo-relative links in step bodies point at on `repo` (`<repo>/blob/<branch>/…`); absent means `main`. */
+  branch: z.string().min(1).optional(),
   function: z.string().optional(),
   documentation_home: z.url().optional(),
 });

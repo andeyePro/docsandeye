@@ -10,6 +10,7 @@ import semver from 'semver';
 import { DocsiError, sortProblems, type Problem } from './errors.js';
 import type { HostingRegistry } from './hosting.js';
 import { unusedGlossaryEntries, type GlossaryEntry } from './glossary.js';
+import { DEFAULT_BRANCH, linkTarget, markdownLinks, unresolvedLinkMessage } from './links.js';
 import { validateWhen, wrapWhenBlocks, type ProfileItem, type When } from './interactive.js';
 import {
   CONFIG_FILENAME,
@@ -42,7 +43,11 @@ export interface ProjectModel {
   bodyProblems?: Problem[];
   /** `docs/glossary.yaml`, validated; empty when the file is absent or invalid. Absent on models built by hand. */
   glossary?: GlossaryEntry[];
-  /** Findings `docsandeye check` reports as warnings (a glossary term no step uses). Absent on models built by hand. */
+  /**
+   * Findings `docsandeye check` reports as warnings (a glossary term no step
+   * uses, a link in a step body the site leaves as written). Absent on models
+   * built by hand.
+   */
   warnings?: Problem[];
 }
 
@@ -148,10 +153,42 @@ export function loadProject(root: string, options: LoadProjectOptions = {}): Pro
     warnings.push({ code: 'schema', file: GLOSSARY_FILE, path: `${glossary.indexOf(entry)}.term`, message: `glossary term "${entry.term}" never appears in any step` });
   }
 
+  for (const [id, step] of steps) linkWarnings(root, config, steps, step, stepFiles.get(id)!, warnings);
+
   sortProblems(problems);
   sortProblems(bodyProblems);
   sortProblems(warnings);
   return { config, components, steps, media, problems, bodyProblems, glossary, warnings };
+}
+
+/**
+ * Links in a step's body and safety note that the site leaves as written (see
+ * `links.ts`): above the project root, or neither a step of one of the step's
+ * guides nor linkable on GitHub because `project.repo` is not set. One warning
+ * per link and guide.
+ */
+function linkWarnings(root: string, config: Config, steps: Map<string, Step>, step: Step, file: string, warnings: Problem[]): void {
+  const fields: [string, string | undefined, number][] = [
+    ['body', step.body, bodyLineOffset(root, file, step.body)],
+    ['safety', step.safety, 0],
+  ];
+  const seen = new Set<string>();
+  for (const guideId of step.guide ?? []) {
+    const stepIds = new Set([...steps.values()].filter((s) => s.guide?.includes(guideId)).map((s) => s.id));
+    const ctx = { stepFile: file, stepIds, repo: config.project?.repo, branch: config.project?.branch ?? DEFAULT_BRANCH };
+    for (const [field, text, offset] of fields) {
+      for (const { url, line } of markdownLinks(text ?? '')) {
+        const target = linkTarget(url, ctx);
+        if (target?.kind !== 'unresolved') continue;
+        const at = field === 'body' ? `body.line.${line + offset}` : field;
+        const message = unresolvedLinkMessage(url, target.reason, guideId);
+        const key = `${at}\n${message}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        warnings.push({ code: 'schema', file, path: at, message });
+      }
+    }
+  }
 }
 
 function loadGlossary(root: string, denylist: readonly string[], problems: Problem[]): GlossaryEntry[] {
