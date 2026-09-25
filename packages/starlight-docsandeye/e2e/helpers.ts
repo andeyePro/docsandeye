@@ -45,7 +45,8 @@ export async function setUnits(page: Page, units: number, field = 'units'): Prom
     input = page.locator(`#docsi-profile-${field}`);
     await input.fill(String(units));
     await input.dispatchEvent('change');
-    await page.getByRole('button', { name: 'Save' }).click().catch(() => undefined);
+    const save = page.getByRole('button', { name: 'Save' });
+    if (await save.count()) await save.click();
     await openReady(page, back);
     return;
   }
