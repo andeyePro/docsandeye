@@ -15,8 +15,10 @@ import { promisify } from 'node:util';
 import { parse, type HTMLElement } from 'node-html-parser';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadProject, stepsForGuide } from '@docsandeye/core';
-import { checkRefs, guideNext, onlyIf, plainMailto, scriptJson, siteHref, skipTargets, supplierLabels, whenAttr } from '../src/interactive-view.ts';
-import { olderVideoSentence, sidebarEntryAfter, sidebarTargetHref, slugLabel, stepPagination } from '../src/view.ts';
+import { checkRefs, onlyIf, plainMailto, scriptJson, siteHref, skipTargets, supplierLabels, whenAttr } from '../src/interactive-view.ts';
+import { ASIDE_ICON_NAMES, ASIDE_ICONS, ASIDE_VARIANTS, asideMarkdown } from '../src/asides.ts';
+import { renderMarkdown } from '../src/markdown.ts';
+import { guideIndexPagination, olderVideoSentence, sidebarEntryAfter, sidebarTargetHref, slugLabel, stepPagination } from '../src/view.ts';
 
 const execFileP = promisify(execFile);
 const BUILD_TIMEOUT = 600_000;
@@ -24,6 +26,7 @@ const BUILD_TIMEOUT = 600_000;
 const PKG_ROOT = path.resolve(import.meta.dirname, '..');
 const SITE_DIR = path.join(PKG_ROOT, 'fixtures/site-interactive');
 const PROJECT_DIR = path.join(PKG_ROOT, 'fixtures/project-interactive');
+const REPO_ROOT = path.resolve(PKG_ROOT, '../..');
 const DIST = path.join(SITE_DIR, 'dist');
 
 beforeAll(async () => {
@@ -41,6 +44,13 @@ function raw(rel: string): string {
 
 function page(rel: string): HTMLElement {
   return parse(raw(rel));
+}
+
+/** Text as a sighted reader sees it: without the visually hidden glossary descriptions. */
+function visibleText(el: HTMLElement): string {
+  const copy = parse(el.outerHTML);
+  for (const tip of copy.querySelectorAll('.docsi-term-tip')) tip.remove();
+  return copy.text;
 }
 
 function json(el: HTMLElement | null | undefined, attr: string): unknown {
@@ -102,8 +112,8 @@ describe('conditional content', () => {
     const block = page(STEP1).querySelector('.docsi-body div.docsi-when');
     expect(block).toBeTruthy();
     expect(json(block, 'data-when')).toEqual({ units: '>=2' });
-    expect(block!.querySelector('p.docsi-when-label')!.text).toBe('Only if: units ≥ 2');
-    expect(block!.text).toContain('Building several units? Sort the parts into one tray per unit.');
+    expect(block!.querySelector('p.docsi-when-label')!.text).toBe('Only if: 2 or more units');
+    expect(visibleText(block!)).toContain('Building several units? Sort the parts into one tray per unit.');
   });
 
   it('choice lists read as option labels; ordinary comments stay comments', () => {
@@ -130,7 +140,7 @@ describe('conditional content', () => {
 
   it('a conditional step shows its condition and a hidden notice pointing at the following steps', () => {
     const doc = page(STEP2);
-    expect(doc.querySelector('.docsi-step-condition')!.text).toBe('Only if: temp-kit: yes');
+    expect(doc.querySelector('.docsi-step-condition')!.text).toBe('Only with temperature upgrade');
     const notice = doc.querySelector('.docsi-skip-notice')!;
     expect(notice.hasAttribute('hidden')).toBe(true);
     expect(notice.getAttribute('data-when-mode')).toBe('unless');
@@ -139,7 +149,7 @@ describe('conditional content', () => {
       { title: 'Finish the build', href: '/kit/step-03-finish/' },
       { title: 'A body with an unclosed block', href: '/kit/step-04-unclosed/' },
     ]);
-    expect(notice.text).toContain("This step doesn't apply to your setup (temp-kit: yes).");
+    expect(notice.text).toContain("This step doesn't apply to your setup (with temperature upgrade).");
     expect(notice.querySelector('a.docsi-skip-link')!.getAttribute('href')).toBe('/kit/');
   });
 
@@ -167,7 +177,7 @@ describe('conditional content', () => {
 
   it('guide list and sidebar entries with checks carry them for the tick', () => {
     const li = page(GUIDE).querySelector('.docsi-guide-steps li[data-step="step-03-finish"]')!;
-    expect(json(li, 'data-checks')).toEqual([{ id: 'rigid' }, { id: 'probe-seated', when: { 'temp-kit': true } }]);
+    expect(json(li, 'data-checks')).toEqual([{ id: 'rigid' }, { id: 'probe-seated', when: { 'temp-kit': true } }, { id: 'config' }]);
     expect(li.querySelector('.docsi-checked-mark')!.hasAttribute('hidden')).toBe(true);
     expect(page(GUIDE).querySelector('li[data-step="step-04-unclosed"]')!.hasAttribute('data-checks')).toBe(false);
   });
@@ -216,10 +226,10 @@ describe('receipt checklist', () => {
       'Per unit (multiply by your number of units)',
       'Per kit (does not scale with units)',
     ]);
-    const rows = (t: HTMLElement) => t.querySelectorAll('tbody tr').map((tr) => tr.querySelectorAll('td').map((td) => td.text.trim()));
+    const rows = (t: HTMLElement) => t.querySelectorAll('tbody tr').map((tr) => tr.querySelectorAll('td').map((td) => visibleText(td).trim()));
     expect(rows(tables[0]!)).toEqual([
       ['Bracket', '1', 'Shop B'],
-      ['Temperature probeOnly if: temp-kit: yes', '1', 'all'],
+      ['Temperature probeOnly with temperature upgrade', '1', 'all'],
       ['Widget', '2', 'Shop A kit, Shop B'],
     ]);
     expect(rows(tables[1]!)).toEqual([['Spares bagBag B, shared across units', '1', 'Shop A kit']]);
@@ -274,7 +284,7 @@ describe('step checks', () => {
   it('a conditional check carries data-when and a label', () => {
     const li = page(STEP3).querySelector('li[data-check="probe-seated"]')!;
     expect(json(li, 'data-when')).toEqual({ 'temp-kit': true });
-    expect(li.querySelector('.docsi-when-label')!.text).toBe('Only if: temp-kit: yes');
+    expect(li.querySelector('.docsi-when-label')!.text).toBe('Only with temperature upgrade');
   });
 });
 
@@ -467,8 +477,9 @@ describe('guide navigation', () => {
     return { prev: link('prev'), next: link('next') };
   };
 
-  it('the guide index leads to the first applicable step', () => {
-    expect(pagination(GUIDE).next).toEqual(['/kit/step-01-unpack/', 'Unpack the kit']);
+  it('the guide index has no Previous; its Next is the first step', () => {
+    expect(pagination(GUIDE)).toEqual({ prev: null, next: ['/kit/step-01-unpack/', 'Unpack the kit'] });
+    expect(pagination('other/index.html')).toEqual({ prev: null, next: ['/other/other-01-paint/', 'Paint the case'] });
   });
 
   it('steps lead to their neighbours; the first back to the guide index', () => {
@@ -535,12 +546,12 @@ describe('interactive view helpers', () => {
     expect(siteHref('bom.html', '/docs/')).toBe('bom.html');
   });
 
-  it('guideNext is the first step applying to the default profile', () => {
+  it('guideIndexPagination: no prev; the first step next', () => {
     const steps = stepsForGuide(model, 'kit');
     const guide = model.config.guides[0]!;
-    expect(guideNext(guide, steps, model.config.profile)).toEqual({ link: '/kit/step-01-unpack/', label: 'Unpack the kit' });
-    expect(guideNext(guide, steps.slice(1), model.config.profile, '/d/')).toEqual({ link: '/d/kit/step-03-finish/', label: 'Finish the build' });
-    expect(guideNext(guide, [], model.config.profile)).toBeUndefined();
+    expect(guideIndexPagination(guide, steps)).toEqual({ prev: false, next: { link: '/kit/step-01-unpack/', label: 'Unpack the kit' } });
+    expect(guideIndexPagination(guide, steps.slice(1), '/d/')).toEqual({ prev: false, next: { link: '/d/kit/step-02-probe/', label: 'Fit the temperature probe' } });
+    expect(guideIndexPagination(guide, [])).toEqual({ prev: false, next: false });
   });
 
   it('stepPagination: neighbours, the guide index first, the sidebar target last', () => {
@@ -597,5 +608,197 @@ describe('interactive view helpers', () => {
   it('the fixture has a body problem that check reports and the build tolerates', () => {
     expect(model.problems).toEqual([]);
     expect(model.bodyProblems!.map((p) => `${p.file}:${p.path}`)).toEqual(['docs/steps/step-04-unclosed.md:body.line.9']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// task_022: glossary tooltips, asides, readable summary labels, guide-scoped
+// profile items, the guide index list, narrow receipts
+
+const OTHER_GUIDE = 'other/index.html';
+const OTHER_STEP = 'other/other-01-paint/index.html';
+
+describe('glossary tooltips', () => {
+  const terms = (el: HTMLElement) => el.querySelectorAll('button.docsi-term').map((b) => b.text);
+
+  it('the first occurrence of each term in the body is a button with its tip', () => {
+    const body = page(STEP1).querySelector('.docsi-body')!;
+    expect(terms(body)).toEqual(['tray', 'bag', 'widgets']);
+    const button = body.querySelector('button.docsi-term')!;
+    expect(button.getAttribute('type')).toBe('button');
+    expect(button.getAttribute('data-tip')).toBe("A shallow box that keeps one unit's parts together.");
+    const described = page(STEP1).querySelector(`#${button.getAttribute('aria-describedby')}`)!;
+    expect(described.classList.contains('docsi-term-tip')).toBe(true);
+    expect(described.text).toBe("A shallow box that keeps one unit's parts together.");
+  });
+
+  it('without JavaScript the tip is a title attribute; no popover markup is rendered', () => {
+    const html = raw(STEP1);
+    for (const b of parse(html).querySelectorAll('button.docsi-term')) expect(b.getAttribute('title')).toBe(b.getAttribute('data-tip'));
+    expect(parse(html).querySelector('.docsi-tip')).toBeNull();
+  });
+
+  it('a read-more link travels with the term', () => {
+    const widget = page(STEP3).querySelector('.docsi-body button.docsi-term')!;
+    expect(widget.text).toBe('widgets');
+    expect(widget.getAttribute('data-link')).toBe('https://widgets.example/about');
+  });
+
+  it('only the first occurrence per block; never in headings, code, links or summaries', () => {
+    const doc = page(STEP3);
+    expect(terms(doc.querySelector('.docsi-body')!)).toEqual(['widgets']);
+    expect(doc.querySelectorAll('h1 .docsi-term, h2 .docsi-term, code .docsi-term, a .docsi-term, summary .docsi-term, .docsi-when-label .docsi-term')).toHaveLength(0);
+  });
+
+  it('each check is its own block: question and issues', () => {
+    const doc = page(STEP3);
+    expect(terms(doc.querySelector('li[data-check="rigid"]')!)).toEqual(['widgets']);
+    expect(terms(doc.querySelector('li[data-check="probe-seated"]')!)).toEqual(['probe']);
+    expect(terms(doc.querySelector('li[data-check="config"]')!)).toEqual(['widget']);
+  });
+
+  it('the receipt notes are a block of their own', () => {
+    const note = page(STEP1).querySelector('.docsi-receipt-static tr[data-component="spares-bag"] .docsi-receipt-note')!;
+    expect(terms(note)).toEqual(['Bag']);
+  });
+
+  it('term ids are unique on the page', () => {
+    for (const rel of [STEP1, STEP3]) {
+      const ids = page(rel).querySelectorAll('.docsi-term-tip').map((s) => s.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(ids.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('the popover script is registered on step pages and stays under 2 KB minified', async () => {
+    const { build } = await import('esbuild');
+    const out = await build({ entryPoints: [path.join(PKG_ROOT, 'src/elements/glossary.ts')], bundle: true, minify: true, write: false, format: 'esm' });
+    expect(out.outputFiles[0]!.contents.byteLength).toBeLessThan(2048);
+    const scripts = page(STEP1)
+      .querySelectorAll('script[type="module"][src]')
+      .map((s) => fs.readFileSync(path.join(DIST, s.getAttribute('src')!.replace(/^\//, '')), 'utf8'));
+    expect(scripts.some((c) => c.includes('docsi-term') && c.includes('docsi-tip'))).toBe(true);
+  });
+});
+
+describe('check questions', () => {
+  it('inline code renders as code, not backticks; the raw question travels for the email', () => {
+    const li = page(STEP3).querySelector('li[data-check="config"]')!;
+    const q = li.querySelector('.docsi-check-q')!;
+    expect(q.querySelector('code')!.text).toBe('config.ini');
+    expect(q.text).not.toContain('`');
+    expect(li.getAttribute('data-question')).toBe('Does `config.ini` list every widget?');
+    expect(li.querySelector('.docsi-check-issues strong code')!.text).toBe('config.ini');
+  });
+});
+
+describe('asides', () => {
+  it(':::tip[title] and :::note render as Starlight asides', () => {
+    const body = page(STEP1).querySelector('.docsi-body')!;
+    const tip = body.querySelector('aside.starlight-aside.starlight-aside--tip')!;
+    expect(tip.getAttribute('aria-label')).toBe('Sort first');
+    const title = tip.querySelector('p.starlight-aside__title')!;
+    expect(title.getAttribute('aria-hidden')).toBe('true');
+    expect(title.querySelector('svg.starlight-aside__icon')!.getAttribute('viewBox')).toBe('0 0 24 24');
+    expect(title.text.trim()).toBe('Sort first');
+    expect(visibleText(tip.querySelector('.starlight-aside__content')!).trim()).toContain('Lay the widgets out before you count them.');
+    const note = body.querySelector('aside.starlight-aside--note')!;
+    expect(note.getAttribute('aria-label')).toBe('Note');
+    expect(note.querySelector('.starlight-aside__title')!.text.trim()).toBe('Note');
+  });
+
+  it('a title may carry inline Markdown', () => {
+    const caution = page(STEP3).querySelector('.docsi-body aside.starlight-aside--caution')!;
+    expect(caution.getAttribute('aria-label')).toBe('Mind the edge');
+    expect(caution.querySelector('.starlight-aside__title code')!.text).toBe('edge');
+  });
+
+  it('safety is a danger aside titled Safety, after the checks', () => {
+    const html = raw(STEP3);
+    const aside = parse(html).querySelector('.docsi-safety aside.starlight-aside--danger')!;
+    expect(aside.getAttribute('aria-label')).toBe('Safety');
+    expect(aside.querySelector('.starlight-aside__content')!.text.trim()).toBe('Unplug before you finish.');
+    expect(html.indexOf('<docsi-checks')).toBeLessThan(html.indexOf('class="docsi-safety"'));
+  });
+
+  it('the icons are Starlight\'s own', async () => {
+    const icons = (await import(path.join(REPO_ROOT, 'node_modules/@astrojs/starlight/dist/components-internals/Icons.js'))) as { Icons: Record<string, string> };
+    for (const variant of ASIDE_VARIANTS) expect(ASIDE_ICONS[variant]).toBe(icons.Icons[ASIDE_ICON_NAMES[variant]]);
+  });
+
+  it('text that merely looks like a directive is kept as written', async () => {
+    const html = await renderMarkdown('At 10:30, see a:b and :abbr[x]{y=1}.\n\n::leaf\n');
+    expect(html).toContain('<p>At 10:30, see a:b and :abbr[x]{y=1}.</p>');
+    expect(html).toContain('<p>::leaf</p>');
+  });
+
+  it('asideMarkdown fences outlast colons in the body', async () => {
+    const md = asideMarkdown('danger', 'Safety', 'Mind the :::fence');
+    expect(md.startsWith('::::danger[Safety]\n')).toBe(true);
+    expect(await renderMarkdown(md)).toContain('Mind the :::fence');
+  });
+});
+
+describe('readable labels', () => {
+  it('Only-with labels use the short label; unit labels read as counts', () => {
+    expect(page(STEP2).querySelector('.docsi-step-condition')!.text).toBe('Only with temperature upgrade');
+    expect(page(GUIDE).querySelector('li[data-step="step-02-probe"] .docsi-when-inline')!.text).toBe('Only with temperature upgrade');
+  });
+
+  it('the profile JSON carries short and unit labels for the summary bar', () => {
+    const items = JSON.parse(page(STEP1).querySelector('script[data-docsi-profile]')!.text) as Array<Record<string, unknown>>;
+    expect(items.find((i) => i.id === 'temp-kit')).toMatchObject({ short: 'temperature upgrade' });
+    expect(items.find((i) => i.id === 'units')).toMatchObject({ unit_label: 'unit', unit_label_plural: 'units' });
+  });
+
+  it('part categories are lower-case small text', () => {
+    expect(page(STEP3).querySelector('.docsi-parts .docsi-cat')!.text).toBe('part');
+    const css = fs.readFileSync(path.join(PKG_ROOT, 'src/styles/docsandeye.css'), 'utf8');
+    expect(css).toMatch(/\.docsi-cat \{[^}]*text-transform: lowercase;/);
+  });
+});
+
+describe('profile items scoped to guides', () => {
+  const ids = (rel: string) => (JSON.parse(page(rel).querySelector('script[data-docsi-profile]')!.text) as Array<{ id: string }>).map((i) => i.id);
+
+  it('each guide\'s pages carry only its questions', () => {
+    expect(ids(GUIDE)).toEqual(['build', 'units', 'temp-kit', 'supplier']);
+    expect(ids(STEP1)).toEqual(['build', 'units', 'temp-kit', 'supplier']);
+    expect(ids(OTHER_GUIDE)).toEqual(['build', 'units', 'supplier', 'colour']);
+    expect(ids(OTHER_STEP)).toEqual(['build', 'units', 'supplier', 'colour']);
+  });
+
+  it('the form shows only the guide\'s questions', () => {
+    const fields = (rel: string) => page(rel).querySelectorAll('docsi-profile [data-profile-field]').map((f) => f.getAttribute('data-profile-field'));
+    expect(fields(OTHER_GUIDE)).toEqual(['build', 'units', 'supplier', 'colour']);
+  });
+
+  it('a condition on a scoped item reads with its labels', () => {
+    const doc = page(OTHER_STEP);
+    expect(doc.querySelector('.docsi-body .docsi-when-label')!.text).toBe('Only if: colour: Red case');
+    expect(doc.querySelector('.docsi-parts li[data-component="widget"] .docsi-when-inline')!.text).toBe('Only if: colour: Red case');
+  });
+});
+
+describe('guide index list', () => {
+  it('each step row has its number, title and parts count', () => {
+    const rows = page(GUIDE).querySelectorAll('.docsi-guide-steps li');
+    expect(rows.map((li) => [li.querySelector('.docsi-step-num')!.text.trim(), li.querySelector('a')!.text.trim(), li.querySelector('.docsi-parts-count')!.text.trim()])).toEqual([
+      ['1', 'Unpack the kit', '3 parts'],
+      ['2', 'Fit the temperature probe', '1 part'],
+      ['3', 'Finish the build', '2 parts'],
+      ['4', 'A body with an unclosed block', '0 parts'],
+    ]);
+  });
+});
+
+describe('receipt on narrow screens', () => {
+  it('the stylesheet lays rows out as one line below 40rem; "Not in your package" is a closed details with a count', () => {
+    const css = fs.readFileSync(path.join(PKG_ROOT, 'src/styles/docsandeye.css'), 'utf8');
+    const narrow = css.slice(css.indexOf('@media (max-width: 40rem)'));
+    expect(narrow).toMatch(/\.docsi-receipt-table tr \{\s*display: flex;/);
+    const src = fs.readFileSync(path.join(PKG_ROOT, 'src/elements/docsi-receipt.ts'), 'utf8');
+    expect(src).toContain("el('details', undefined, 'docsi-receipt-elsewhere')");
+    expect(src).toContain('Not in your package — source these yourself (${r.elsewhere.length})');
   });
 });

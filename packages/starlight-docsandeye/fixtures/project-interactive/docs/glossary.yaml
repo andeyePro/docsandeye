@@ -1,0 +1,12 @@
+# Terms explained once per page: the first use in a step body, a check or the receipt notes.
+- term: tray
+  terms: [trays]
+  tip: "A shallow box that keeps one unit's parts together."
+- term: widget
+  terms: [widgets]
+  tip: "The small clip that holds the frame together."
+  link: https://widgets.example/about
+- term: bag
+  tip: "A sealed bag of small parts, labelled with a letter."
+- term: probe
+  tip: "The temperature sensor on a lead."

@@ -1,6 +1,7 @@
 theme: starlight
 guides:
   - {id: kit, title: "Kit guide", base: /kit}
+  - {id: other, title: "Other guide", base: /other}
 profile:
   - id: build
     type: choice
@@ -14,12 +15,16 @@ profile:
   - id: units
     type: number
     label: "How many units did you receive?"
+    unit_label: unit
+    unit_label_plural: units
     default: 1
     min: 1
     max: 20
   - id: temp-kit
     type: boolean
     label: "Do you have the temperature upgrade?"
+    short: "temperature upgrade"
+    guides: [kit]
     default: false
   - id: supplier
     type: choice
@@ -29,6 +34,13 @@ profile:
       - {value: shop-b, label: "Shop B"}
       - {value: diy, label: "Sourced myself from [the BoM](https://bom.example/list)"}
     default: shop-a
+  - id: colour
+    type: choice
+    label: "Which colour is your case?"
+    guides: [other]
+    options:
+      - {value: red, label: "Red case"}
+      - {value: blue, label: "Blue case"}
 receipt:
   multiply_by: units
   supplier_from: supplier

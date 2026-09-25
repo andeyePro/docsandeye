@@ -27,3 +27,11 @@ Building several units? Sort the parts into one tray per unit.
 <!-- /when -->
 
 Keep the bag of spares.
+
+:::tip[Sort first]
+Lay the widgets out before you count them.
+:::
+
+:::note
+Nothing here needs tools.
+:::

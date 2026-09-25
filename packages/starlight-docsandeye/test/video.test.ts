@@ -542,7 +542,8 @@ describe('AC10: banner tokens and sticky positioning', () => {
 describe('AC11: package hygiene', () => {
   it('no new runtime dependency in starlight-docsandeye or cli package.json (matches the pre-task_008 dependency set)', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(PKG_ROOT, 'package.json'), 'utf8')) as { dependencies?: Record<string, string> };
-    expect(Object.keys(pkg.dependencies ?? {}).sort()).toEqual(['@astrojs/markdown-remark', '@docsandeye/core', '@google/model-viewer', 'zod']);
+    // task_022 adds remark-directive (already in the tree through Starlight) for `:::note` asides in step bodies.
+    expect(Object.keys(pkg.dependencies ?? {}).sort()).toEqual(['@astrojs/markdown-remark', '@docsandeye/core', '@google/model-viewer', 'remark-directive', 'zod']);
 
     const cliPkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'packages/cli/package.json'), 'utf8')) as { dependencies?: Record<string, string> };
     expect(Object.keys(cliPkg.dependencies ?? {}).sort()).toEqual(['@docsandeye/core', '@tgwf/co2', 'node-html-parser', 'yaml']);

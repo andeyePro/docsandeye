@@ -319,10 +319,12 @@ describe('AC4 + AC6: step-02-cap markup, document order and staleness demotion',
     expect(safetyIdx).toBeGreaterThan(toolIdx);
   });
 
-  it('docsi-text: <aside class="docsi-safety"> contains the safety text', () => {
+  it('docsi-text: the safety text is a Starlight danger aside titled Safety (task_022)', () => {
     const doc = parse(html);
-    const aside = doc.querySelector('.docsi-text aside.docsi-safety');
-    expect(aside?.text).toContain('Wear eye protection when seating the cap; the glass vial can shatter.');
+    const aside = doc.querySelector('.docsi-text .docsi-safety aside.starlight-aside.starlight-aside--danger');
+    expect(aside?.getAttribute('aria-label')).toBe('Safety');
+    expect(aside?.querySelector('.starlight-aside__title')?.text.trim()).toBe('Safety');
+    expect(aside?.querySelector('.starlight-aside__content')?.text).toContain('Wear eye protection when seating the cap; the glass vial can shatter.');
   });
 
   it('copied files exist at dist/_docsandeye/render/… and dist/_docsandeye/media/…', () => {

@@ -65,3 +65,24 @@ describe('check: interactive problems', () => {
     expect(err.some((l) => l.startsWith('docs/steps/s1.md:body.line.6: schema: line 6:') && l.includes('never closed'))).toBe(true);
   });
 });
+
+describe('check: glossary (task_022)', () => {
+  it('a glossary term no step uses is a warning, not an error', async () => {
+    const root = project({
+      'docsandeye.config.yaml': CONFIG,
+      'docs/glossary.yaml': '- {term: septum, tip: "Seal."}\n- {term: vial, tip: "Glass."}\n',
+      'docs/steps/s1.md': `---\nid: s1\norder: 1\ntitle: One\n---\nPierce the septum.\n`,
+    });
+    const { code, err, out } = await check(root);
+    expect(code).toBe(0);
+    expect(err).toContain('warning: docs/glossary.yaml:1.term: schema: glossary term "vial" never appears in any step');
+    expect(out.at(-1)).toMatch(/^errors: 0, warnings: [1-9]/);
+  });
+
+  it('an invalid glossary entry is an error', async () => {
+    const root = project({ 'docsandeye.config.yaml': CONFIG, 'docs/glossary.yaml': '- {term: septum}\n' });
+    const { code, err } = await check(root);
+    expect(code).toBe(1);
+    expect(err.some((l) => l.startsWith('docs/glossary.yaml:0.tip: schema:'))).toBe(true);
+  });
+});
