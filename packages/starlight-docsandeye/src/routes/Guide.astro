@@ -3,6 +3,7 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import { stepsForGuide } from '@docsandeye/core';
 import { config, maintainer, model } from 'virtual:docsandeye/model';
 import ConsentBar from '../components/ConsentBar.astro';
+import { guideDescription } from '../description.ts';
 import ProfileData from '../components/ProfileData.astro';
 import ProfileForm from '../components/ProfileForm.astro';
 import { itemsForGuide } from '@docsandeye/core/interactive';
@@ -22,7 +23,7 @@ const { prev, next } = guideIndexPagination(guide, steps, base);
 ---
 
 <StarlightPage
-	frontmatter={{ id: guide.id, order: 0, title: guide.title, tableOfContents: false, prev, next }}
+	frontmatter={{ id: guide.id, order: 0, title: guide.title, description: guideDescription(guide.title, steps.length), tableOfContents: false, prev, next }}
 	docsandeye={{ kind: 'guide', guideId: guide.id }}
 >
 	<p class="docsi-guide-intro">

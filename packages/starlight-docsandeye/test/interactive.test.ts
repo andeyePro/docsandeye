@@ -973,3 +973,26 @@ describe('task_023: canonical URLs and the sitemap', () => {
     expect(locs.filter((url) => !exists(url))).toEqual([]);
   });
 });
+
+describe('page descriptions: description, OpenGraph and Twitter tags', () => {
+  const meta = (rel: string, selector: string) => page(rel).querySelector(selector)?.getAttribute('content');
+
+  it('a guide page is described as "<title>: <N> steps."', () => {
+    expect(meta(GUIDE, 'meta[name="description"]')).toBe('Kit guide: 4 steps.');
+    expect(meta(GUIDE, 'meta[property="og:description"]')).toBe('Kit guide: 4 steps.');
+    expect(meta('other/index.html', 'meta[name="description"]')).toBe('Other guide: 1 step.');
+  });
+
+  it("a step page is described by its body's first paragraph, Markdown stripped", () => {
+    expect(meta(STEP1, 'meta[name="description"]')).toBe('Open the box and lay the parts out.');
+    expect(meta(STEP1, 'meta[property="og:description"]')).toBe('Open the box and lay the parts out.');
+    expect(meta(STEP2, 'meta[name="description"]')).toBe('Uncoil the probe lead. Push the probe into its socket.');
+    expect(meta(STEP3, 'meta[property="og:description"]')).toBe('Fit the widgets.');
+  });
+
+  it('Starlight adds the OpenGraph title and Twitter card; no per-step image', () => {
+    expect(meta(STEP1, 'meta[property="og:title"]')).toBe('Unpack the kit');
+    expect(meta(STEP1, 'meta[name="twitter:card"]')).toBeTruthy();
+    expect(page(STEP1).querySelector('meta[property="og:image"]')).toBeFalsy();
+  });
+});

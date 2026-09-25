@@ -5,6 +5,7 @@ import { getEntry } from 'astro:content';
 import * as docsi from 'virtual:docsandeye/model';
 import { buildDate, carbon, config, maintainer, model, renderManifest, staleness } from 'virtual:docsandeye/model';
 import StepPage from '../components/StepPage.astro';
+import { stepDescription } from '../description.ts';
 import { guideForRoutePattern, sidebarTargetHref, slugLabel, stepPagination, type PageLink, type SidebarTarget } from '../view.ts';
 
 export function getStaticPaths({ routePattern }: { routePattern: string }) {
@@ -43,10 +44,12 @@ if (target && afterHref) {
 	after = { link: afterHref, label: label ?? afterHref };
 }
 const { prev, next } = stepPagination(guide, steps, step.id, base, after);
+// Starlight turns `description` into the description, OpenGraph and Twitter tags.
+const description = stepDescription(step.body ?? '');
 ---
 
 <StarlightPage
-	frontmatter={{ ...stepFrontmatter, title: step.title, tableOfContents: false, prev, next }}
+	frontmatter={{ ...stepFrontmatter, title: step.title, ...(description ? { description } : {}), tableOfContents: false, prev, next }}
 	docsandeye={{ kind: 'step', guideId: guide.id, stepId: step.id }}
 >
 	<StepPage
