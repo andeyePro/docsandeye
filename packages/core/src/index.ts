@@ -158,7 +158,7 @@ export type {
   WhenScalar,
 } from './interactive.js';
 
-export { compileGlossary, inlineCodeHtml, linkGlossaryTerms, termButton, termIds, unusedGlossaryEntries } from './glossary.js';
+export { compileGlossary, inlineCodeHtml, inlineMarkdownHtml, linkGlossaryTerms, termButton, termIds, unusedGlossaryEntries } from './glossary.js';
 export type { CompiledGlossaryEntry, GlossaryEntry, TermIds } from './glossary.js';
 
 export {
@@ -173,7 +173,7 @@ export {
 } from './links.js';
 export type { LinkContext, LinkTarget } from './links.js';
 
-export { buildReceipt, receiptItems } from './receipt.js';
+export { buildReceipt, isDraftNote, receiptItems, type ReceiptItemsOptions } from './receipt.js';
 
 export { COLLECTION_DIRS, GLOSSARY_FILE, isDenylisted, loadProject, stepsForGuide } from './load.js';
 export type { LoadProjectOptions, ProjectModel } from './load.js';

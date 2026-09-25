@@ -318,6 +318,11 @@ export const GlossaryEntrySchema = z.object({
   tip: nonEmptyString.max(GLOSSARY_TIP_MAX, `must be at most ${GLOSSARY_TIP_MAX} characters`),
   /** Optional "read more" link. */
   link: nonEmptyString.optional(),
+  /**
+   * Phrases (any case) that veto a match: an occurrence with one of them
+   * within 12 characters either side is skipped (`["mm OD"]` for `OD`).
+   */
+  exclude: z.array(nonEmptyString).optional(),
 });
 
 /** `docs/glossary.yaml`: a list of entries; no term or alias may appear twice (case-insensitively). */
@@ -347,10 +352,19 @@ export const DEFAULT_DENYLIST: readonly string[] = [
   'node_modules/**',
 ];
 
+/** A companion page of a guide (a Starlight content page), listed under the guide in the plugin's sidebar. */
+export const GuidePageSchema = z.object({
+  label: nonEmptyString,
+  /** The page's Starlight slug (its path under `src/content/docs`, no extension): `aep/protocol`. */
+  slug: nonEmptyString.transform((s) => s.replace(/^\/+|\/+$/g, '')).pipe(nonEmptyString),
+});
+
 export const GuideSchema = z.object({
   id: kebabId,
   title: nonEmptyString,
   base: z.string().regex(/^\//, 'must start with "/"'),
+  /** Companion pages (protocols, notes) shown after the guide's steps in its sidebar group. */
+  pages: z.array(GuidePageSchema).optional(),
 });
 
 /**
