@@ -145,6 +145,15 @@ describe('glossary matcher', () => {
     expect(out).toContain('data-tip="A &quot;disc&quot; &lt;b&gt;"');
   });
 
+  it('a shared used set makes several calls one block; when labels are skipped', () => {
+    const ids = termIds();
+    const used = new Set<GlossaryEntry>();
+    expect(buttons(linkGlossaryTerms('<p>septum</p>', [SEPTUM], ids, used))).toEqual(['septum']);
+    expect(buttons(linkGlossaryTerms('<p>septum</p>', [SEPTUM], ids, used))).toEqual([]);
+    expect(buttons(link('<p class="docsi-when-label">Only with septum</p><p>septum</p>'))).toEqual(['septum']);
+    expect(link('<p class="docsi-when-label">Only with septum</p>')).toBe('<p class="docsi-when-label">Only with septum</p>');
+  });
+
   it('an empty glossary returns the html unchanged', () => {
     expect(linkGlossaryTerms('<p>septum</p>', [], termIds())).toBe('<p>septum</p>');
   });
@@ -211,7 +220,8 @@ describe('setup summary and condition labels', () => {
     expect(whenLabel({ 'temp-kit': true }, items)).toBe('Only with temperature kit');
     expect(whenLabel({ 'temp-kit': false }, items)).toBe('Only without temperature kit');
     expect(whenLabel({ stirrer: true }, items)).toBe('Only if: stirrer: yes');
-    expect(whenLabel({ units: '>=2' }, items)).toBe('Only if: ≥ 2 Pioreactors');
+    expect(whenLabel({ units: '>=2' }, items)).toBe('Only if: 2 or more Pioreactors');
+    expect(describeWhen({ units: ['<3', '>5'] }, items)).toBe('fewer than 3 Pioreactors or more than 5 Pioreactors');
     expect(describeWhen({ units: 3, count: '>=2' }, items)).toBe('3 Pioreactors and count ≥ 2');
     expect(describeWhen({ 'temp-kit': true, supplier: ['a', 'b'] }, items)).toBe('with temperature kit and supplier: Shop A kit or Shop B');
   });

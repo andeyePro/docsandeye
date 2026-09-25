@@ -159,7 +159,7 @@ export type {
 } from './interactive.js';
 
 export { compileGlossary, inlineCodeHtml, linkGlossaryTerms, termButton, termIds, unusedGlossaryEntries } from './glossary.js';
-export type { GlossaryEntry, TermIds } from './glossary.js';
+export type { CompiledGlossaryEntry, GlossaryEntry, TermIds } from './glossary.js';
 
 export { buildReceipt, receiptItems } from './receipt.js';
 

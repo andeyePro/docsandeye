@@ -71,13 +71,13 @@ function termPattern(term: string): string {
     .join('\\s+');
 }
 
-interface Compiled {
+export interface CompiledGlossaryEntry {
   entry: GlossaryEntry;
   re: RegExp;
 }
 
 /** One case-insensitive whole-word regex per entry (term and aliases, longest first). */
-export function compileGlossary(entries: readonly GlossaryEntry[]): Compiled[] {
+export function compileGlossary(entries: readonly GlossaryEntry[]): CompiledGlossaryEntry[] {
   return entries.map((entry) => {
     const words = [entry.term, ...(entry.terms ?? [])].filter((w) => w.trim() !== '').sort((a, b) => b.length - a.length);
     const re = new RegExp(`(?<![\\p{L}\\p{N}_])(?:${words.map(termPattern).join('|')})(?![\\p{L}\\p{N}_])`, 'iu');
@@ -92,7 +92,7 @@ export function termButton(text: string, entry: GlossaryEntry, id: string): stri
   return `<button type="button" class="docsi-term" aria-describedby="${id}" data-tip="${tip}"${link} title="${tip}">${text}</button><span class="docsi-term-tip" id="${id}">${tip}</span>`;
 }
 
-function linkText(text: string, compiled: readonly Compiled[], used: Set<GlossaryEntry>, ids: TermIds): string {
+function linkText(text: string, compiled: readonly CompiledGlossaryEntry[], used: Set<GlossaryEntry>, ids: TermIds): string {
   let out = '';
   let rest = text;
   for (;;) {
@@ -116,13 +116,19 @@ function linkText(text: string, compiled: readonly Compiled[], used: Set<Glossar
  * Wrap the first occurrence of each glossary term in `html` (one block: a
  * step body, one check, one receipt) as a term button. Text inside code,
  * links, headings, `<summary>`, buttons, labels, SVG, and any element marked
- * `aria-hidden="true"` is left alone. `ids` numbers the buttons' descriptions
- * across the page. Returns `html` unchanged when the glossary is empty.
+ * `aria-hidden="true"` or of class `docsi-when-label` is left alone. `ids`
+ * numbers the buttons' descriptions across the page; pass the same `used`
+ * set to several calls to make them one block. Returns `html` unchanged when
+ * the glossary is empty.
  */
-export function linkGlossaryTerms(html: string, entries: readonly GlossaryEntry[] | readonly Compiled[], ids: TermIds): string {
+export function linkGlossaryTerms(
+  html: string,
+  entries: readonly GlossaryEntry[] | readonly CompiledGlossaryEntry[],
+  ids: TermIds,
+  used: Set<GlossaryEntry> = new Set(),
+): string {
   if (entries.length === 0) return html;
-  const compiled = 're' in entries[0]! ? (entries as readonly Compiled[]) : compileGlossary(entries as readonly GlossaryEntry[]);
-  const used = new Set<GlossaryEntry>();
+  const compiled = 're' in entries[0]! ? (entries as readonly CompiledGlossaryEntry[]) : compileGlossary(entries as readonly GlossaryEntry[]);
   const stack: Array<{ tag: string; skip: boolean }> = [];
   let skipping = 0;
   let out = '';
@@ -151,7 +157,7 @@ export function linkGlossaryTerms(html: string, entries: readonly GlossaryEntry[
         continue;
       }
       if (VOID_TAGS.has(tag) || selfClosing === '/') continue;
-      const skip = SKIP_TAGS.has(tag) || /\saria-hidden\s*=\s*["']?true/i.test(attrs);
+      const skip = SKIP_TAGS.has(tag) || /\saria-hidden\s*=\s*["']?true/i.test(attrs) || /\sclass\s*=\s*["'][^"']*\bdocsi-when-label\b/.test(attrs);
       stack.push({ tag, skip });
       if (skip) skipping++;
     }

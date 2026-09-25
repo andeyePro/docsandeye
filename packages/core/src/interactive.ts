@@ -207,6 +207,13 @@ function describeValue(item: ProfileItem | undefined, value: WhenScalar): string
   return String(value);
 }
 
+/** `2 or more Pioreactors`, `fewer than 3 Pioreactors` (always the plural). */
+function countComparison(item: ProfileItem, op: '>=' | '<=' | '>' | '<', value: number): string {
+  const plural = item.unit_label_plural ?? item.unit_label ?? item.id;
+  const words = { '>=': `${value} or more`, '<=': `${value} or fewer`, '>': `more than ${value}`, '<': `fewer than ${value}` };
+  return `${words[op]} ${plural}`;
+}
+
 function hasUnits(item: ProfileItem | undefined): item is ProfileItem {
   return item?.type === 'number' && (item.unit_label !== undefined || item.unit_label_plural !== undefined);
 }
@@ -236,7 +243,7 @@ export function describeWhen(when: When, items: readonly ProfileItem[] = []): st
         comparators
           .map((c) => {
             const cmp = parseComparator(c)!;
-            return hasUnits(item) ? `${COMPARATOR_SYMBOL[cmp.op]} ${formatCount(item, cmp.value)}` : `${name} ${COMPARATOR_SYMBOL[cmp.op]} ${cmp.value}`;
+            return hasUnits(item) ? countComparison(item, cmp.op, cmp.value) : `${name} ${COMPARATOR_SYMBOL[cmp.op]} ${cmp.value}`;
           })
           .join(' or '),
       );
