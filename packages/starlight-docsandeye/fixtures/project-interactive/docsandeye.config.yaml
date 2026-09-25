@@ -1,7 +1,11 @@
 theme: starlight
 project: {repo: "https://github.com/example/kit", branch: dev}
 guides:
-  - {id: kit, title: "Kit guide", base: /kit}
+  - id: kit
+    title: "Kit guide"
+    base: /kit
+    # A companion page in a mixed-case folder: Starlight serves it lower-cased.
+    pages: [{label: "Wiring notes", slug: "Kit/wiring"}]
   - {id: other, title: "Other guide", base: /other}
 profile:
   - id: build

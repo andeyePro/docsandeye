@@ -9,4 +9,4 @@ parts:
 checks:
   - {id: reads, question: "Does the probe read room temperature?"}
 ---
-Push the probe into its socket.
+Uncoil the probe lead. Push the probe into its socket.

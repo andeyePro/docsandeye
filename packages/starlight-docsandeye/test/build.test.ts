@@ -302,7 +302,7 @@ describe('AC4 + AC6: step-02-cap markup, document order and staleness demotion',
     expect(anode?.text).toContain('MMO anode');
   });
 
-  it('docsi-text: a tools list includes Blank Cap, positioned after docsi-parts and before docsi-safety', () => {
+  it('docsi-text: a tools list includes Blank Cap, after docsi-parts; docsi-safety leads the step body (task_023)', () => {
     const doc = parse(html);
     const textPane = doc.querySelector('.docsi-text')!;
     const toolItem = textPane.querySelector('li[data-component="blank-cap"]');
@@ -316,7 +316,9 @@ describe('AC4 + AC6: step-02-cap markup, document order and staleness demotion',
     const safetyIdx = wrapHtml.indexOf('class="docsi-safety"');
     expect(partsIdx).toBeGreaterThanOrEqual(0);
     expect(toolIdx).toBeGreaterThan(partsIdx);
-    expect(safetyIdx).toBeGreaterThan(toolIdx);
+    expect(safetyIdx).toBeGreaterThanOrEqual(0);
+    expect(safetyIdx).toBeLessThan(wrapHtml.indexOf('class="docsi-body'));
+    expect(safetyIdx).toBeLessThan(partsIdx);
   });
 
   it('docsi-text: the safety text is a Starlight danger aside titled Safety (task_022)', () => {

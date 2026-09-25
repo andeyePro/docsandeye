@@ -6,3 +6,4 @@ master_format: none
 supplier: {name: Bracket Co, url: "https://brackets.example/b"}
 receipt:
   from: [shop-b]
+  note: "DRAFT: confirm the count with Bracket Co"

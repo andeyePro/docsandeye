@@ -15,10 +15,10 @@ import { promisify } from 'node:util';
 import { parse, type HTMLElement } from 'node-html-parser';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadProject, stepsForGuide } from '@docsandeye/core';
-import { checkRefs, onlyIf, plainMailto, scriptJson, siteHref, skipTargets, supplierLabels, whenAttr } from '../src/interactive-view.ts';
+import { checkRefs, guideReceiptItems, onlyIf, plainMailto, scriptJson, siteHref, skipTargets, supplierLabels, whenAttr } from '../src/interactive-view.ts';
 import { ASIDE_ICON_NAMES, ASIDE_ICONS, ASIDE_VARIANTS, asideMarkdown } from '../src/asides.ts';
 import { renderMarkdown } from '../src/markdown.ts';
-import { guideIndexPagination, olderVideoSentence, sidebarEntryAfter, sidebarTargetHref, slugLabel, stepPagination } from '../src/view.ts';
+import { guideIndexPagination, guidePageLinks, olderVideoSentence, sidebarEntryAfter, sidebarTargetHref, slugLabel, stepPagination } from '../src/view.ts';
 
 const execFileP = promisify(execFile);
 const BUILD_TIMEOUT = 600_000;
@@ -28,11 +28,19 @@ const SITE_DIR = path.join(PKG_ROOT, 'fixtures/site-interactive');
 const PROJECT_DIR = path.join(PKG_ROOT, 'fixtures/project-interactive');
 const REPO_ROOT = path.resolve(PKG_ROOT, '../..');
 const DIST = path.join(SITE_DIR, 'dist');
+const DIST_MAINTAINER = path.join(SITE_DIR, 'dist-maintainer');
 
 beforeAll(async () => {
   await execFileP('npx', ['astro', 'build'], {
     cwd: SITE_DIR,
     env: { ...process.env, DOCSANDEYE_BUILD_DATE: '2026-09-23' },
+    timeout: BUILD_TIMEOUT,
+    maxBuffer: 1024 * 1024 * 64,
+  });
+  // task_023: draft material is maintainer-only, so the same site is also built in maintainer mode.
+  await execFileP('npx', ['astro', 'build', '--outDir', './dist-maintainer'], {
+    cwd: SITE_DIR,
+    env: { ...process.env, DOCSANDEYE_BUILD_DATE: '2026-09-23', DOCSANDEYE_MAINTAINER: '1' },
     timeout: BUILD_TIMEOUT,
     maxBuffer: 1024 * 1024 * 64,
   });
@@ -44,6 +52,10 @@ function raw(rel: string): string {
 
 function page(rel: string): HTMLElement {
   return parse(raw(rel));
+}
+
+function maintainerPage(rel: string): HTMLElement {
+  return parse(fs.readFileSync(path.join(DIST_MAINTAINER, rel), 'utf8'));
 }
 
 /** Text as a sighted reader sees it: without the visually hidden glossary descriptions. */
@@ -272,10 +284,10 @@ describe('receipt checklist', () => {
 describe('step checks', () => {
   const checks = () => page(STEP1).querySelector('docsi-checks')!;
 
-  it('sits after the parts list and before safety', () => {
+  it('sits after the parts list; safety leads the step body (task_023)', () => {
     const html = raw(STEP3);
     expect(html.indexOf('class="docsi-parts"')).toBeLessThan(html.indexOf('<docsi-checks'));
-    expect(html.indexOf('<docsi-checks')).toBeLessThan(html.indexOf('class="docsi-safety"'));
+    expect(html.indexOf('class="docsi-safety"')).toBeLessThan(html.indexOf('class="docsi-body'));
   });
 
   it('without JavaScript: the questions as a list with issues in <details>; radios hidden', () => {
@@ -294,9 +306,10 @@ describe('step checks', () => {
     expect(el.querySelector('.docsi-checks-done')!.hasAttribute('hidden')).toBe(true);
   });
 
-  it('draft note only with checks_draft', () => {
-    expect(checks().querySelector('.docsi-checks-draft')!.text).toBe('Draft checks, under review');
-    expect(page(STEP3).querySelector('.docsi-checks-draft')).toBeFalsy();
+  it('draft note only with checks_draft, and only in a maintainer build (task_023)', () => {
+    expect(checks().querySelector('.docsi-checks-draft')).toBeFalsy();
+    expect(maintainerPage(STEP1).querySelector('docsi-checks .docsi-checks-draft')!.text).toBe('Draft checks, under review');
+    expect(maintainerPage(STEP3).querySelector('.docsi-checks-draft')).toBeFalsy();
   });
 
   it('the project contact travels in a data attribute; a noscript contact link names the step', () => {
@@ -412,13 +425,20 @@ describe('profile: implies, link options and label links', () => {
     ]);
   });
 
-  it('a Markdown link in an option label renders as a link inside the label', () => {
+  it('a Markdown link in an option label: plain text in the label, a separate "site" link after it (task_023)', () => {
     const label = form().querySelector('input[name="supplier"][value="diy"]')!.parentNode as unknown as HTMLElement;
+    expect(label.tagName).toBe('LABEL');
     expect(label.text.replace(/\s+/g, ' ').trim()).toBe('Sourced myself from the BoM');
-    const a = label.querySelector('a')!;
+    expect(label.querySelector('a')).toBeFalsy();
+    const option = label.parentNode as unknown as HTMLElement;
+    expect(option.classList.contains('docsi-profile-option')).toBe(true);
+    const a = option.querySelector('a.docsi-profile-site')!;
+    expect(a.parentNode).toBe(option);
     expect(a.getAttribute('href')).toBe('https://bom.example/list');
-    expect(a.text).toBe('the BoM');
+    expect(a.text.trim()).toBe('site');
+    expect(a.getAttribute('aria-label')).toBe('the BoM (site)');
     expect(form().outerHTML).not.toContain('[the BoM]');
+    expect(form().querySelectorAll('label a')).toHaveLength(0);
   });
 });
 
@@ -738,12 +758,15 @@ describe('asides', () => {
     expect(caution.querySelector('.starlight-aside__title code')!.text).toBe('edge');
   });
 
-  it('safety is a danger aside titled Safety, after the checks', () => {
+  it('safety is a danger aside titled Safety, at the top of the step body (task_023)', () => {
     const html = raw(STEP3);
     const aside = parse(html).querySelector('.docsi-safety aside.starlight-aside--danger')!;
     expect(aside.getAttribute('aria-label')).toBe('Safety');
     expect(aside.querySelector('.starlight-aside__content')!.text.trim()).toBe('Unplug before you finish.');
-    expect(html.indexOf('<docsi-checks')).toBeLessThan(html.indexOf('class="docsi-safety"'));
+    const safety = html.indexOf('class="docsi-safety"');
+    expect(html.indexOf('<h1')).toBeLessThan(safety);
+    expect(safety).toBeLessThan(html.indexOf('class="docsi-body'));
+    expect(safety).toBeLessThan(html.indexOf('<docsi-checks'));
   });
 
   it('the icons are Starlight\'s own', async () => {
@@ -825,5 +848,128 @@ describe('receipt on narrow screens', () => {
     const src = fs.readFileSync(path.join(PKG_ROOT, 'src/elements/docsi-receipt.ts'), 'utf8');
     expect(src).toContain("el('details', undefined, 'docsi-receipt-elsewhere')");
     expect(src).toContain('Not in your package — source these yourself (${r.elsewhere.length})');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// task_023: review follow-ups — glossary exclude, maintainer-only drafts,
+// inline Markdown in checks, safety first, label links, companion pages,
+// option spacing, canonical URLs
+
+describe('task_023: glossary exclude', () => {
+  it('an occurrence inside an excluded phrase is skipped; the next one is linked', () => {
+    const body = page(STEP2).querySelector('.docsi-body')!;
+    const buttons = body.querySelectorAll('button.docsi-term');
+    expect(buttons.map((b) => b.text)).toEqual(['probe']);
+    expect(body.innerHTML).toContain('Uncoil the probe lead. Push the <button');
+  });
+});
+
+describe('task_023: draft material is maintainer-only', () => {
+  const note = (doc: HTMLElement) => doc.querySelector('.docsi-receipt-static tr[data-component="bracket"] .docsi-receipt-note');
+
+  it('a DRAFT: receipt note is left out for readers', () => {
+    expect(page(STEP1).querySelector('.docsi-receipt-static tr[data-component="bracket"]')).toBeTruthy();
+    expect(note(page(STEP1))).toBeNull();
+    expect(raw(STEP1)).not.toContain('confirm the count');
+  });
+
+  it('a maintainer build shows it in full; other notes are shown in both', () => {
+    expect(note(maintainerPage(STEP1))!.text).toBe('DRAFT: confirm the count with Bracket Co');
+    for (const doc of [page(STEP1), maintainerPage(STEP1)]) {
+      expect(visibleText(doc.querySelector('tr[data-component="spares-bag"] .docsi-receipt-note')!)).toBe('Bag B, shared across units');
+    }
+  });
+
+  it('guideReceiptItems keeps DRAFT notes only for a maintainer', async () => {
+    const model = await loadProject(PROJECT_DIR);
+    const bracket = (maintainer: boolean) => guideReceiptItems(model, 'kit', maintainer).find((i) => i.component === 'bracket')!;
+    expect(bracket(false).note).toBeUndefined();
+    expect(bracket(true).note).toBe('DRAFT: confirm the count with Bracket Co');
+    expect(guideReceiptItems(model, 'kit').find((i) => i.component === 'bracket')!.note).toBeUndefined();
+  });
+});
+
+describe('task_023: inline Markdown in checks', () => {
+  it('issues render emphasis, bold and links; no block elements', () => {
+    const li = page(STEP3).querySelector('li[data-check="rigid"] details.docsi-check-issues li')!;
+    expect(li.querySelector('strong em')!.text).toBe('wobbles');
+    expect(li.querySelectorAll('strong').map((s) => s.text)).toContain('by hand');
+    const a = li.querySelector('a')!;
+    expect(a.getAttribute('href')).toBe('https://widgets.example/torque');
+    expect(a.text).toBe('torque table');
+    expect(li.querySelectorAll('p, ul, ol, h1, h2, h3, blockquote')).toHaveLength(0);
+    expect(li.text).not.toContain('**');
+    expect(li.text).not.toContain('](');
+  });
+
+  it('code spans still render', () => {
+    expect(page(STEP3).querySelector('li[data-check="config"] .docsi-check-q code')!.text).toBe('config.ini');
+  });
+});
+
+describe('task_023: companion pages of a guide', () => {
+  it('the guide\'s sidebar group lists its pages at Starlight\'s own (lower-case) href', () => {
+    for (const rel of [GUIDE, STEP1]) {
+      const links = page(rel).querySelectorAll('.docsi-sidebar-guide .docsi-guide-pages a');
+      expect(links.map((a) => [a.text.trim(), a.getAttribute('href')])).toEqual([['Wiring notes', '/kit/wiring/']]);
+    }
+    expect(fs.existsSync(path.join(DIST, 'kit/wiring/index.html'))).toBe(true);
+  });
+
+  it('the pages follow the steps; "Other guides" is kept', () => {
+    const nav = page(STEP1).querySelector('nav.docsi-sidebar')!.outerHTML;
+    expect(nav.indexOf('class="docsi-steps"')).toBeLessThan(nav.indexOf('class="docsi-guide-pages"'));
+    expect(page(STEP1).querySelector('.docsi-sidebar-others .docsi-guides a')!.getAttribute('href')).toBe('/other/');
+    expect(page(OTHER_STEP).querySelector('.docsi-guide-pages')).toBeNull();
+  });
+
+  it('guidePageLinks resolves a slug to the content entry case-insensitively', () => {
+    const ids = ['aep/protocol', 'kit/wiring', 'notes/index', 'index'];
+    expect(guidePageLinks([{ label: 'Protocol', slug: 'AEP/protocol' }], ids)).toEqual([{ label: 'Protocol', href: '/aep/protocol/', found: true }]);
+    expect(guidePageLinks([{ label: 'W', slug: '/Kit/Wiring/' }], ids, '/docs/')).toEqual([{ label: 'W', href: '/docs/kit/wiring/', found: true }]);
+    expect(guidePageLinks([{ label: 'N', slug: 'notes' }], ids)).toEqual([{ label: 'N', href: '/notes/', found: true }]);
+    expect(guidePageLinks([{ label: 'Home', slug: 'index' }], ids)).toEqual([{ label: 'Home', href: '/', found: true }]);
+    expect(guidePageLinks([{ label: 'Gone', slug: 'Missing/Page' }], ids)).toEqual([{ label: 'Gone', href: '/missing/page/', found: false }]);
+    expect(guidePageLinks(undefined, ids)).toEqual([]);
+  });
+});
+
+describe('task_023: option spacing', () => {
+  it('a choice list is a column at normal line spacing (0.35rem gap, no extra margin)', () => {
+    const css = fs.readFileSync(path.join(PKG_ROOT, 'src/styles/docsandeye.css'), 'utf8');
+    expect(css).toMatch(/fieldset\.docsi-profile-field \{[^}]*flex-direction: column;[^}]*gap: 0\.35rem;/);
+    expect(css).toMatch(/\.docsi-profile-option \{[^}]*gap: 0\.35rem;[^}]*margin: 0;/);
+    expect(css).not.toMatch(/\.docsi-profile-option \{[^}]*flex-basis/);
+    // Options are spans, which Starlight's content spacing (`:not(span) + :not(span)`) leaves alone.
+    expect(page(GUIDE).querySelectorAll('fieldset[data-profile-field="supplier"] > span.docsi-profile-option')).toHaveLength(3);
+  });
+});
+
+describe('task_023: canonical URLs and the sitemap', () => {
+  function htmlFiles(dir: string): string[] {
+    return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      return e.isDirectory() ? htmlFiles(full) : e.name.endsWith('.html') ? [full] : [];
+    });
+  }
+  /** Whether a URL is served by a built file: `/a/` by `a/index.html` (or `a.html`, as `404.html` is), `/a.xml` by itself. */
+  const exists = (url: string) => {
+    const pathname = decodeURIComponent(new URL(url).pathname);
+    const candidates = pathname.endsWith('/') ? [`${pathname}index.html`, `${pathname.slice(0, -1)}.html`] : [pathname];
+    return candidates.some((c) => fs.existsSync(path.join(DIST, c)));
+  };
+
+  it('every canonical URL in the built site points at an existing file', () => {
+    const canonicals = htmlFiles(DIST).flatMap((f) => parse(fs.readFileSync(f, 'utf8')).querySelectorAll('link[rel="canonical"]').map((l) => l.getAttribute('href')!));
+    expect(canonicals.length).toBeGreaterThan(5);
+    expect(canonicals).toContain('https://docsandeye.example/kit/wiring/');
+    expect(canonicals.filter((url) => !exists(url))).toEqual([]);
+  });
+
+  it('every sitemap URL points at an existing file', () => {
+    const locs = [...fs.readFileSync(path.join(DIST, 'sitemap-0.xml'), 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]!);
+    expect(locs).toContain('https://docsandeye.example/kit/wiring/');
+    expect(locs.filter((url) => !exists(url))).toEqual([]);
   });
 });

@@ -11,7 +11,7 @@ checks:
   - id: rigid
     question: "Is the frame rigid?"
     issues:
-      - {problem: "It wobbles", fix: "Tighten the widgets."}
+      - {problem: "It *wobbles*", fix: "Tighten the widgets **by hand**; see the [torque table](https://widgets.example/torque)."}
   - id: probe-seated
     question: "Is the probe seated?"
     when: {temp-kit: true}

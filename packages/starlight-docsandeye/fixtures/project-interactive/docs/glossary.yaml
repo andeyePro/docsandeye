@@ -10,3 +10,5 @@
   tip: "A sealed bag of small parts, labelled with a letter."
 - term: probe
   tip: "The temperature sensor on a lead."
+  # "probe lead" is the cable, not the sensor: that occurrence is skipped.
+  exclude: ["Probe lead"]
