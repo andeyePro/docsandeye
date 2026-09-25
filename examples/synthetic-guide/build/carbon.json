@@ -1,24 +1,24 @@
 {
   "pages": {
     "/example/step-01-print-the-parts/": {
-      "bytes": 138366,
-      "gco2e": 0.020505841200000003
+      "bytes": 139379,
+      "gco2e": 0.0206559678
     },
     "/example/step-02-fit-the-arm/": {
-      "bytes": 132930,
-      "gco2e": 0.019700226
+      "bytes": 133911,
+      "gco2e": 0.019845610200000002
     },
     "/example/step-03-fit-the-led-module/": {
-      "bytes": 136085,
-      "gco2e": 0.020167797
+      "bytes": 137066,
+      "gco2e": 0.0203131812
     },
     "/example/step-04-fit-the-shade/": {
-      "bytes": 130277,
-      "gco2e": 0.019307051400000004
+      "bytes": 131286,
+      "gco2e": 0.019456585199999998
     },
     "/example/step-05-fit-the-dimmer/": {
-      "bytes": 132758,
-      "gco2e": 0.0196747356
+      "bytes": 133639,
+      "gco2e": 0.019805299800000002
     }
   },
   "version": 1
