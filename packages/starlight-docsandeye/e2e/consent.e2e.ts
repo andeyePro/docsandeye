@@ -29,7 +29,8 @@ test('"Don\'t save" shows the not-saved notice and writes nothing', async ({ pag
   await expect(bar(page)).toBeHidden();
   await expect(page.locator('.docsi-consent-notice').first()).toBeVisible();
   await expect(page.locator('.docsi-consent-notice').first()).toContainText('Not saved');
-  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+  // Nothing of ours is written; the theme switcher keeps its own keys regardless.
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('docsandeye:')))).toEqual([]);
 
   await page.reload();
   await expect(page.locator('[data-enhanced]').first()).toBeAttached();

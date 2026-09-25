@@ -601,8 +601,11 @@ docsi-youtube [hidden],
   font-size: var(--sl-text-sm);
 }
 
+/* A step that does not apply to this reader's setup stays listed and readable (AA contrast),
+   just quieter than the others; the "(not for your setup)" note carries the meaning too. */
 [data-docsi-skipped] > a {
-  opacity: 0.6;
+  color: var(--sl-color-gray-3);
+  font-style: italic;
 }
 
 .docsi-checked-mark {

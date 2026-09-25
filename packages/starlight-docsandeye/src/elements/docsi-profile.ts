@@ -56,10 +56,17 @@ export class DocsiProfile extends ElementBase {
     if (!form || !this.guideId) return;
     fillForm(form, this.items, loadProfile(this.guideId, this.items));
     const saved = this.querySelector<HTMLElement>('.docsi-profile-saved');
+    let last = JSON.stringify(loadProfile(this.guideId, this.items));
     const onChange = (): void => {
       const profile = readForm(form, this.items);
       // Show the normalised answers (a number clamped to its range, an empty field back to its default).
       fillForm(form, this.items, profile);
+      // A field's native `change` fires again when it loses focus, even when nothing new was typed;
+      // re-saving the same profile would rebuild every listening element (the receipt table among
+      // them) under the reader's cursor.
+      const json = JSON.stringify(profile);
+      if (json === last) return;
+      last = json;
       saveProfile(this.guideId, profile, this);
       if (saved) saved.hidden = false;
     };
