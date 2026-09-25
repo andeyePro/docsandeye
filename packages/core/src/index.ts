@@ -30,6 +30,9 @@ export {
   ContactSchema,
   ConfigSchema,
   DEFAULT_DENYLIST,
+  GLOSSARY_TIP_MAX,
+  GlossaryEntrySchema,
+  GlossarySchema,
   GuideSchema,
   KEBAB_ID_RE,
   MASTER_FORMATS,
@@ -53,6 +56,7 @@ export {
   mergeDenylist,
   parseComponent,
   parseConfig,
+  parseGlossary,
   parseMedia,
   parsePin,
   parseStep,
@@ -105,10 +109,12 @@ export {
   effectiveProfile,
   describeWhen,
   escapeHtml,
+  formatCount,
   formatDuration,
   impliedItems,
   impliesProblems,
   isSafeHref,
+  itemsForGuide,
   labelParts,
   matchesWhen,
   missingParts,
@@ -152,9 +158,12 @@ export type {
   WhenScalar,
 } from './interactive.js';
 
+export { compileGlossary, inlineCodeHtml, linkGlossaryTerms, termButton, termIds, unusedGlossaryEntries } from './glossary.js';
+export type { GlossaryEntry, TermIds } from './glossary.js';
+
 export { buildReceipt, receiptItems } from './receipt.js';
 
-export { COLLECTION_DIRS, isDenylisted, loadProject, stepsForGuide } from './load.js';
+export { COLLECTION_DIRS, GLOSSARY_FILE, isDenylisted, loadProject, stepsForGuide } from './load.js';
 export type { LoadProjectOptions, ProjectModel } from './load.js';
 
 export { changelogBetween, computeStaleness } from './staleness.js';

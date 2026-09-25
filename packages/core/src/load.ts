@@ -9,12 +9,14 @@ import picomatch from 'picomatch';
 import semver from 'semver';
 import { DocsiError, sortProblems, type Problem } from './errors.js';
 import type { HostingRegistry } from './hosting.js';
+import { unusedGlossaryEntries, type GlossaryEntry } from './glossary.js';
 import { validateWhen, wrapWhenBlocks, type ProfileItem, type When } from './interactive.js';
 import {
   CONFIG_FILENAME,
   DEFAULT_DENYLIST,
   parseComponent,
   parseConfig,
+  parseGlossary,
   parseMedia,
   parsePin,
   parseStep,
@@ -38,6 +40,10 @@ export interface ProjectModel {
    * by hand.
    */
   bodyProblems?: Problem[];
+  /** `docs/glossary.yaml`, validated; empty when the file is absent or invalid. Absent on models built by hand. */
+  glossary?: GlossaryEntry[];
+  /** Findings `docsandeye check` reports as warnings (a glossary term no step uses). Absent on models built by hand. */
+  warnings?: Problem[];
 }
 
 export const COLLECTION_DIRS = {
@@ -45,6 +51,9 @@ export const COLLECTION_DIRS = {
   steps: 'docs/steps',
   media: 'docs/media',
 } as const;
+
+/** The optional glossary file, repo-relative. */
+export const GLOSSARY_FILE = 'docs/glossary.yaml';
 
 const YAML_EXTENSIONS = new Set(['.yaml', '.yml']);
 const MARKDOWN_EXTENSIONS = new Set(['.md']);
@@ -117,7 +126,7 @@ export function loadProject(root: string, options: LoadProjectOptions = {}): Pro
   const bodyProblems: Problem[] = [];
   for (const [id, step] of steps) {
     const file = stepFiles.get(id)!;
-    const { problems: found } = wrapWhenBlocks(step.body, config.profile);
+    const { problems: found } = wrapWhenBlocks(step.body, stepItems(step, config.profile));
     if (found.length === 0) continue;
     const offset = bodyLineOffset(root, file, step.body);
     for (const p of found) {
@@ -132,9 +141,37 @@ export function loadProject(root: string, options: LoadProjectOptions = {}): Pro
     checkPins(components, manifest.in_frame, file, 'in_frame', problems);
   }
 
+  const glossary = loadGlossary(root, config.denylist, problems);
+  const warnings: Problem[] = [];
+  const stepTexts = [...steps.values()].map((s) => [s.body, ...(s.checks ?? []).flatMap((c) => [c.question, ...c.issues.flatMap((i) => [i.problem, i.fix])])].join('\n'));
+  for (const entry of unusedGlossaryEntries(glossary, stepTexts)) {
+    warnings.push({ code: 'schema', file: GLOSSARY_FILE, path: `${glossary.indexOf(entry)}.term`, message: `glossary term "${entry.term}" never appears in any step` });
+  }
+
   sortProblems(problems);
   sortProblems(bodyProblems);
-  return { config, components, steps, media, problems, bodyProblems };
+  sortProblems(warnings);
+  return { config, components, steps, media, problems, bodyProblems, glossary, warnings };
+}
+
+function loadGlossary(root: string, denylist: readonly string[], problems: Problem[]): GlossaryEntry[] {
+  const abs = path.join(root, GLOSSARY_FILE);
+  if (isDenylisted(GLOSSARY_FILE, denylist) || !fs.existsSync(abs)) return [];
+  try {
+    return parseGlossary(fs.readFileSync(abs, 'utf8'), GLOSSARY_FILE);
+  } catch (err) {
+    if (err instanceof DocsiError) {
+      problems.push(...err.problems);
+      return [];
+    }
+    throw err;
+  }
+}
+
+/** The profile items that apply on every guide the step is in (see `itemsForGuide`). */
+function stepItems(step: Step, profile: readonly ProfileItem[]): ProfileItem[] {
+  const guides = step.guide ?? [];
+  return profile.filter((item) => item.guides === undefined || guides.every((g) => item.guides!.includes(g)));
 }
 
 // ---------------------------------------------------------------------------
@@ -225,17 +262,32 @@ function checkComponentRef(components: Map<string, Component>, id: string, file:
   }
 }
 
-function checkWhen(when: When, profile: readonly ProfileItem[], file: string, at: string, problems: Problem[]): void {
-  for (const p of validateWhen(when, profile)) {
+function checkWhen(when: When, profile: readonly ProfileItem[], file: string, at: string, problems: Problem[], step?: Step): void {
+  const scoped: When = {};
+  for (const [key, value] of Object.entries(when)) {
+    const item = profile.find((p) => p.id === key);
+    const outside = step && item?.guides !== undefined ? (step.guide ?? []).filter((g) => !item.guides!.includes(g)) : [];
+    if (outside.length > 0) {
+      problems.push({
+        code: 'schema',
+        file,
+        path: `${at}.${key}`,
+        message: `profile item "${key}" does not apply to guide ${outside.map((g) => `"${g}"`).join(', ')} (its guides: ${item!.guides!.join(', ')})`,
+      });
+    } else {
+      scoped[key] = value;
+    }
+  }
+  for (const p of validateWhen(scoped, profile)) {
     problems.push({ code: 'schema', file, path: `${at}.${p.path}`, message: p.message });
   }
 }
 
 function checkStepWhens(step: Step, profile: readonly ProfileItem[], file: string, problems: Problem[]): void {
-  if (step.when) checkWhen(step.when, profile, file, 'when', problems);
-  step.parts.forEach((p, i) => p.when && checkWhen(p.when, profile, file, `parts.${i}.when`, problems));
-  step.tools.forEach((t, i) => t.when && checkWhen(t.when, profile, file, `tools.${i}.when`, problems));
-  step.checks?.forEach((c, i) => c.when && checkWhen(c.when, profile, file, `checks.${i}.when`, problems));
+  if (step.when) checkWhen(step.when, profile, file, 'when', problems, step);
+  step.parts.forEach((p, i) => p.when && checkWhen(p.when, profile, file, `parts.${i}.when`, problems, step));
+  step.tools.forEach((t, i) => t.when && checkWhen(t.when, profile, file, `tools.${i}.when`, problems, step));
+  step.checks?.forEach((c, i) => c.when && checkWhen(c.when, profile, file, `checks.${i}.when`, problems, step));
 }
 
 /** `receipt.from` values must be options of the `receipt.supplier_from` choice, when one is configured. */

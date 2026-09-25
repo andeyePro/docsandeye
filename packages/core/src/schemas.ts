@@ -305,6 +305,38 @@ export const MediaSchema = z
 export type Media = z.output<typeof MediaSchema>;
 
 // ---------------------------------------------------------------------------
+// Glossary
+
+/** Longest tip a glossary entry may carry: a popover, not a paragraph. */
+export const GLOSSARY_TIP_MAX = 240;
+
+export const GlossaryEntrySchema = z.object({
+  /** Matched case-insensitively as a whole word. */
+  term: nonEmptyString,
+  /** Aliases matched the same way (`septa` for `septum`). */
+  terms: z.array(nonEmptyString).optional(),
+  tip: nonEmptyString.max(GLOSSARY_TIP_MAX, `must be at most ${GLOSSARY_TIP_MAX} characters`),
+  /** Optional "read more" link. */
+  link: nonEmptyString.optional(),
+});
+
+/** `docs/glossary.yaml`: a list of entries; no term or alias may appear twice (case-insensitively). */
+export const GlossarySchema = z.array(GlossaryEntrySchema).superRefine((entries, ctx) => {
+  const seen = new Map<string, number>();
+  entries.forEach((entry, i) => {
+    const words: Array<[string, (string | number)[]]> = [[entry.term, [i, 'term']], ...(entry.terms ?? []).map((t, j): [string, (string | number)[]] => [t, [i, 'terms', j]])];
+    for (const [word, at] of words) {
+      const key = word.trim().toLowerCase();
+      const first = seen.get(key);
+      if (first !== undefined) ctx.addIssue({ code: 'custom', path: at, message: `duplicate glossary term "${word}" (already in entry ${first})` });
+      else seen.set(key, i);
+    }
+  });
+});
+
+export type GlossaryEntryOutput = z.output<typeof GlossaryEntrySchema>;
+
+// ---------------------------------------------------------------------------
 // Config
 
 export const DEFAULT_DENYLIST: readonly string[] = [
@@ -364,6 +396,13 @@ export const ProfileItemSchema = z
     min: z.number().int().optional(),
     max: z.number().int().optional(),
     options: z.array(ProfileOptionSchema).optional(),
+    /** A short name for summaries and "Only with …" labels (`temperature kit`); defaults to `label` in the summary. */
+    short: nonEmptyString.optional(),
+    /** number only: the unit, singular and plural (`Pioreactor`, `Pioreactors`); default the id. */
+    unit_label: nonEmptyString.optional(),
+    unit_label_plural: nonEmptyString.optional(),
+    /** The guides this question belongs to; absent = every guide. Checked against `guides` by the config refinement. */
+    guides: z.array(kebabId).min(1, 'must list at least one guide id').optional(),
   })
   .superRefine((p, ctx) => {
     if (p.type === 'choice') {
@@ -383,7 +422,7 @@ export const ProfileItemSchema = z
       ctx.addIssue({ code: 'custom', path: ['options'], message: `not allowed for ${p.type}` });
     }
     if (p.type !== 'number') {
-      for (const key of ['min', 'max'] as const) {
+      for (const key of ['min', 'max', 'unit_label', 'unit_label_plural'] as const) {
         if (p[key] !== undefined) ctx.addIssue({ code: 'custom', path: [key], message: `only allowed for number (this item is ${p.type})` });
       }
     }
@@ -412,10 +451,14 @@ export const ProfileItemSchema = z
   })
   .transform((p): ProfileItem => {
     const out: ProfileItem = { id: p.id, type: p.type, label: p.label, default: false };
+    if (p.short !== undefined) out.short = p.short;
+    if (p.guides !== undefined) out.guides = p.guides;
     if (p.type === 'number') {
       out.min = p.min ?? 1;
       out.max = p.max ?? 100;
       out.default = p.default ?? out.min;
+      if (p.unit_label !== undefined) out.unit_label = p.unit_label;
+      if (p.unit_label_plural !== undefined) out.unit_label_plural = p.unit_label_plural;
     } else if (p.type === 'boolean') {
       out.default = p.default ?? false;
     } else {
@@ -468,6 +511,11 @@ function buildConfigSchema(registry: HostingRegistry) {
         seen.add(g.id);
       });
       checkProfileConfig(c, ctx);
+      c.profile.forEach((item, i) => {
+        item.guides?.forEach((g, j) => {
+          if (!seen.has(g)) ctx.addIssue({ code: 'custom', path: ['profile', i, 'guides', j], message: `guide "${g}" is not declared in guides` });
+        });
+      });
       if (!registry.has(c.hosting.provider)) {
         ctx.addIssue({
           code: 'custom',
@@ -664,6 +712,16 @@ export function parseMedia(text: string, filename: string): Media {
   const media = validate(MediaSchema, parseYamlDocument(text, filename), filename);
   checkIdMatchesStem(media.id, filename);
   return media;
+}
+
+/** Parse `docs/glossary.yaml` (a YAML list; an empty file is an empty glossary). */
+export function parseGlossary(text: string, filename: string): GlossaryEntryOutput[] {
+  const data = parseYamlDocument(text, filename);
+  if (data === null || data === undefined) return [];
+  if (!Array.isArray(data)) throw new DocsiError([{ code: 'schema', file: filename, path: '', message: 'document must be a YAML list of glossary entries' }]);
+  const result = GlossarySchema.safeParse(data);
+  if (!result.success) throw new DocsiError(zodProblems(result.error, filename));
+  return result.data;
 }
 
 export interface ParseConfigOptions {

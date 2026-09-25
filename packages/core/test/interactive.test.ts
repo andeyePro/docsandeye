@@ -333,7 +333,7 @@ describe('profile values', () => {
   it('defaults and summary', () => {
     const p = defaultProfile(ITEMS);
     expect(p).toEqual({ units: 1, 'temp-kit': false, supplier: 'shop-a' });
-    expect(profileSummary(ITEMS, { units: 2, 'temp-kit': true, supplier: 'shop-a' })).toBe('2 × units · temp-kit yes · Shop A kit');
+    expect(profileSummary(ITEMS, { units: 2, 'temp-kit': true, supplier: 'shop-a' })).toBe('2 units · Do you have the temperature kit?: yes · Shop A kit');
   });
 
   it('normalises stored answers: clamps, rounds, drops unknowns, falls back to defaults', () => {
@@ -487,7 +487,7 @@ describe('option label links', () => {
   it('plain text is used in summaries and conditions', () => {
     const items = parseConfig(BASE_CONFIG + IMPLIES_YAML).profile;
     expect(plainLabel('Sourced myself from [the BoM](https://x.invalid)')).toBe('Sourced myself from the BoM');
-    expect(profileSummary(items, defaultProfile(items))).toBe('New · 2 × units · temp-kit yes · Shop A');
+    expect(profileSummary(items, defaultProfile(items))).toBe('New · 2 units · Temperature kit?: yes · Shop A');
     expect(describeWhen({ supplier: 'diy' }, items)).toBe('supplier: Sourced myself from the BoM');
   });
 });

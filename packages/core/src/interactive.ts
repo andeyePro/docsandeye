@@ -41,6 +41,13 @@ export interface ProfileItem {
   max?: number;
   /** choice only */
   options?: ProfileOption[];
+  /** Short name for summaries and "Only with …" labels. */
+  short?: string;
+  /** number only: unit names for "3 Pioreactors" (default the id). */
+  unit_label?: string;
+  unit_label_plural?: string;
+  /** The guides the question belongs to; absent = every guide. */
+  guides?: string[];
 }
 
 export type ProfileValue = number | boolean | string;
@@ -184,6 +191,13 @@ function valueProblem(item: ProfileItem, value: WhenScalar): string | undefined 
 
 const COMPARATOR_SYMBOL: Record<string, string> = { '>=': '≥', '<=': '≤', '>': '>', '<': '<' };
 
+/** `3 Pioreactors` / `1 Pioreactor`: a number with the item's unit labels (the id when it has none). */
+export function formatCount(item: Pick<ProfileItem, 'id' | 'unit_label' | 'unit_label_plural'>, value: number | string): string {
+  const one = item.unit_label ?? item.id;
+  const many = item.unit_label_plural ?? item.unit_label ?? item.id;
+  return `${value} ${Number(value) === 1 ? one : many}`;
+}
+
 function describeValue(item: ProfileItem | undefined, value: WhenScalar): string {
   if (typeof value === 'boolean') return value ? 'yes' : 'no';
   if (item?.type === 'choice') {
@@ -193,10 +207,17 @@ function describeValue(item: ProfileItem | undefined, value: WhenScalar): string
   return String(value);
 }
 
+function hasUnits(item: ProfileItem | undefined): item is ProfileItem {
+  return item?.type === 'number' && (item.unit_label !== undefined || item.unit_label_plural !== undefined);
+}
+
 /**
- * Human text for a condition, e.g. `temp-kit: yes and supplier: LabCrafter kit
- * or Pioreactor (direct) and units ≥ 2`. Choice values read as their option
- * labels when the item is known.
+ * Human text for a condition, clauses joined with "and". A boolean item with
+ * a `short` label reads `with <short>` / `without <short>`; a number item
+ * with unit labels reads `3 Pioreactors` or `≥ 2 Pioreactors`; otherwise
+ * `<name>: <values>` with choice values as their option labels and the name
+ * the item's `short` (else its id): `temp-kit: yes and supplier: LabCrafter
+ * kit or Pioreactor (direct) and units ≥ 2`.
  */
 export function describeWhen(when: When, items: readonly ProfileItem[] = []): string {
   const byId = new Map(items.map((i) => [i.id, i]));
@@ -204,19 +225,28 @@ export function describeWhen(when: When, items: readonly ProfileItem[] = []): st
   for (const [key, raw] of Object.entries(when)) {
     const item = byId.get(key);
     const values = Array.isArray(raw) ? raw : [raw];
+    const name = item?.short ?? key;
+    if (item?.type === 'boolean' && item.short !== undefined && values.length === 1 && typeof values[0] === 'boolean') {
+      parts.push(`${values[0] ? 'with' : 'without'} ${item.short}`);
+      continue;
+    }
     const comparators = values.filter((v): v is string => typeof v === 'string' && parseComparator(v) !== undefined && item?.type !== 'choice');
     if (comparators.length === values.length && comparators.length > 0) {
       parts.push(
         comparators
           .map((c) => {
             const cmp = parseComparator(c)!;
-            return `${key} ${COMPARATOR_SYMBOL[cmp.op]} ${cmp.value}`;
+            return hasUnits(item) ? `${COMPARATOR_SYMBOL[cmp.op]} ${formatCount(item, cmp.value)}` : `${name} ${COMPARATOR_SYMBOL[cmp.op]} ${cmp.value}`;
           })
           .join(' or '),
       );
       continue;
     }
-    parts.push(`${key}: ${values.map((v) => describeValue(item, v)).join(' or ')}`);
+    if (hasUnits(item) && values.every((v) => typeof v === 'number')) {
+      parts.push(values.map((v) => formatCount(item, v as number)).join(' or '));
+      continue;
+    }
+    parts.push(`${name}: ${values.map((v) => describeValue(item, v)).join(' or ')}`);
   }
   return parts.join(' and ');
 }
@@ -353,13 +383,23 @@ export function parseStoredProfile(items: readonly ProfileItem[], stored: string
   }
 }
 
-/** `2 × units · temp-kit yes · LabCrafter kit`. */
+/** The questions that apply on a guide's pages: items without `guides`, and those listing the guide. */
+export function itemsForGuide<T extends Pick<ProfileItem, 'guides'>>(items: readonly T[], guideId: string): T[] {
+  return items.filter((item) => item.guides === undefined || item.guides.includes(guideId));
+}
+
+/**
+ * The "Your setup" line, in human labels: `3 Pioreactors · temperature kit:
+ * yes · LabCrafter kit`. A choice reads as its option label (plain text); a
+ * boolean as its `short` (else its label) with yes/no; a number with its unit
+ * labels (else its id).
+ */
 export function profileSummary(items: readonly ProfileItem[], profile: Profile): string {
   return items
     .map((item) => {
       const value = profile[item.id] ?? item.default;
-      if (item.type === 'number') return `${String(value)} × ${item.id}`;
-      if (item.type === 'boolean') return `${item.id} ${value === true ? 'yes' : 'no'}`;
+      if (item.type === 'number') return formatCount(item, String(value));
+      if (item.type === 'boolean') return `${plainLabel(item.short ?? item.label)}: ${value === true ? 'yes' : 'no'}`;
       const label = item.options?.find((o) => o.value === value)?.label;
       return label !== undefined ? plainLabel(label) : String(value);
     })
@@ -531,9 +571,10 @@ export function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-/** `Only if: <human text>`. */
+/** `Only with the temperature kit` when the condition opens with a `with`/`without` clause, else `Only if: <human text>`. */
 export function whenLabel(when: When, items: readonly ProfileItem[]): string {
-  return `Only if: ${describeWhen(when, items)}`;
+  const text = describeWhen(when, items);
+  return /^with(out)? /.test(text) ? `Only ${text}` : `Only if: ${text}`;
 }
 
 /**
