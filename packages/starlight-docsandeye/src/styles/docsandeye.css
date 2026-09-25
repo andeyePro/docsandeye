@@ -889,20 +889,23 @@ docsi-youtube {
 
 /* ---- saving consent --------------------------------------------------------- */
 .docsi-consent-bar {
+  /* A small card above the page's bottom edge, centred in the content column: a full-width
+     strip runs under Starlight's sidebar on wide screens and clips its own first words. */
   position: fixed;
-  inset: auto 0 0 0;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(40rem, calc(100% - 2rem));
   z-index: 20;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--sl-color-hairline);
-  background: var(--docsi-bg);
-  color: var(--docsi-text);
-  font-size: var(--sl-text-sm);
-  box-shadow: 0 -0.25rem 1rem rgb(0 0 0 / 0.15);
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.75rem;
+  box-shadow: var(--sl-shadow-md);
+}
+
+@media (min-width: 50rem) {
+  .docsi-consent-bar {
+    left: calc(50% + var(--sl-sidebar-width, 18.75rem) / 2);
+  }
 }
 
 .docsi-consent-bar[hidden],
@@ -996,4 +999,35 @@ docsi-youtube {
 
 .docsi-tip a {
   color: var(--docsi-accent-high);
+}
+
+/* ---- print ------------------------------------------------------------------ */
+/* A step prints as its own sheet: text, parts, checks and images; no chrome, no popovers. */
+@media print {
+  .docsi-consent-bar,
+  .docsi-profile-form,
+  .docsi-checkoff,
+  .docsi-term-pop,
+  docsi-youtube button,
+  .docsi-video-figure video {
+    display: none !important;
+  }
+  .docsi-body img {
+    max-width: 100%;
+    page-break-inside: avoid;
+  }
+  .docsi-body a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+    color: inherit;
+  }
+  .docsi-term {
+    text-decoration: none;
+  }
+  .docsi-media,
+  .docsi-parts,
+  .docsi-tools,
+  docsi-checks {
+    page-break-inside: avoid;
+  }
 }
