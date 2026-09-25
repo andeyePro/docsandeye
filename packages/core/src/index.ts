@@ -205,3 +205,5 @@ export type { BuildUpRef, BuildUpSubstitution, ExportAsset, ExportFile, ExportPl
 
 export { checkVersionBumps } from './guard.js';
 export type { VersionBumpFacts, VersionBumpResult, Violation } from './guard.js';
+
+export { mentionPattern, mentionsComponent, unmentionedComponents } from './mentions.js';

@@ -140,6 +140,10 @@ Validates every component, step and media file, runs the version-bump guard agai
 
 A page over its [byte budget](/carbon/) is an error, so `check --dist` fails a build that grows past it. `--no-strict` demotes those to warnings. Nothing else changes with the flag: a skipped guard or a missing asset is a warning either way.
 
+With `--dist`, reader-visible text on a guide or step page that contains `<!-- TODO` literally, or a line that starts `DRAFT:`, is an error (`draft: <page> …`). Attributes, `<script>` and `<style>` bodies and HTML comments are not checked.
+
+A step's `parts:` or `tools:` entry whose component the step body never mentions, by name or id (whole words, any case), is a warning, with or without `--dist`. Parts with `cat: prev` are exempt.
+
 Problems print one per line on stderr as `file:path: code: message`. The last line on stdout is `errors: N, warnings: M`.
 
 ## Exit codes

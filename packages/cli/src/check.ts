@@ -2,12 +2,15 @@
  * `docsandeye check`: content validation, the version-bump guard against
  * real git history, and (with `--dist`) the per-page byte budget plus the
  * CO2.js estimate written to `build/carbon.json`. Since v0.2 an over-budget
- * page is an error by default (`--no-strict` demotes it to a warning).
+ * page is an error by default (`--no-strict` demotes it to a warning). A step
+ * part or tool its body never mentions is a warning; with `--dist`, a draft
+ * marker (`<!-- TODO`, a `DRAFT:` line) left in a guide or step page is an error.
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { canonicalJson, checkVersionBumps, type ProjectModel, type VersionBumpFacts } from '@docsandeye/core';
+import { canonicalJson, checkVersionBumps, unmentionedComponents, type ProjectModel, type VersionBumpFacts } from '@docsandeye/core';
 import { analyseDist, carbonDocument } from './budget.js';
+import { draftErrors } from './drafts.js';
 import { EXIT, formatProblem, loadProjectSafely, type Io } from './common.js';
 import { isAncestor, isInsideWorkTree, lastCommitTouching, lastDesignVersionChange } from './git.js';
 
@@ -97,6 +100,8 @@ export async function runCheck(opts: CheckOptions, io: Io): Promise<number> {
   for (const p of model?.bodyProblems ?? []) errors.push(formatProblem(p));
   // A glossary entry no step mentions is dead weight, not a broken page.
   for (const p of model?.warnings ?? []) warnings.push(`warning: ${formatProblem(p)}`);
+  // A part or tool the step body never names is probably unexplained.
+  if (model) for (const p of unmentionedComponents(model)) warnings.push(`warning: ${formatProblem(p)}`);
 
   if (model) {
     const guard = await runGuard(opts.root, model);
@@ -108,6 +113,7 @@ export async function runCheck(opts: CheckOptions, io: Io): Promise<number> {
     const budgetKb = model?.config.byte_budget_kb ?? DEFAULT_BUDGET_KB;
     const { pages, warnings: budgetWarnings } = analyseDist(distDir, budgetKb);
     warnings.push(...budgetWarnings);
+    errors.push(...draftErrors(distDir));
     const carbonPath = path.join(opts.root, CARBON_PATH);
     fs.mkdirSync(path.dirname(carbonPath), { recursive: true });
     fs.writeFileSync(carbonPath, `${canonicalJson(carbonDocument(pages))}\n`);

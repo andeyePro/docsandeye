@@ -8,4 +8,4 @@ parts:
 viewer: {component: vial-cap}
 media: [vid-002-cap-fitting]
 ---
-Push the cap on until it clicks.
+Push the cap onto the Glass Vial 20 mL until it clicks.

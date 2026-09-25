@@ -8,4 +8,4 @@ renders:
   - {id: cap-iso, component: vial-cap}
   - {id: cap-top, component: vial-cap, view: top}
 ---
-Print the cap at 0.2 mm layer height.
+Print the vial cap at 0.2 mm layer height.
