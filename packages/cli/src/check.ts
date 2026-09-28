@@ -3,12 +3,13 @@
  * real git history, and (with `--dist`) the per-page byte budget plus the
  * CO2.js estimate written to `build/carbon.json`. Since v0.2 an over-budget
  * page is an error by default (`--no-strict` demotes it to a warning). A step
- * part or tool its body never mentions is a warning; with `--dist`, a draft
+ * part or tool its body never mentions is a warning, as is a yes/no step check
+ * (rewrite it as options); with `--dist`, a draft
  * marker (`<!-- TODO`, the word `DRAFT:`) left in a guide or step page is an error.
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { canonicalJson, checkVersionBumps, unmentionedComponents, type ProjectModel, type VersionBumpFacts } from '@docsandeye/core';
+import { canonicalJson, checkVersionBumps, unmentionedComponents, yesNoCheckWarnings, type ProjectModel, type VersionBumpFacts } from '@docsandeye/core';
 import { analyseDist, carbonDocument } from './budget.js';
 import { draftErrors } from './drafts.js';
 import { EXIT, formatProblem, loadProjectSafely, type Io } from './common.js';
@@ -102,6 +103,8 @@ export async function runCheck(opts: CheckOptions, io: Io): Promise<number> {
   for (const p of model?.warnings ?? []) warnings.push(`warning: ${formatProblem(p)}`);
   // A part or tool the step body never names is probably unexplained.
   if (model) for (const p of unmentionedComponents(model)) warnings.push(`warning: ${formatProblem(p)}`);
+  // A yes/no check begs "yes" from a reader in a hurry; options make them look.
+  if (model) for (const p of yesNoCheckWarnings(model)) warnings.push(`warning: ${formatProblem(p)}`);
 
   if (model) {
     const guard = await runGuard(opts.root, model);

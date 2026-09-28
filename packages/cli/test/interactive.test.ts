@@ -103,3 +103,44 @@ describe('check: step body links', () => {
     expect(out.at(-1)).toMatch(/^errors: 0, warnings: [1-9]/);
   });
 });
+
+describe('check: step check forms (task_024)', () => {
+  const step = (checks: string) => `---\nid: s1\norder: 1\ntitle: One\nchecks:\n${checks}---\nOne.\n`;
+  const option = (extra = '') => `  - id: shunt\n    question: "Where is the shunt?"\n    options:\n      - {label: "Left", correct: true${extra}}\n      - {label: "Right"}\n`;
+
+  it('a yes/no check is a warning: rewrite as options', async () => {
+    const root = project({ 'docsandeye.config.yaml': CONFIG, 'docs/steps/s1.md': step('  - {id: moved, question: "Did you move the shunt?"}\n' + option()) });
+    const { code, err } = await check(root);
+    expect(code).toBe(0);
+    expect(err).toContain('warning: docs/steps/s1.md:checks.0: schema: yes/no check "moved": rewrite as options');
+    expect(err.filter((l) => l.includes('yes/no check'))).toHaveLength(1);
+  });
+
+  it('an option check with no correct option is an error', async () => {
+    const root = project({ 'docsandeye.config.yaml': CONFIG, 'docs/steps/s1.md': step(option().replace(', correct: true', '')) });
+    const { code, err } = await check(root);
+    expect(code).toBe(1);
+    expect(err.some((l) => l.startsWith('docs/steps/s1.md:checks.0.options: schema:') && l.includes('exactly one option must be correct'))).toBe(true);
+  });
+
+  it('an option check with two correct options is an error', async () => {
+    const root = project({ 'docsandeye.config.yaml': CONFIG, 'docs/steps/s1.md': step(option().replace('{label: "Right"}', '{label: "Right", correct: true}')) });
+    const { code, err } = await check(root);
+    expect(code).toBe(1);
+    expect(err.some((l) => l.startsWith('docs/steps/s1.md:checks.0.options: schema:') && l.includes('found 2'))).toBe(true);
+  });
+
+  it('an option image without alt is an error', async () => {
+    const root = project({ 'docsandeye.config.yaml': CONFIG, 'docs/steps/s1.md': step(option(', image: docs/img/left.png')), 'docs/img/left.png': 'png' });
+    const { code, err } = await check(root);
+    expect(code).toBe(1);
+    expect(err.some((l) => l.startsWith('docs/steps/s1.md:checks.0.options.0.alt: schema:'))).toBe(true);
+  });
+
+  it('a valid option check with its image present has no check warning', async () => {
+    const root = project({ 'docsandeye.config.yaml': CONFIG, 'docs/steps/s1.md': step(option(', image: docs/img/left.png, alt: "Shunt on the left"')), 'docs/img/left.png': 'png' });
+    const { code, err } = await check(root);
+    expect(code).toBe(0);
+    expect(err.filter((l) => l.includes('checks.'))).toEqual([]);
+  });
+});
