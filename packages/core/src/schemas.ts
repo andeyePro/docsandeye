@@ -182,13 +182,72 @@ const CheckIssueSchema = z.object({
   fix: nonEmptyString,
 });
 
-/** A yes/no check at the end of a step; `issues` are shown when the reader answers No. */
-export const CheckSchema = z.object({
-  id: kebabId,
-  question: nonEmptyString,
-  issues: z.array(CheckIssueSchema).default([]),
-  when: WhenSchema.optional(),
+/** Where a check option's picture lives: a repo-relative path, or an https URL. */
+const CheckImageSchema = nonEmptyString.refine(
+  (v) => (/^[a-z][a-z0-9+.-]*:/i.test(v) ? /^https:\/\/\S+$/i.test(v) : !v.startsWith('/') && !v.split(/[\\/]/).includes('..')),
+  'must be a repo-relative path (no leading "/", no "..") or an https URL',
+);
+
+/** One answer of a multiple-choice check: what the reader might see. */
+const CheckOptionSchema = z.object({
+  /** Inline Markdown. */
+  label: nonEmptyString,
+  image: CheckImageSchema.optional(),
+  /** Required with `image`. */
+  alt: nonEmptyString.optional(),
+  /** Exactly one option of a check is correct. */
+  correct: z.boolean().optional(),
+  /** What to do when the reader sees this (wrong options only). */
+  fix: nonEmptyString.optional(),
 });
+
+export const CHECK_OPTIONS_MIN = 2;
+export const CHECK_OPTIONS_MAX = 6;
+
+/**
+ * A check at the end of a step, in one of two forms:
+ * - multiple choice (`options`): an observational question ("Where is the
+ *   shunt connector?") and 2..6 options, exactly one `correct`; the site
+ *   shows them neutrally and reorders them so the correct one's position
+ *   cycles through a guide (`checks.ts`);
+ * - yes/no (the older form): `issues` are shown when the reader answers No.
+ *   Still valid; `docsandeye check` warns to rewrite it as options.
+ */
+export const CheckSchema = z
+  .object({
+    id: kebabId,
+    question: nonEmptyString,
+    issues: z.array(CheckIssueSchema).default([]),
+    options: z
+      .array(CheckOptionSchema)
+      .min(CHECK_OPTIONS_MIN, `must list at least ${CHECK_OPTIONS_MIN} options`)
+      .max(CHECK_OPTIONS_MAX, `must list at most ${CHECK_OPTIONS_MAX} options`)
+      .optional(),
+    when: WhenSchema.optional(),
+  })
+  .superRefine((c, ctx) => {
+    if (!c.options) return;
+    if (c.issues.length > 0) {
+      ctx.addIssue({ code: 'custom', path: ['issues'], message: 'a check has either options or issues (the yes/no form), not both' });
+    }
+    const correct = c.options.filter((o) => o.correct === true).length;
+    if (correct !== 1) {
+      ctx.addIssue({ code: 'custom', path: ['options'], message: `exactly one option must be correct: true (found ${correct})` });
+    }
+    const labels = new Set<string>();
+    c.options.forEach((o, i) => {
+      if (o.image !== undefined && o.alt === undefined) {
+        ctx.addIssue({ code: 'custom', path: ['options', i, 'alt'], message: 'an option with an image needs alt text' });
+      }
+      if (o.correct === true && o.fix !== undefined) {
+        ctx.addIssue({ code: 'custom', path: ['options', i, 'fix'], message: 'the correct option has no fix (fix is for wrong options)' });
+      }
+      if (labels.has(o.label)) {
+        ctx.addIssue({ code: 'custom', path: ['options', i, 'label'], message: `duplicate option label "${o.label}" within check` });
+      }
+      labels.add(o.label);
+    });
+  });
 
 export const RenderSchema = z.object({
   id: nonEmptyString,
@@ -249,6 +308,7 @@ export type StepPart = z.output<typeof PartSchema>;
 export type StepRender = z.output<typeof RenderSchema>;
 export type StepViewer = z.output<typeof ViewerSchema>;
 export type StepCheck = z.output<typeof CheckSchema>;
+export type StepCheckOption = z.output<typeof CheckOptionSchema>;
 export interface Step extends StepFrontmatter {
   /** Markdown body following the frontmatter fence. */
   body: string;

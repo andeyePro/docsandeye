@@ -785,6 +785,8 @@ export interface CheckMailtoInput {
   question: string;
   profileSummary: string;
   pageUrl: string;
+  /** What the reader answered: the option they picked, or (the yes/no form, the default) "No". */
+  answer?: string;
 }
 
 /** "Something else — contact us": subject plus step title; body names the step, question, setup and page. Undefined without an email. */
@@ -797,7 +799,7 @@ export function checkMailto(input: CheckMailtoInput): string | undefined {
     '',
     `Step: ${input.stepTitle}`,
     `Check: ${input.question}`,
-    'My answer: No',
+    `My answer: ${input.answer ?? 'No'}`,
     ...(input.profileSummary ? [`My setup: ${input.profileSummary}`] : []),
     `Page: ${input.pageUrl}`,
     '',
@@ -810,7 +812,46 @@ export function checkMailto(input: CheckMailtoInput): string | undefined {
 // ---------------------------------------------------------------------------
 // Step checks and skipping
 
-export type CheckAnswer = 'yes' | 'no';
+/**
+ * A stored check answer: `yes` (a yes/no check answered Yes, or the correct
+ * option picked), `no` (answered No), or `no:<token>` (the wrong option with
+ * that `optionToken` picked). Only `yes` counts as checked.
+ */
+export type CheckAnswer = 'yes' | 'no' | `no:${string}`;
+
+/** 32-bit FNV-1a of `text`, as 8 lower-case hex digits: an opaque, stable marker, not a secret. */
+export function fnv1aHex(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, '0');
+}
+
+/** The opaque marker of one option of a multiple-choice check (`data-option`); stable when options are reordered. */
+export function optionToken(checkId: string, label: string): string {
+  return fnv1aHex(`${checkId}\n${label}`);
+}
+
+/**
+ * The opaque marker a multiple-choice check carries (`data-key`): a digest
+ * of its correct option's token, so the page can tell a right pick from a
+ * wrong one without naming the right one in plain view.
+ */
+export function answerKey(stepId: string, checkId: string, token: string): string {
+  return fnv1aHex(`${stepId}/${checkId}/${token}`);
+}
+
+/** The value stored for a pick: `yes` when `token` is the correct one, `no:<token>` otherwise. */
+export function optionAnswer(stepId: string, checkId: string, key: string, token: string): CheckAnswer {
+  return answerKey(stepId, checkId, token) === key ? 'yes' : `no:${token}`;
+}
+
+/** The token of the wrong option a stored answer records; undefined for anything else. */
+export function wrongPick(answer: unknown): string | undefined {
+  return typeof answer === 'string' && answer.startsWith('no:') && answer.length > 3 ? answer.slice(3) : undefined;
+}
 
 export interface CheckRef {
   id: string;

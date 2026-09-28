@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import picomatch from 'picomatch';
 import semver from 'semver';
+import { localCheckImages, placeCheckOptions } from './checks.js';
 import { DocsiError, sortProblems, type Problem } from './errors.js';
 import type { HostingRegistry } from './hosting.js';
 import { unusedGlossaryEntries, type GlossaryEntry } from './glossary.js';
@@ -148,17 +149,43 @@ export function loadProject(root: string, options: LoadProjectOptions = {}): Pro
 
   const glossary = loadGlossary(root, config.denylist, problems);
   const warnings: Problem[] = [];
-  const stepTexts = [...steps.values()].map((s) => [s.body, ...(s.checks ?? []).flatMap((c) => [c.question, ...c.issues.flatMap((i) => [i.problem, i.fix])])].join('\n'));
+  const stepTexts = [...steps.values()].map((s) =>
+    [
+      s.body,
+      ...(s.checks ?? []).flatMap((c) => [
+        c.question,
+        ...c.issues.flatMap((i) => [i.problem, i.fix]),
+        ...(c.options ?? []).flatMap((o) => [o.label, o.fix ?? '']),
+      ]),
+    ].join('\n'),
+  );
   for (const entry of unusedGlossaryEntries(glossary, stepTexts)) {
     warnings.push({ code: 'schema', file: GLOSSARY_FILE, path: `${glossary.indexOf(entry)}.term`, message: `glossary term "${entry.term}" never appears in any step` });
   }
 
   for (const [id, step] of steps) linkWarnings(root, config, steps, step, stepFiles.get(id)!, warnings);
+  for (const [id, step] of steps) checkImageWarnings(root, config.denylist, step, stepFiles.get(id)!, warnings);
 
   sortProblems(problems);
   sortProblems(bodyProblems);
   sortProblems(warnings);
-  return { config, components, steps, media, problems, bodyProblems, glossary, warnings };
+  const model: ProjectModel = { config, components, steps, media, problems, bodyProblems, glossary, warnings };
+  // The correct option's position cycles through each guide (see `checks.ts`).
+  placeCheckOptions(model);
+  return model;
+}
+
+/** A check option's repo-relative image that is missing (or denylisted): the site would show a broken picture. */
+function checkImageWarnings(root: string, denylist: readonly string[], step: Step, file: string, warnings: Problem[]): void {
+  step.checks?.forEach((check, i) => {
+    for (const image of localCheckImages(check)) {
+      const rel = image.replace(/\\/g, '/').replace(/^\.\//, '');
+      if (isDenylisted(rel, denylist) || !fs.existsSync(path.join(root, rel))) {
+        const j = check.options!.findIndex((o) => o.image === image);
+        warnings.push({ code: 'schema', file, path: `checks.${i}.options.${j}.image`, message: `check image not found: ${image}` });
+      }
+    }
+  });
 }
 
 /**

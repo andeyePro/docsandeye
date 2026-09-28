@@ -24,6 +24,8 @@ export {
   CONFIG_FILENAME,
   COMPONENT_KINDS,
   ChangelogEntrySchema,
+  CHECK_OPTIONS_MAX,
+  CHECK_OPTIONS_MIN,
   CheckSchema,
   ComponentReceiptSchema,
   ComponentSchema,
@@ -85,6 +87,7 @@ export type {
   Step,
   StepFrontmatter,
   StepCheck,
+  StepCheckOption,
   StepPart,
   StepRender,
   StepViewer,
@@ -98,6 +101,7 @@ export {
   PROFILE_TYPES,
   STORAGE_KEYS,
   YOUTUBE_ID_RE,
+  answerKey,
   checkMailto,
   checkedKeys,
   checkoffKey,
@@ -109,6 +113,7 @@ export {
   effectiveProfile,
   describeWhen,
   escapeHtml,
+  fnv1aHex,
   formatCount,
   formatDuration,
   impliedItems,
@@ -121,6 +126,8 @@ export {
   missingPartsMailto,
   nextApplicableStep,
   normaliseProfile,
+  optionAnswer,
+  optionToken,
   parseComparator,
   parseConsent,
   parseStoredProfile,
@@ -131,6 +138,7 @@ export {
   validateWhen,
   whenLabel,
   wrapWhenBlocks,
+  wrongPick,
   youtubeEmbedUrl,
   youtubeWatchUrl,
 } from './interactive.js';
@@ -205,5 +213,7 @@ export type { BuildUpRef, BuildUpSubstitution, ExportAsset, ExportFile, ExportPl
 
 export { checkVersionBumps } from './guard.js';
 export type { VersionBumpFacts, VersionBumpResult, Violation } from './guard.js';
+
+export { correctPosition, guideOffset, localCheckImages, placeCheckOptions, placeCorrectOption, yesNoCheckWarnings } from './checks.js';
 
 export { mentionPattern, mentionsComponent, unmentionedComponents } from './mentions.js';
