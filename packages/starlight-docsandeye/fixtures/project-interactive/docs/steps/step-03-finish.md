@@ -19,6 +19,12 @@ checks:
     question: "Does `config.ini` list every widget?"
     issues:
       - {problem: "A widget is missing from `config.ini`", fix: "Add a line per widget."}
+  - id: frame-feet
+    question: "Which way up are the frame's feet?"
+    options:
+      - {label: "Pointing up", fix: "Turn the frame over."}
+      - {label: "Pointing sideways", fix: "Rotate the frame a quarter turn."}
+      - {label: "Touching the table", correct: true}
 safety: "Unplug before you finish."
 ---
 Fit the widgets.

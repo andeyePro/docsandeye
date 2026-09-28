@@ -14,7 +14,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { parse, type HTMLElement } from 'node-html-parser';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { loadProject, stepsForGuide } from '@docsandeye/core';
+import { answerKey, loadProject, optionToken, stepsForGuide } from '@docsandeye/core';
 import { checkRefs, guideReceiptItems, onlyIf, plainMailto, scriptJson, siteHref, skipTargets, supplierLabels, whenAttr } from '../src/interactive-view.ts';
 import { ASIDE_ICON_NAMES, ASIDE_ICONS, ASIDE_VARIANTS, asideMarkdown } from '../src/asides.ts';
 import { renderMarkdown } from '../src/markdown.ts';
@@ -189,7 +189,7 @@ describe('conditional content', () => {
 
   it('guide list and sidebar entries with checks carry them for the tick', () => {
     const li = page(GUIDE).querySelector('.docsi-guide-steps li[data-step="step-03-finish"]')!;
-    expect(json(li, 'data-checks')).toEqual([{ id: 'rigid' }, { id: 'probe-seated', when: { 'temp-kit': true } }, { id: 'config' }]);
+    expect(json(li, 'data-checks')).toEqual([{ id: 'rigid' }, { id: 'probe-seated', when: { 'temp-kit': true } }, { id: 'config' }, { id: 'frame-feet' }]);
     expect(li.querySelector('.docsi-checked-mark')!.hasAttribute('hidden')).toBe(true);
     expect(page(GUIDE).querySelector('li[data-step="step-04-unclosed"]')!.hasAttribute('data-checks')).toBe(false);
   });
@@ -295,7 +295,7 @@ describe('step checks', () => {
     expect(el.getAttribute('data-step')).toBe('step-01-unpack');
     expect(el.getAttribute('data-step-title')).toBe('Unpack the kit');
     const items = el.querySelectorAll('ol.docsi-checks-list > li[data-check]');
-    expect(items.map((li) => li.getAttribute('data-check'))).toEqual(['count', 'dry']);
+    expect(items.map((li) => li.getAttribute('data-check'))).toEqual(['count', 'dry', 'laid-out']);
     expect(items[0]!.querySelector('.docsi-check-q')!.text.trim()).toBe('Did every part on the list arrive?');
     const issues = items[0]!.querySelectorAll('details.docsi-check-issues li');
     expect(issues.map((li) => li.querySelector('strong')!.text)).toEqual(['A part is missing', 'A part is damaged']);
@@ -994,5 +994,89 @@ describe('page descriptions: description, OpenGraph and Twitter tags', () => {
     expect(meta(STEP1, 'meta[property="og:title"]')).toBe('Unpack the kit');
     expect(meta(STEP1, 'meta[name="twitter:card"]')).toBeTruthy();
     expect(page(STEP1).querySelector('meta[property="og:image"]')).toBeFalsy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// task_024: non-leading multiple-choice checks
+
+describe('task_024: multiple-choice checks', () => {
+  const model = () => loadProject(PROJECT_DIR);
+  const choice = (rel: string, id: string) => page(rel).querySelector(`li.docsi-check-choice[data-check="${id}"]`)!;
+  const labels = (li: HTMLElement) => li.querySelectorAll('button.docsi-check-option .docsi-check-label').map((l) => l.text.trim());
+
+  it('options render in the placed order as identical, inert buttons with opaque tokens', () => {
+    const li = choice(STEP1, 'laid-out');
+    const placed = model().steps.get('step-01-unpack')!.checks!.find((c) => c.id === 'laid-out')!.options!;
+    expect(labels(li)).toEqual(placed.map((o) => o.label));
+    const buttons = li.querySelectorAll('button.docsi-check-option');
+    expect(buttons).toHaveLength(3);
+    for (const b of buttons) {
+      expect(b.getAttribute('type')).toBe('button');
+      expect(b.getAttribute('aria-pressed')).toBe('false');
+      expect(b.hasAttribute('disabled')).toBe(true);
+      expect(b.getAttribute('class')).toBe('docsi-check-option');
+      expect(b.getAttribute('data-option')).toMatch(/^[0-9a-f]{8}$/);
+    }
+    // Every option carries exactly the same attribute names: nothing marks the right one.
+    const names = buttons.map((b) => Object.keys(b.attributes).sort().join(','));
+    expect(new Set(names).size).toBe(1);
+    expect(li.getAttribute('data-key')).toBe(answerKey('step-01-unpack', 'laid-out', optionToken('laid-out', 'In one pile per unit')));
+    expect(raw(STEP1)).not.toMatch(/data-correct|class="[^"]*correct/);
+    expect(li.querySelector('.docsi-check-options')!.getAttribute('aria-labelledby')).toBe(li.querySelector('.docsi-check-q')!.getAttribute('id'));
+  });
+
+  it('an image option is a thumbnail with its alt, copied under /_docsandeye/checks/', () => {
+    const img = choice(STEP1, 'laid-out').querySelector('img.docsi-check-thumb')!;
+    expect(img.getAttribute('src')).toBe('/_docsandeye/checks/docs/img/parts-heap.svg');
+    expect(img.getAttribute('alt')).toBe('Every part in a single heap');
+    expect(fs.existsSync(path.join(DIST, '_docsandeye/checks/docs/img/parts-heap.svg'))).toBe(true);
+    expect(choice(STEP3, 'frame-feet').querySelector('img')).toBeFalsy();
+  });
+
+  it('fixes are hidden per wrong option; no fix names the right one', () => {
+    const li = choice(STEP1, 'laid-out');
+    const fixes = li.querySelectorAll('.docsi-check-fix');
+    expect(fixes.map((f) => f.getAttribute('data-for'))).toEqual(
+      model().steps.get('step-01-unpack')!.checks!.find((c) => c.id === 'laid-out')!.options!.filter((o) => o.fix).map((o) => optionToken('laid-out', o.label)),
+    );
+    for (const f of fixes) expect(f.hasAttribute('hidden')).toBe(true);
+    expect(li.querySelector('.docsi-check-feedback')!.getAttribute('role')).toBe('status');
+    expect(li.querySelector('.docsi-check-contact')!.hasAttribute('hidden')).toBe(true);
+  });
+
+  it('without JavaScript: a closed <details> reveals the answer and what to do for each wrong option', () => {
+    const details = choice(STEP3, 'frame-feet').querySelector('details.docsi-check-reveal')!;
+    expect(details.hasAttribute('open')).toBe(false);
+    expect(details.querySelector('summary')!.text).toBe('Show the answer');
+    expect(details.querySelector('p strong')!.text).toBe('Touching the table');
+    expect(details.querySelectorAll('li').map((l) => l.text.replace(/\s+/g, ' ').trim())).toEqual([
+      'If you see Pointing up: Turn the frame over.',
+      'If you see Pointing sideways: Rotate the frame a quarter turn.',
+    ]);
+  });
+
+  it('the correct position cycles through the guide: the two fixture checks differ', () => {
+    const at = (rel: string, id: string) => {
+      const li = choice(rel, id);
+      return li.querySelectorAll('button.docsi-check-option').findIndex((b) => answerKey(li.closest('docsi-checks')!.getAttribute('data-step')!, id, b.getAttribute('data-option')!) === li.getAttribute('data-key'));
+    };
+    const first = at(STEP1, 'laid-out');
+    const second = at(STEP3, 'frame-feet');
+    expect(first).toBeGreaterThanOrEqual(0);
+    expect(second).toBe((first + 1) % 3);
+  });
+
+  it('legacy yes/no checks on the same page render as before', () => {
+    const li = page(STEP1).querySelector('li[data-check="count"]')!;
+    expect(li.classList.contains('docsi-check-choice')).toBe(false);
+    expect(li.querySelector('.docsi-check-answer')!.hasAttribute('hidden')).toBe(true);
+    expect(li.querySelector('.docsi-check-options')).toBeFalsy();
+    expect(li.querySelector('details.docsi-check-reveal')).toBeFalsy();
+  });
+
+  it('the guide list ticks option checks like yes/no ones', () => {
+    const li = page(GUIDE).querySelector('.docsi-guide-steps li[data-step="step-01-unpack"]')!;
+    expect(json(li, 'data-checks')).toEqual([{ id: 'count' }, { id: 'dry' }, { id: 'laid-out' }]);
   });
 });

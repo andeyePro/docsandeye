@@ -1,13 +1,14 @@
 /**
- * The static copy step. Render outputs listed in the render manifest and
- * locally hosted media files are copied verbatim into `dist/_docsandeye/`;
+ * The static copy step. Render outputs listed in the render manifest,
+ * locally hosted media files and check option images are copied verbatim into `dist/_docsandeye/`;
  * the page markup references them by those URLs. No image service, no
  * transformation.
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { DocsandeyeData } from './data.ts';
-import { MEDIA_URL_PREFIX, RENDER_URL_PREFIX, basename } from './view.ts';
+import { localCheckImages } from '@docsandeye/core';
+import { MEDIA_URL_PREFIX, RENDER_URL_PREFIX, basename, checkImagePath } from './view.ts';
 
 export interface StaticAsset {
   /** Site-root-relative URL path, e.g. `/_docsandeye/render/<file>`. */
@@ -37,6 +38,15 @@ export function collectStaticAssets(data: DocsandeyeData, projectRoot: string): 
       // A YouTube clip is served by YouTube: no video file to copy, only its poster.
       if (media.file !== undefined && media.youtube === undefined) add(MEDIA_URL_PREFIX, media.file);
       if (media.poster) add(MEDIA_URL_PREFIX, media.poster);
+    }
+  }
+  // Check option pictures are the project's own files, whatever the media hosting.
+  for (const step of data.model.steps.values()) {
+    for (const check of step.checks ?? []) {
+      for (const image of localCheckImages(check)) {
+        const url = checkImagePath(image);
+        if (!byUrl.has(url)) byUrl.set(url, { url, source: path.resolve(root, image) });
+      }
     }
   }
   return [...byUrl.values()];

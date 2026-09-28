@@ -127,7 +127,26 @@ Every step's parts and tools lists get the same box at the start of each row. A 
 
 ## Step checks
 
-End a step with yes/no questions:
+End a step with questions the reader answers by looking, not by agreeing. Ask what they see and list what they might see:
+
+```yaml
+checks:
+  - id: shunt
+    question: "Where is the shunt connector?"
+    options:
+      - {label: "On the two left pins", image: docs/img/shunt-left.jpg, alt: "Shunt on the two left pins", fix: "Move it one pin to the right."}
+      - {label: "On the two right pins", correct: true, image: docs/img/shunt-right.jpg, alt: "Shunt on the two right pins"}
+      - {label: "Not fitted", fix: "Find it in the spares bag and fit it on the two right pins."}
+checks_draft: true   # optional: "Draft checks, under review" (maintainer builds only)
+```
+
+- `options`: 2 to 6. Exactly one has `correct: true`. `label` is required (inline Markdown; links show as plain text, since each option is a button).
+- `image`: a repo-relative path (copied to `/_docsandeye/checks/…`) or an `https` URL; `alt` is then required. A missing local image is a `docsandeye check` warning.
+- `fix`: optional, wrong options only: what to do if the reader sees this.
+
+List the correct option anywhere: the site reorders each check's options so the correct one's position cycles through the guide (every position in turn, the same on every build); wrong options keep their order. The options look identical until the reader picks. A right pick turns the check green with a tick. A wrong pick marks that option, shows its `fix` and a "Something else — contact us" email to `contacts.project` (naming the step, the question, the option picked and the reader's setup), and lets the reader pick again; it never reveals the right option. Without JavaScript the options are listed and a closed "Show the answer" holds the answer and each fix.
+
+The older yes/no form still works, and `docsandeye check` warns about each one ("rewrite as options"), since "Did you move the shunt?" begs a yes from a reader in a hurry:
 
 ```yaml
 checks:
@@ -135,11 +154,11 @@ checks:
     question: "Does the module light when you plug in the supply?"
     issues:
       - {problem: "Nothing lights", fix: "Check the plug is fully home."}
-      - {problem: "It flickers", fix: "Reseat the module."}
-checks_draft: true   # optional: "Draft checks, under review" (maintainer builds only)
 ```
 
-A question or issue may contain inline Markdown: `` `code` ``, `**bold**`, `*emphasis*` and `[links](https://example.invalid)`. Nothing else is Markdown there: a `#` or `-` at the start stays as written. The checks come after the parts list; the safety aside is at the top of the step. The "Draft checks, under review" badge of `checks_draft` shows only in a maintainer build. Answering No reveals that question's issues and a "Something else — contact us" email to `contacts.project`, naming the step, the question and the reader's setup. When every check that applies is Yes, the step shows "Step checked" and gets a tick in the guide list and sidebar. Check `id`s are kebab-case and unique within the step.
+Answering No reveals that question's issues and the contact email. A check has `options` or `issues`, not both; no correct option, more than one, or an image without `alt` is an error.
+
+A question, issue or fix may contain inline Markdown: `` `code` ``, `**bold**`, `*emphasis*` and `[links](https://example.invalid)`. Nothing else is Markdown there: a `#` or `-` at the start stays as written. The checks come after the parts list; the safety aside is at the top of the step. The "Draft checks, under review" badge of `checks_draft` shows only in a maintainer build. When every check that applies is right (Yes, or the correct option), the step shows "Step checked" and gets a tick in the guide list and sidebar. Check `id`s are kebab-case and unique within the step.
 
 ## Saving in this browser
 

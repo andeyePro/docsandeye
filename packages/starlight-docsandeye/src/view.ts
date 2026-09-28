@@ -19,6 +19,8 @@ import type { CarbonPage, CarbonReport, RenderManifest, RenderManifestJob } from
 
 export const RENDER_URL_PREFIX = '/_docsandeye/render/';
 export const MEDIA_URL_PREFIX = '/_docsandeye/media/';
+/** Where a check option's repo-relative image is served, under its own repo-relative path. */
+export const CHECK_IMAGE_URL_PREFIX = '/_docsandeye/checks/';
 export const UPDATED_WINDOW_DAYS = 30;
 
 // ---------------------------------------------------------------------------
@@ -140,6 +142,16 @@ export function renderJobFor(
     if (found) return found;
   }
   return { key, job: manifest?.jobs[key] };
+}
+
+/** Site-root-relative path of a repo-relative check image (`docs/img/a.png` → `/_docsandeye/checks/docs/img/a.png`). */
+export function checkImagePath(image: string): string {
+  return `${CHECK_IMAGE_URL_PREFIX}${image.replace(/\\/g, '/').replace(/^(\.\/)+/, '')}`;
+}
+
+/** URL of a check option's image: an https image as written, a repo-relative one copied under `/_docsandeye/checks/`. */
+export function checkImageUrl(image: string, siteBase = '/'): string {
+  return /^https:\/\//i.test(image) ? image : withBase(checkImagePath(image), siteBase);
 }
 
 /** URL of one render output (by basename) under `/_docsandeye/render/`, percent-encoded. */

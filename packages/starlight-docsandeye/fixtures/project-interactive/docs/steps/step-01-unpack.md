@@ -19,6 +19,12 @@ checks:
       - {problem: "A part is damaged", fix: "Photograph it and email your supplier."}
   - id: dry
     question: "Is everything dry?"
+  - id: laid-out
+    question: "How are the parts laid out on the table?"
+    options:
+      - {label: "Still in the box", fix: "Take every part out so you can count it."}
+      - {label: "In one pile per unit", correct: true}
+      - {label: "All in one heap", image: docs/img/parts-heap.svg, alt: "Every part in a single heap", fix: "Split them into one pile per unit."}
 ---
 Open the box and lay the parts out.
 

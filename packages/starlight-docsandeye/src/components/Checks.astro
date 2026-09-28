@@ -1,14 +1,27 @@
 ---
 /**
- * `<docsi-checks>`: yes/no checks at the end of a step. Without JavaScript:
- * the questions as a list, each with its likely issues in a `<details>`, and
- * a plain contact link. The element adds the Yes/No radios (server-rendered,
- * hidden), reveals issues on No with a pre-filled email, and shows
- * "Step checked" once every visible check is Yes.
+ * `<docsi-checks>`: checks at the end of a step, in two forms.
+ *
+ * Multiple choice (`options`): the question and its options as neutral,
+ * identical buttons (an image as a thumbnail with its alt text), in the
+ * order the loader placed them. Nothing a reader sees hints which is right:
+ * each option carries an opaque token and the check an opaque key. Without
+ * JavaScript the buttons are inert and a closed `<details>` reveals the
+ * answer and what to do for each wrong one; the element enables the
+ * buttons, hides that `<details>`, ticks a right pick and shows a wrong
+ * pick's fix (never the right answer).
+ *
+ * Yes/no (the older form): the questions as a list, each with its likely
+ * issues in a `<details>`, and a plain contact link. The element adds the
+ * Yes/No radios (server-rendered, hidden) and reveals issues on No with a
+ * pre-filled email.
+ *
+ * Either way it shows "Step checked" once every visible check is right.
  */
-import { inlineMarkdownHtml, type GlossaryEntry, type ProjectModel, type Step } from '@docsandeye/core';
+import { answerKey, inlineMarkdownHtml, optionToken, type GlossaryEntry, type ProjectModel, type Step } from '@docsandeye/core';
 import type { ProfileItem } from '@docsandeye/core/interactive';
 import { onlyIf, plainMailto, whenAttr } from '../interactive-view.ts';
+import { checkImageUrl } from '../view.ts';
 
 interface Props {
 	guideId: string;
@@ -23,15 +36,33 @@ interface Props {
 }
 
 const { guideId, step, model, items, linkTerms = (html: string) => html, maintainer = false } = Astro.props;
+const base = import.meta.env.BASE_URL;
 const checks = step.checks ?? [];
 const contact = model.config.contacts.project;
 const help = plainMailto(contact, step.title);
 const name = (id: string) => `docsi-check-${step.id}-${id}`;
-// Questions and issues are inline Markdown (code, bold, emphasis, links); glossary terms are linked once per check.
+/** An option label sits inside a button: no links and no glossary buttons in it, only their text. */
+const labelHtml = (value: string) => inlineMarkdownHtml(value).replace(/<a\b[^>]*>/g, '').replace(/<\/a>/g, '');
+// Questions, issues and fixes are inline Markdown (code, bold, emphasis, links); glossary terms are linked once per check.
 const blocks = checks.map((check) => {
 	const used = new Set<GlossaryEntry>();
 	const text = (value: string) => linkTerms(inlineMarkdownHtml(value), used);
-	return { question: text(check.question), issues: check.issues.map((issue) => ({ problem: text(issue.problem), fix: text(issue.fix) })) };
+	const question = text(check.question);
+	const options = (check.options ?? []).map((option) => ({
+		...option,
+		token: optionToken(check.id, option.label),
+		html: labelHtml(option.label),
+		src: option.image === undefined ? undefined : checkImageUrl(option.image, base),
+		fixHtml: option.fix === undefined ? undefined : text(option.fix),
+	}));
+	const right = options.find((o) => o.correct === true);
+	return {
+		question,
+		issues: check.issues.map((issue) => ({ problem: text(issue.problem), fix: text(issue.fix) })),
+		options,
+		key: right ? answerKey(step.id, check.id, right.token) : undefined,
+		right,
+	};
 });
 ---
 
@@ -42,37 +73,93 @@ const blocks = checks.map((check) => {
 				<h2>Check your work</h2>
 				{maintainer && step.checks_draft && <p class="docsi-checks-draft">Draft checks, under review</p>}
 				<ol class="docsi-checks-list">
-					{checks.map((check, i) => (
-						<li class="docsi-check" data-check={check.id} data-question={check.question} data-when={whenAttr(check.when)}>
-							<p class="docsi-check-q" id={`${name(check.id)}-q`} set:html={blocks[i]!.question} />
-							{check.when && <p class="docsi-when-label">{onlyIf(check.when, items)}</p>}
-							<div class="docsi-check-answer" role="radiogroup" aria-labelledby={`${name(check.id)}-q`} hidden>
-								<label>
-									<input type="radio" name={name(check.id)} value="yes" /> Yes
-								</label>
-								<label>
-									<input type="radio" name={name(check.id)} value="no" /> No
-								</label>
-							</div>
-							{check.issues.length > 0 && (
-								<details class="docsi-check-issues">
-									<summary>If not: likely issues</summary>
-									<ul>
-										{blocks[i]!.issues.map((issue) => (
+					{checks.map((check, i) => {
+						const block = blocks[i]!;
+						if (check.options) {
+							return (
+								<li class="docsi-check docsi-check-choice" data-check={check.id} data-question={check.question} data-when={whenAttr(check.when)} data-key={block.key}>
+									<p class="docsi-check-q" id={`${name(check.id)}-q`} set:html={block.question} />
+									{check.when && <p class="docsi-when-label">{onlyIf(check.when, items)}</p>}
+									<ul class="docsi-check-options" role="list" aria-labelledby={`${name(check.id)}-q`}>
+										{block.options.map((option) => (
 											<li>
-												<strong set:html={issue.problem} /> — <Fragment set:html={issue.fix} />
+												<button type="button" class="docsi-check-option" data-option={option.token} aria-pressed="false" disabled>
+													{option.src && <img class="docsi-check-thumb" src={option.src} alt={option.alt} loading="lazy" decoding="async" />}
+													<span class="docsi-check-label" set:html={option.html} />
+													<span class="docsi-check-mark" aria-hidden="true" />
+												</button>
 											</li>
 										))}
 									</ul>
-								</details>
-							)}
-							{contact?.email && (
-								<p class="docsi-check-contact" hidden>
-									<a href={help}>Something else — contact us</a>
-								</p>
-							)}
-						</li>
-					))}
+									<p class="docsi-check-feedback" role="status" />
+									{block.options.map(
+										(option) =>
+											option.fixHtml && (
+												<p class="docsi-check-fix" data-for={option.token} hidden>
+													<Fragment set:html={option.fixHtml} />
+												</p>
+											),
+									)}
+									{contact?.email && (
+										<p class="docsi-check-contact" hidden>
+											<a href={help}>Something else — contact us</a>
+										</p>
+									)}
+									<details class="docsi-check-reveal">
+										<summary>Show the answer</summary>
+										{block.right && (
+											<p>
+												Answer: <strong set:html={block.right.html} />
+											</p>
+										)}
+										{block.options.some((o) => o.fixHtml) && (
+											<ul>
+												{block.options.map(
+													(option) =>
+														option.fixHtml && (
+															<li>
+																If you see <strong set:html={option.html} />: <Fragment set:html={option.fixHtml} />
+															</li>
+														),
+												)}
+											</ul>
+										)}
+									</details>
+								</li>
+							);
+						}
+						return (
+							<li class="docsi-check" data-check={check.id} data-question={check.question} data-when={whenAttr(check.when)}>
+								<p class="docsi-check-q" id={`${name(check.id)}-q`} set:html={block.question} />
+								{check.when && <p class="docsi-when-label">{onlyIf(check.when, items)}</p>}
+								<div class="docsi-check-answer" role="radiogroup" aria-labelledby={`${name(check.id)}-q`} hidden>
+									<label>
+										<input type="radio" name={name(check.id)} value="yes" /> Yes
+									</label>
+									<label>
+										<input type="radio" name={name(check.id)} value="no" /> No
+									</label>
+								</div>
+								{check.issues.length > 0 && (
+									<details class="docsi-check-issues">
+										<summary>If not: likely issues</summary>
+										<ul>
+											{block.issues.map((issue) => (
+												<li>
+													<strong set:html={issue.problem} /> — <Fragment set:html={issue.fix} />
+												</li>
+											))}
+										</ul>
+									</details>
+								)}
+								{contact?.email && (
+									<p class="docsi-check-contact" hidden>
+										<a href={help}>Something else — contact us</a>
+									</p>
+								)}
+							</li>
+						);
+					})}
 				</ol>
 				<p class="docsi-checks-done" role="status" hidden>
 					Step checked
