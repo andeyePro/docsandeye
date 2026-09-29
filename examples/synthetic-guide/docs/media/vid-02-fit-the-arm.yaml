@@ -2,7 +2,7 @@ id: vid-02-fit-the-arm
 type: video
 file: assets/video/vid-02-fit-the-arm.mp4
 poster: assets/video/vid-02-fit-the-arm.png
-duration_s: 42
+duration_s: 8
 shot_date: 2026-05-20
 shot_by: "Docs&I example"
 hero: [lamp-arm@1.0.0]

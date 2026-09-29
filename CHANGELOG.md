@@ -4,6 +4,8 @@ Done-work log for Docs&I (`docsandeye`), newest first. Open work is in TODO.md.
 
 ## 2026-09-29
 
+- [x] **No build warnings left** — the example guide's step 2 video (`vid-02-fit-the-arm.mp4`) never existed, so docs.andeye.com's example showed a video that could not play; it is now a 5 KB, 8-second synthetic clip (the arm drops into the base, then the clamp appears), made with ffmpeg lavfi to match the poster, and `duration_s` is 8. Root `package.json` gains `allowScripts` denying esbuild's postinstall and fsevents' install script: npm 11+ blocks them anyway and the build does not need them, so recording the decision just silences the warning. Checked in a scratch copy on Node 22 and npm 12: install and build print no warnings.
+
 - [x] **Quiet site build** — Martin's Mac build of `site/` printed four warnings; three were Starlight/Vite noise and are gone: an `i18n` collection with an empty `en.json`; a real "Page not found" page (`docs/404.md`, `draft: true` so it feeds Starlight's `/404` route without also being built by `[...slug]`); `chunkSizeWarningLimit` raised to 1100 kB for the 1 MB model-viewer chunk, which is already loaded only on demand. The missing `vid-02-fit-the-arm.mp4` warning stays: the example guide has no real video. Checked in a scratch copy on Node 22: one warning left, `check` 0 errors.
 
 ## 2026-09-28
