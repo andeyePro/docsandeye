@@ -14,6 +14,7 @@ export default defineConfig({
 	vite: { build: { chunkSizeWarningLimit: 1100 } },
 	integrations: [
 		starlight({
+			routeMiddleware: './src/routeData.ts',
 			title: 'Docs&I',
 			description: 'Interactive video documentation for open-source hardware that knows when its own videos have gone stale.',
 			plugins: [docsandeye({ projectRoot: '../examples/synthetic-guide' })],
