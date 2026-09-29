@@ -9,6 +9,9 @@ import docsandeye from 'starlight-docsandeye';
 export default defineConfig({
 	site: 'https://docs.andeye.com',
 	image: { service: passthroughImageService() },
+	// The 3D model viewer is one ~1 MB chunk, loaded only when a reader opens a
+	// model (a dynamic import in docsi-model.ts), so the size warning is noise.
+	vite: { build: { chunkSizeWarningLimit: 1100 } },
 	integrations: [
 		starlight({
 			title: 'Docs&I',
