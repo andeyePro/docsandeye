@@ -2,6 +2,10 @@
 
 Done-work log for Docs&I (`docsandeye`), newest first. Open work is in TODO.md.
 
+## 2026-09-30
+
+- [x] **Root build compiles each package once** — `npm run build` built `@docsandeye/core` three times and the themes, plugin and CLI twice (the root script, then `--workspaces`, then the site's `prebuild`). It now builds core, then themes, plugin and CLI, then the site with `--ignore-scripts` so its `prebuild` does not repeat them; `npm run build` inside `site/` alone still builds its dependencies first.
+
 ## 2026-09-29
 
 - [x] **404 page without the draft notice** — `draft: true` on `docs/404.md` made Starlight show "This content is a draft" on the live 404 page (seen in a screenshot of docs.electropioreactor.org after deploy); `site/src/routeData.ts` route middleware clears the flag on the 404 route only. electroPioreactor's site gets the same file.

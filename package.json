@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "build": "npm run build -w @docsandeye/core -w @docsandeye/themes && npm run build --workspaces --if-present",
+    "build": "npm run build -w @docsandeye/core && npm run build -w @docsandeye/themes -w starlight-docsandeye -w docsandeye && npm run build -w docsandeye-site --ignore-scripts",
     "typecheck": "tsc --noEmit -p packages/core",
     "e2e": "node packages/starlight-docsandeye/e2e/build-fixture.mjs && playwright test -c packages/starlight-docsandeye/e2e/playwright.config.ts",
     "typecheck:e2e": "tsc -p packages/starlight-docsandeye/e2e"
