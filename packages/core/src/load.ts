@@ -127,6 +127,7 @@ export function loadProject(root: string, options: LoadProjectOptions = {}): Pro
     const file = componentFiles.get(id)!;
     if (component.receipt.when) checkWhen(component.receipt.when, config.profile, file, 'receipt.when', problems);
     checkReceiptFrom(component.receipt.from, config, file, problems);
+    checkReceiptFrom(component.receipt.fitted, config, file, problems, 'fitted');
   }
 
   const bodyProblems: Problem[] = [];
@@ -354,8 +355,8 @@ function checkStepWhens(step: Step, profile: readonly ProfileItem[], file: strin
   step.checks?.forEach((c, i) => c.when && checkWhen(c.when, profile, file, `checks.${i}.when`, problems, step));
 }
 
-/** `receipt.from` values must be options of the `receipt.supplier_from` choice, when one is configured. */
-function checkReceiptFrom(from: readonly string[] | undefined, config: Config, file: string, problems: Problem[]): void {
+/** `receipt.from` and `receipt.fitted` values must be options of the `receipt.supplier_from` choice, when one is configured. */
+function checkReceiptFrom(from: readonly string[] | undefined, config: Config, file: string, problems: Problem[], field = 'from'): void {
   const supplierId = config.receipt?.supplier_from;
   if (!from || supplierId === undefined) return;
   const item = config.profile.find((p) => p.id === supplierId);
@@ -363,7 +364,7 @@ function checkReceiptFrom(from: readonly string[] | undefined, config: Config, f
   const values = (item.options ?? []).map((o) => o.value);
   from.forEach((value, i) => {
     if (!values.includes(value)) {
-      problems.push({ code: 'schema', file, path: `receipt.from.${i}`, message: `"${value}" is not an option of "${supplierId}" (options: ${values.join(', ')})` });
+      problems.push({ code: 'schema', file, path: `receipt.${field}.${i}`, message: `"${value}" is not an option of "${supplierId}" (options: ${values.join(', ')})` });
     }
   });
 }

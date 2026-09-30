@@ -92,6 +92,8 @@ export const ComponentReceiptSchema = z.object({
   per: z.enum(RECEIPT_PER).default('unit'),
   qty: z.number().int().min(1).default(1),
   from: z.array(kebabId).optional(),
+  /** Suppliers whose kit ships this part already fitted into a larger one: their readers do not count it. */
+  fitted: z.array(kebabId).optional(),
   when: WhenSchema.optional(),
   note: z.string().optional(),
 });

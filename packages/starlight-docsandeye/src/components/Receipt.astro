@@ -35,6 +35,7 @@ const labels = supplierLabels(model);
 const { perUnit, perKit } = staticReceiptGroups(items);
 const multiplied = config.receipt?.multiply_by;
 const optionCount = Object.keys(labels).length;
+// A part fitted into a larger one by a supplier is not "in the package from" that supplier as a loose part.
 const fromText = (from: readonly string[] | undefined) =>
 	from === undefined || (optionCount > 0 && from.length >= optionCount) ? 'all' : from.map((v) => labels[v] ?? v).join(', ') || 'none';
 const groups = [
@@ -73,6 +74,7 @@ const contacts = Object.entries(config.contacts).filter(([key]) => key !== 'proj
 									data-per={row.per}
 									data-qty={row.qty}
 									data-from={row.from?.join(' ')}
+									data-fitted={row.fitted?.join(' ')}
 									data-when={whenAttr(row.when)}
 									data-supplier-name={row.supplier?.name}
 									data-supplier-url={row.supplier?.url}
@@ -83,7 +85,7 @@ const contacts = Object.entries(config.contacts).filter(([key]) => key !== 'proj
 										{row.when && <span class="docsi-when-inline">{onlyIf(row.when, profile)}</span>}
 									</td>
 									<td>{row.qty}</td>
-									{showFrom && <td>{fromText(row.from)}</td>}
+									{showFrom && <td>{fromText(row.fitted ? (row.from ?? Object.keys(labels)).filter((v) => !row.fitted!.includes(v)) : row.from)}</td>}
 								</tr>
 							))}
 						</tbody>

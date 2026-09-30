@@ -658,6 +658,15 @@ describe('computeReceipt', () => {
     expect(r.elsewhere.map((x) => x.component)).toEqual(['bag-b', 'pump', 'screw']);
   });
 
+  it('fitted: a supplier that ships the part built into another drops the row; others still count it', () => {
+    const items = [...RECEIPT_ITEMS, { component: 'nut', name: 'Nut', per: 'unit' as const, qty: 2, fitted: ['shop-a'] }];
+    const a = computeReceipt(items, { units: 1, 'temp-kit': false, supplier: 'shop-a' }, CONFIG);
+    expect([...a.perUnit, ...a.perKit, ...a.elsewhere].map((x) => x.component)).not.toContain('nut');
+    const diy = computeReceipt(items, { units: 3, 'temp-kit': false, supplier: 'diy' }, CONFIG);
+    expect(diy.perUnit.find((x) => x.component === 'nut')?.expected).toBe(6);
+    expect(computeReceipt(items, { 'temp-kit': false }, {}).perUnit.map((x) => x.component)).toContain('nut');
+  });
+
   it('no config: units 1, no supplier split', () => {
     const r = computeReceipt(RECEIPT_ITEMS, { 'temp-kit': false }, {});
     expect(r.units).toBe(1);

@@ -112,12 +112,15 @@ Give each component the reader should count a `receipt`:
 receipt:
   per: unit          # unit (default) or kit: a kit quantity does not scale
   qty: 4             # default 1
-  from: [kit]        # whose package contains it; omitted means every supplier
+  from: [kit, diy]   # whose package contains it; omitted means every supplier
+  fitted: [kit]      # suppliers whose kit ships it already built into a larger part
   when: {dimmer: true}
   note: "Two for the arm, two for the module"
 ```
 
 A `note` that starts with `DRAFT:` (any case) is a maintainer's reminder: it appears only in a maintainer build (`DOCSANDEYE_MAINTAINER=1`) and is left out for readers.
+
+A part listed in `fitted` for the reader's supplier is left out of their checklist: it arrives built into a larger part (a nut already in its cap, a connector already crimped on), so there is nothing loose to count. Readers who source parts themselves still count it.
 
 Components without `receipt` are not in the checklist. A guide's checklist lists the components its steps use, plus any receipt component no step uses (a spares bag, say).
 

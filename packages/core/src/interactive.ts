@@ -79,6 +79,8 @@ export interface ReceiptItem {
   qty: number;
   /** Choice values of `supplier_from` whose package contains this part; absent = all. */
   from?: string[];
+  /** Choice values of `supplier_from` whose kit ships this part already fitted into a larger one; those readers do not count it. */
+  fitted?: string[];
   when?: When;
   note?: string;
   supplier?: { name: string; url?: string };
@@ -678,7 +680,8 @@ function compareText(a: string, b: string): number {
 /**
  * The checklist for a profile: rows failing `when` dropped; the rest split
  * into per-unit and per-kit groups, with rows whose `from` excludes the
- * reader's supplier moved to `elsewhere`. Each group is ordered by component
+ * reader's supplier moved to `elsewhere`, and rows `fitted` by that supplier
+ * (built into a larger part in its kit) left out. Each group is ordered by component
  * name, then id.
  */
 export function computeReceipt(items: readonly ReceiptItem[], profile: Profile, config: ReceiptConfig = {}): Receipt {
@@ -692,6 +695,7 @@ export function computeReceipt(items: readonly ReceiptItem[], profile: Profile, 
   const sorted = [...items].sort((a, b) => compareText(a.name, b.name) || compareText(a.component, b.component));
   for (const item of sorted) {
     if (!matchesWhen(item.when, profile)) continue;
+    if (supplier !== undefined && item.fitted?.includes(supplier)) continue;
     const row: ReceiptRow = { ...item, expected: item.per === 'kit' ? item.qty : item.qty * units };
     if (supplier !== undefined && item.from !== undefined && !item.from.includes(supplier)) receipt.elsewhere.push(row);
     else if (item.per === 'kit') receipt.perKit.push(row);

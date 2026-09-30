@@ -54,6 +54,7 @@ export function readReceiptItems(root: ParentNode): ReceiptItem[] {
       qty: Number(d.qty) || 1,
     };
     if (d.from !== undefined) item.from = d.from.split(' ').filter(Boolean);
+    if (d.fitted !== undefined) item.fitted = d.fitted.split(' ').filter(Boolean);
     if (d.when !== undefined) item.when = dataJson(tr, 'when', {});
     const noteEl = tr.querySelector('.docsi-receipt-note')?.cloneNode(true) as Element | undefined;
     for (const tip of noteEl?.querySelectorAll('.docsi-term-tip') ?? []) tip.remove();

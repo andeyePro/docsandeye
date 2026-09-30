@@ -51,6 +51,7 @@ export function receiptItems(model: ProjectModel, guideId: string, options: Rece
     if (!inGuide.has(component.id) && referencedAnywhere.has(component.id)) continue;
     const item: ReceiptItem = { component: component.id, name: component.name, per: receipt.per, qty: receipt.qty };
     if (receipt.from !== undefined) item.from = [...receipt.from];
+    if (receipt.fitted !== undefined) item.fitted = [...receipt.fitted];
     if (receipt.when !== undefined) item.when = receipt.when;
     const note = receipt.note === undefined ? undefined : options.maintainer === true ? receipt.note : readerNote(receipt.note);
     if (note !== undefined) item.note = note;
