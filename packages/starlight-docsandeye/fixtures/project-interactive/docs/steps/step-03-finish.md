@@ -23,7 +23,7 @@ checks:
     question: "Which way up are the frame's feet?"
     options:
       - {label: "Pointing up", fix: "Turn the frame over."}
-      - {label: "Pointing sideways", fix: "Rotate the frame a quarter turn."}
+      - {label: "Pointing sideways", fix: "Rotate the frame a quarter turn, as in [unpacking](step-01-unpack.md) and the [readme](../../README.md#over-ssh)."}
       - {label: "Touching the table", correct: true}
 safety: "Unplug before you finish."
 ---

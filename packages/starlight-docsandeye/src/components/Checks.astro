@@ -18,6 +18,7 @@
  *
  * Either way it shows "Step checked" once every visible check is right.
  */
+import { rewriteHtmlLinks, rewriteLink, type LinkOptions } from '../links.ts';
 import { answerKey, inlineMarkdownHtml, optionToken, type GlossaryEntry, type ProjectModel, type Step } from '@docsandeye/core';
 import type { ProfileItem } from '@docsandeye/core/interactive';
 import { onlyIf, plainMailto, whenAttr } from '../interactive-view.ts';
@@ -33,9 +34,12 @@ interface Props {
 	linkTerms?: (html: string, used?: Set<GlossaryEntry>) => string;
 	/** A maintainer build shows the "Draft checks" badge of `checks_draft`; readers never see it. */
 	maintainer?: boolean;
+	/** The step's link options: repo-relative links in questions, issues and fixes resolve as in the step body. */
+	links?: LinkOptions;
 }
 
-const { guideId, step, model, items, linkTerms = (html: string) => html, maintainer = false } = Astro.props;
+const { guideId, step, model, items, linkTerms = (html: string) => html, maintainer = false, links } = Astro.props;
+const resolveLinks = (html: string) => (links ? rewriteHtmlLinks(html, (url, image) => rewriteLink(url, links, image)) : html);
 const base = import.meta.env.BASE_URL;
 const checks = step.checks ?? [];
 const contact = model.config.contacts.project;
@@ -46,7 +50,7 @@ const labelHtml = (value: string) => inlineMarkdownHtml(value).replace(/<a\b[^>]
 // Questions, issues and fixes are inline Markdown (code, bold, emphasis, links); glossary terms are linked once per check.
 const blocks = checks.map((check) => {
 	const used = new Set<GlossaryEntry>();
-	const text = (value: string) => linkTerms(inlineMarkdownHtml(value), used);
+	const text = (value: string) => linkTerms(resolveLinks(inlineMarkdownHtml(value)), used);
 	const question = text(check.question);
 	const options = (check.options ?? []).map((option) => ({
 		...option,

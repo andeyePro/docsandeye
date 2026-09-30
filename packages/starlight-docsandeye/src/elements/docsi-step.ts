@@ -10,7 +10,8 @@ export class DocsiStep extends HTMLElement {
     if (this.hasAttribute('data-enhanced')) return;
     this.setAttribute('data-enhanced', '');
     for (const img of this.querySelectorAll<HTMLImageElement>('.docsi-media img')) {
-      if (img.closest('docsi-model')) continue;
+      // A poster inside a play button or link is part of that control, not a zoomable image.
+      if (img.closest('docsi-model, a, button')) continue;
       img.tabIndex = 0;
       img.setAttribute('role', 'button');
     }

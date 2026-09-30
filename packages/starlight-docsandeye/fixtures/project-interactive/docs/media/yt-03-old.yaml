@@ -2,6 +2,7 @@ id: yt-03-old
 type: video
 youtube: ZyXwVuTsRq9
 duration_s: 30
+poster: docs/img/parts-heap.svg
 shot_date: 2026-02-01
 shot_by: "Fixture"
 hero: [widget@1.0.0]

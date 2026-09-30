@@ -215,6 +215,11 @@ describe('repo-relative links in step bodies', () => {
     expect(page(STEP3).querySelector('.docsi-body img[alt="Wiring"]')!.getAttribute('src')).toBe(`${REPO}/raw/dev/Media/wiring%20diagram.png`);
   });
 
+  it('links in a check\'s fix resolve the same way (step page, GitHub on the branch)', () => {
+    const fixLinks = Object.fromEntries(page(STEP3).querySelectorAll('docsi-checks .docsi-check-fix a').map((a) => [a.text.trim(), a.getAttribute('href')]));
+    expect(fixLinks).toMatchObject({ unpacking: '/kit/step-01-unpack/', readme: `${REPO}/blob/dev/README.md#over-ssh` });
+  });
+
   it('a path above the project root, absolute URLs and fragments are left as written', () => {
     expect(hrefs()).toMatchObject({ outside: '../../../elsewhere/notes.md', 'the site': 'https://example.com/x', top: '#_top' });
   });
@@ -364,8 +369,10 @@ describe('YouTube facade', () => {
     expect(noscript).toBeTruthy();
   });
 
-  it('no video file is copied for YouTube media', () => {
-    expect(fs.existsSync(path.join(DIST, '_docsandeye/media'))).toBe(false);
+  it('no video file is copied for YouTube media (only yt-03-old\'s poster)', () => {
+    const dir = path.join(DIST, '_docsandeye/media');
+    const files = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+    expect(files.filter((f) => /\.(mp4|webm|mov|m4v)$/i.test(f))).toEqual([]);
   });
 });
 
@@ -1052,7 +1059,7 @@ describe('task_024: multiple-choice checks', () => {
     expect(details.querySelector('p strong')!.text).toBe('Touching the table');
     expect(details.querySelectorAll('li').map((l) => l.text.replace(/\s+/g, ' ').trim())).toEqual([
       'If you see Pointing up: Turn the frame over.',
-      'If you see Pointing sideways: Rotate the frame a quarter turn.',
+      'If you see Pointing sideways: Rotate the frame a quarter turn, as in unpacking and the readme.',
     ]);
   });
 

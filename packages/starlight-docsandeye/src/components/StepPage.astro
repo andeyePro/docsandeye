@@ -101,7 +101,7 @@ const hasMediaPane = step.renders.length > 0 || step.viewer !== undefined || med
 			<div class="docsi-body sl-markdown-content" set:html={html} />
 			{step.receipt && <Receipt guideId={guide.id} stepId={step.id} model={model} items={profile} linkTerms={linkTerms} maintainer={maintainer} />}
 			<PartsList step={step} model={model} items={profile} />
-			<Checks guideId={guide.id} step={step} model={model} items={profile} linkTerms={linkTerms} maintainer={maintainer} />
+			<Checks guideId={guide.id} step={step} model={model} items={profile} linkTerms={linkTerms} maintainer={maintainer} links={links} />
 			{
 				olderVideos.length > 0 && (
 					<section class="docsi-older-video">

@@ -31,7 +31,10 @@ export function fixtureOnly(): void {
 /** Open a page and wait until its Docs&I client script has upgraded the markup. */
 export async function openReady(page: Page, path: string): Promise<void> {
   await page.goto(path);
-  await expect(page.locator('[data-enhanced]').first()).toBeAttached();
+  // A page with no Docs&I element to upgrade (a guide page without a profile form, say) has nothing
+  // to wait for; the theme picker's docsi-theme never takes data-enhanced.
+  const elements = await page.evaluate(() => [...document.querySelectorAll('*')].filter((el) => el.localName.startsWith('docsi-') && el.localName !== 'docsi-theme').length);
+  if (elements > 0) await expect(page.locator('[data-enhanced]').first()).toBeAttached();
 }
 
 /** Set a number answer in the profile form (fires `change`, as leaving the field does); `units` by default. */

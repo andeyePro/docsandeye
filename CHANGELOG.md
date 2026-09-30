@@ -4,6 +4,7 @@ Done-work log for Docs&I (`docsandeye`), newest first. Open work is in TODO.md.
 
 ## 2026-09-30
 
+- [x] **Browser suite against the live guides; two plugin fixes it found** — the Playwright suite ran on the Mac for the first time since task_024: 27/27 on the fixture (the multiple-choice check tests included), then with `E2E_DIST` against the electroPioreactor AEP, MEP and BAEP pages. Fixed: `<docsi-step>` made every media image a zoomable `role="button"`, including a YouTube poster inside its own play button, which axe flags as nested interactive (serious) plus two role conflicts; posters inside a button or link are now left alone (the fixture's `yt-03-old` gains a poster and a11y now covers that step). Links in check questions, issues and fixes were not resolved like the step body, so `[AEP-Plugin/README.md](../../AEP-Plugin/README.md)` in a fix pointed at a missing page; `Checks.astro` now takes the step's link options. The suite itself: the consent tests answer a multiple-choice check when a page has no yes/no one, and `openReady` no longer waits for an upgrade on a page with no Docs&I element (a guide page without a profile form).
 - [x] **Root build compiles each package once** — `npm run build` built `@docsandeye/core` three times and the themes, plugin and CLI twice (the root script, then `--workspaces`, then the site's `prebuild`). It now builds core, then themes, plugin and CLI, then the site with `--ignore-scripts` so its `prebuild` does not repeat them; `npm run build` inside `site/` alone still builds its dependencies first.
 
 ## 2026-09-29
