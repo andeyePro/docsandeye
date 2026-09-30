@@ -5,6 +5,8 @@ test('a glossary term opens its tip from the keyboard and Escape returns focus',
   await openReady(page, STEP);
   // The first term on the page a reader can reach (one inside a hidden "Only if" block is not).
   const term = page.locator('button.docsi-term:visible').first();
+  // A real site's step may use no glossary term (the fixture's always does).
+  test.skip((await term.count()) === 0, 'no glossary term on this step');
   const tipText = (await term.getAttribute('data-tip'))!;
   expect(tipText).toBeTruthy();
 

@@ -612,6 +612,11 @@ docsi-youtube [hidden],
   color: var(--sl-color-gray-2);
 }
 
+/* The muted grey is 4.48:1 on a guide list's dark background (axe, AA needs 4.5). */
+:root[data-theme='dark'] .docsi-skip-note {
+  color: var(--sl-color-gray-2);
+}
+
 .docsi-checked-mark {
   color: var(--sl-color-green-high);
   font-size: var(--sl-text-sm);

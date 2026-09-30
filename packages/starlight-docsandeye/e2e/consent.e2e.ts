@@ -12,6 +12,8 @@ const answer = async (page: Page) => {
 };
 const pick = async (page: Page) => {
   const control = await answer(page);
+  // A real site's step may have no check at all (the fixture's always has one).
+  test.skip((await control.count()) === 0, 'no check on this step');
   if ((await control.getAttribute('type')) === 'radio') await control.check();
   else await control.click();
 };
