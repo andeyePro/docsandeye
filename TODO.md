@@ -9,11 +9,11 @@ maintainer's machine only; the public-facing summary is README.md.
 
 ### v0.1 — data, renders, staleness, no video
 
-- [ ] **First consumer: electroPioreactor AEP0.2** — the site now lives in the electroPioreactor repository (`site/` on AEP02, Docs&I vendored as npm pack tarballs via `site/scripts/vendor-docsandeye.sh`; decision 19 superseded 2026-09-23). Builds 17 pages, check 0/0 at a 175 KB budget. Waiting on Martin: the AMYBO contact address, the 11 DRAFT receipt quantities, the draft checks, the YouTube links, and the Cloudflare Pages direct-upload deploy and cutover (brain2 Docs&I-fromClaude items 20 to 27).
+- [ ] **First consumer: electroPioreactor AEP0.2, remaining** — live at docs.electropioreactor.org since 2026-09-29 (Cloudflare Pages Direct Upload with wrangler from `site/`, production branch AEP02; contact address confirmed, videos 1-3 and 6-8 in, checks rewritten as multiple choice). Still open: the kit quantities LabCrafter must confirm (brain2 AMYBO/LabCrafter-questions-for-Gerrit), the software setup video Martin is to record (fromClaude 4), and after launch: merge AEP02 into main, set the Pages production branch back to main and deploy with `--branch main`.
 
-- [ ] **Footage tools on real footage**: first run of `tools/footage` on the AEP0.2 shoot (Laura's MacBook Pro, standard account `claude`, `/Users/Shared`); confirm Final Cut imports the FCPXML multicam, and fix whatever the real ffprobe tags and whisper JSON differ in.
+- [ ] **Footage tools on real footage, remaining**: `tools/footage` ran on the AEP0.2 shoot on Laura's MacBook Pro on 2026-09-25 (sessions, transcripts, cut sheet in its shared footage-prep folder), and the chapter lists for videos 1-3 and 6-8 came from whisper runs there. Still unconfirmed: that Final Cut imports the FCPXML multicam.
 
-- [ ] **Deploy**: docs.andeye.com Pages project (root `site`, `npm run build`, `dist`) is Martin's dashboard step; the AEP guide needs its own Pages project on the electroPioreactor repo (docs.electroPioreactor.org, business Cloudflare account).
+- [ ] **Deploy**: docs.andeye.com Pages project (root `site`, `npm run build`, `dist`) is Martin's dashboard step (fromClaude 11e). The AEP guide's own project (docs.electroPioreactor.org) is done.
 
 ### v0.2 — video
 
